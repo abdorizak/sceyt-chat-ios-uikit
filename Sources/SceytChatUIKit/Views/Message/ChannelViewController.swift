@@ -1893,13 +1893,37 @@ open class ChannelViewController: ViewController,
                         }
                     }
                 }
+
                 guard let self = self else { return }
+
                 if isInsertingItemsToTop {
+                    // Get content height after new items were inserted
                     let contentHeightAfterInsertion = self.collectionView.contentSize.height
+
+                    // Calculate how much the content height has grown
                     let heightDifference = contentHeightAfterInsertion - contentHeightBeforeInsertion
-                    let newOffsetY = offsetBeforeInsertion + heightDifference
+
+                    // Preserve scroll position by adjusting offset based on height increase
+                    var newOffsetY = offsetBeforeInsertion + heightDifference
+
+                    // Handle special case: initial load when collectionView was empty
+                    if contentHeightBeforeInsertion == 0 && offsetBeforeInsertion == 0 {
+
+                        // If content doesn't fill the screen, no need to scroll - just keep offset at top
+                        if collectionView.frame.height > collectionView.contentSize.height {
+                            newOffsetY = 0.0
+                        } else {
+                            // If content is scrollable, subtract visible height (excluding bottom inset)
+                            // to align first inserted items with the top of the visible area
+                            let visibleHeight = collectionView.bounds.height - collectionView.adjustedContentInset.bottom
+                            newOffsetY -= visibleHeight
+                        }
+                    }
+
+                    // Apply the adjusted offset to maintain scroll position smoothly
                     self.collectionView.contentOffset.y = newOffsetY
                 }
+
                 UIView.performWithoutAnimation {
                     let reloads = paths.reloads + moves.map(\.to)
                     if !reloads.isEmpty {
@@ -1908,7 +1932,7 @@ open class ChannelViewController: ViewController,
                         }
                     }
                 }
-                
+
                 if needsToScrollBottom, !(self.collectionView.isDragging || self.collectionView.isDecelerating) {
                     scrollBottom = true
                 } else {
