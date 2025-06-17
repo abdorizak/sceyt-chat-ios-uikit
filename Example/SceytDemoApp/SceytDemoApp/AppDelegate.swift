@@ -54,10 +54,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UIBarButtonItem.appearance()
             .setTitleTextAttributes([
                 .font: Appearance.Fonts.bold.withSize(16),
-                .foregroundColor: UIColor.accent
+                .foregroundColor: DefaultColors.accent
             ], for: [])
-        UITabBar.appearance().tintColor = UIColor.accent
-        UISwitch.appearance().onTintColor = UIColor.accent
+        UITabBar.appearance().tintColor = DefaultColors.accent
+        UISwitch.appearance().onTintColor = DefaultColors.accent
     }
     
     func registerForPushNotifications() {

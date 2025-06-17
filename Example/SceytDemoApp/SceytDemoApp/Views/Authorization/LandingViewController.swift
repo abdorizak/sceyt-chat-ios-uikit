@@ -23,7 +23,7 @@ class LandingViewController: ViewController {
         $0.numberOfLines = 0
         $0.textAlignment = .center
         $0.font = .systemFont(ofSize: .init(32), weight: .semibold)
-        $0.textColor = .primaryText
+        $0.textColor = DefaultColors.primaryText
         return $0.withoutAutoresizingMask
     }(UILabel())
     
@@ -32,15 +32,15 @@ class LandingViewController: ViewController {
         $0.numberOfLines = 0
         $0.textAlignment = .center
         $0.font = .systemFont(ofSize: .init(15), weight: .regular)
-        $0.textColor = .secondaryText
+        $0.textColor = DefaultColors.secondaryText
         return $0.withoutAutoresizingMask
     }(UILabel())
     
     lazy var createButton = {
         $0.setTitle("Create Account", for: .normal)
-        $0.setTitleColor(.onPrimary, for: .normal)
+        $0.setTitleColor(DefaultColors.onPrimary, for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: .init(17), weight: .semibold)
-        $0.backgroundColor = .accent
+        $0.backgroundColor = DefaultColors.accent
         $0.layer.cornerRadius = 8
         $0.layer.cornerCurve = .continuous
         $0.addTarget(self, action: #selector(createButtonAction), for: .touchUpInside)
@@ -49,9 +49,9 @@ class LandingViewController: ViewController {
     
     lazy var chooseButton = {
         $0.setTitle("Choose Account", for: .normal)
-        $0.setTitleColor(.accent, for: .normal)
+        $0.setTitleColor(DefaultColors.accent, for: .normal)
         $0.titleLabel?.font = .systemFont(ofSize: .init(17), weight: .semibold)
-        $0.backgroundColor = .surface1
+        $0.backgroundColor = DefaultColors.surface1
         $0.layer.cornerRadius = 8
         $0.layer.cornerCurve = .continuous
         $0.addTarget(self, action: #selector(chooseButtonAction), for: .touchUpInside)
@@ -102,7 +102,7 @@ class LandingViewController: ViewController {
         guard let vc = storyboard.instantiateViewController(withIdentifier: "AccountPickerViewController") as? AccountPickerViewController else { return }
         
         vc.onUserIdSelected = { userId in
-            Config.currentUserId = userId
+            Config.currentUserId = "m"// userId
             AppCoordinator.shared.showMainFlow()
         }
         let nav = CustomInteractiveTransitionNavigationController(rootViewController: vc)

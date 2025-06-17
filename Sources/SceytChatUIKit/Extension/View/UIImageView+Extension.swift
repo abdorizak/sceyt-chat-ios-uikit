@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension UIImageView {
+extension UIImageView {
     // Data holder tap recognizer
     private class TapWithDataRecognizer: UITapGestureRecognizer {
         weak var from: UIViewController?

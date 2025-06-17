@@ -1,15 +1,14 @@
 //
-//  Constraints.swift
-//  SceytChatUIKit
+//  Constraints+Extensions.swift
+//  SceytDemoApp
 //
-//  Created by Hovsep Keropyan on 26.10.23.
-//  Copyright © 2023 Sceyt LLC. All rights reserved.
+//  Created by Sergey Charchoghlyan on 17.06.25.
+//  Copyright © 2025 Sceyt LLC. All rights reserved.
 //
 
 import UIKit
 
-@frozen
-public enum LayoutAnchorType {
+enum LayoutAnchorType {
 
     @frozen
     public enum FuncType {
@@ -46,19 +45,17 @@ public enum LayoutAnchorType {
     
 }
 
-@frozen
-public enum LayoutDimensionType {
+enum LayoutDimensionType {
     case width(CGFloat = 0, LayoutAnchorType.FuncType = .equal)
     case height(CGFloat = 0, LayoutAnchorType.FuncType = .equal)
     
-    public static var width: LayoutDimensionType { LayoutDimensionType.width() }
-    public static var height: LayoutDimensionType { LayoutDimensionType.height() }
+    static var width: LayoutDimensionType { LayoutDimensionType.width() }
+    static var height: LayoutDimensionType { LayoutDimensionType.height() }
 }
 
 extension UIView {
 
     @discardableResult
-    @inlinable
     func pin(to view: UIView,
              anchor: LayoutAnchorType,
              activate: Bool = true)
@@ -67,7 +64,6 @@ extension UIView {
     }
 
     @discardableResult
-    @inlinable
     func pin(to view: UIView,
              anchors: [LayoutAnchorType] = [.leading(), .trailing(), .top(), .bottom()],
              activate: Bool = true)
@@ -187,7 +183,6 @@ extension UIView {
     }
 
     @discardableResult
-    @inlinable
     func pin(to guide: UILayoutGuide,
              anchors: [LayoutAnchorType] = [.leading(), .trailing(), .top(), .bottom()],
              activate: Bool = true)
@@ -221,7 +216,6 @@ extension UIView {
     }
 
     @discardableResult
-    @inlinable
     func resize(anchors: [LayoutDimensionType],
              activate: Bool = true)
     -> [NSLayoutConstraint] {
@@ -253,20 +247,17 @@ extension UIView {
 extension NSLayoutConstraint {
 
     @discardableResult
-    @inlinable
     func priority(_ priority: UILayoutPriority) -> Self {
         self.priority = priority
         return self
     }
 
     @discardableResult
-    @inlinable
     func priority(_ value: Float) -> Self {
         priority(UILayoutPriority(value))
     }
 
     @discardableResult
-    @inlinable
     func activate(_ isActive: Bool) -> Self {
         self.isActive = isActive
         return self
@@ -276,19 +267,16 @@ extension NSLayoutConstraint {
 extension NSLayoutAnchor {
 
     @discardableResult
-    @usableFromInline
     @objc func pin(to anchor: NSLayoutAnchor, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
         constraint(equalTo: anchor, constant: constant).activate(activate)
     }
 
     @discardableResult
-    @usableFromInline
     @objc func pin(greaterThanOrEqualTo anchor: NSLayoutAnchor, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
         constraint(greaterThanOrEqualTo: anchor, constant: constant).activate(activate)
     }
 
     @discardableResult
-    @usableFromInline
     @objc func pin(lessThanOrEqualTo anchor: NSLayoutAnchor, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
         constraint(lessThanOrEqualTo: anchor, constant: constant).activate(activate)
     }

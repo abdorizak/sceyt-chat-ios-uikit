@@ -9,7 +9,7 @@
 import Combine
 import UIKit
 
-public extension UIViewController {
+extension UIViewController {
     @discardableResult
     func showSheet(_ child: UIView,
                    style: SheetViewController.Style = .bottom,
