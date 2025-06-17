@@ -37,6 +37,11 @@ open class Router<ViewController: UIViewController>: NSObject {
     }
     
     @objc
+    public func push(_ viewControllers: UIViewController, animated: Bool = true) {
+        rootViewController.navigationController?.pushViewController(viewControllers, animated: animated)
+    }
+    
+    @objc
     public func dismiss(animated: Bool = true, completion: (() -> Void)? = nil) {
         if let nav = rootViewController.navigationController {
             nav.dismiss(animated: animated, completion: completion)
