@@ -32,6 +32,11 @@ open class Router<ViewController: UIViewController>: NSObject {
     }
     
     @objc
+    public func setViewControllers(_ viewControllers: [UIViewController], animated: Bool = true) {
+        rootViewController.navigationController?.setViewControllers(viewControllers, animated: animated)
+    }
+    
+    @objc
     public func push(_ viewControllers: UIViewController, animated: Bool = true) {
         rootViewController.navigationController?.pushViewController(viewControllers, animated: animated)
     }
