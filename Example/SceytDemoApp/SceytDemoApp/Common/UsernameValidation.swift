@@ -31,14 +31,14 @@ enum UsernameValidation {
         
         let fullTextAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: .init(13), weight: .regular),
-            .foregroundColor: DefaultColors.secondaryText.light
+            .foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText.light
         ]
         
         attributedText.addAttributes(fullTextAttributes, range: NSRange(location: 0, length: fullText.count))
         
         let boldAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: .init(13), weight: .bold),
-            .foregroundColor: DefaultColors.secondaryText.light
+            .foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText.light
         ]
         
         let rangesToBold = [

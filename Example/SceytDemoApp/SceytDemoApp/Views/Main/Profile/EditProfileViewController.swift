@@ -45,8 +45,8 @@ class EditProfileViewController: ViewController {
     lazy var usernameTextField: UITextField = {
         $0.delegate = self
         $0.font = .systemFont(ofSize: .init(16), weight: .regular)
-        $0.textColor = DefaultColors.primaryText
-        $0.backgroundColor = DefaultColors.backgroundSections
+        $0.textColor = SceytChatUIKit.shared.theme.colors.primaryText
+        $0.backgroundColor = SceytChatUIKit.shared.theme.colors.backgroundSections
         $0.autocapitalizationType = .none
         $0.autocorrectionType = .no
         $0.spellCheckingType = .no
@@ -60,7 +60,7 @@ class EditProfileViewController: ViewController {
         let label = UILabel()
         label.text = "@"
         label.font = .systemFont(ofSize: .init(16), weight: .regular)
-        label.textColor = DefaultColors.primaryText
+        label.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0)).withoutAutoresizingMask
         view.resize(anchors: [.width(16)])
         let stackView = UIStackView(arrangedSubviews: [view, label])
@@ -74,7 +74,7 @@ class EditProfileViewController: ViewController {
         
         $0.attributedPlaceholder = NSAttributedString(
             string: "username",
-            attributes: [.foregroundColor: DefaultColors.secondaryText]
+            attributes: [.foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText]
         )
         $0.resize(anchors: [.height(50)])
         return $0.withoutAutoresizingMask
@@ -98,7 +98,7 @@ class EditProfileViewController: ViewController {
     
     lazy var descriptionLabel: UILabel = {
         $0.font = .systemFont(ofSize: .init(16), weight: .regular)
-        $0.textColor = DefaultColors.secondaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.secondaryText
         $0.attributedText = UsernameValidation.attributedDescription
         $0.numberOfLines = 0
         return $0.withoutAutoresizingMask
@@ -379,7 +379,7 @@ extension EditProfileViewController {
     
     private func updateErrorLabel(isAvailable: Bool?) {
         errorLabel.isHidden = false
-        errorLabel.textColor = isAvailable ?? false ? DefaultColors.stateSuccess : DefaultColors.stateWarning
+        errorLabel.textColor = isAvailable ?? false ? SceytChatUIKit.shared.theme.colors.stateSuccess : SceytChatUIKit.shared.theme.colors.stateWarning
         if let isAvailable {
             errorLabel.text = isAvailable ? "Username is available. You can use it." : "Username is already taken."
         } else {
@@ -389,7 +389,7 @@ extension EditProfileViewController {
     
     private func handle(validation: UsernameValidation) {
         errorLabel.isHidden = false
-        errorLabel.textColor = DefaultColors.stateWarning
+        errorLabel.textColor = SceytChatUIKit.shared.theme.colors.stateWarning
         errorLabel.text = validation.description.description
     }
     

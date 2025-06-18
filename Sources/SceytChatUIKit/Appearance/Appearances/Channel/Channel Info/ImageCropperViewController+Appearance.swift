@@ -13,7 +13,7 @@ extension ImageCropperViewController: AppearanceProviding {
         navigationBarAppearance: NavigationBarAppearance.appearance,
         backgroundColor: .background,
         maskColor: .black.withAlphaComponent(0.5),
-        bottomBarBackgroundColor: DefaultColors.backgroundDark,
+        bottomBarBackgroundColor: SceytChatUIKit.shared.theme.colors.backgroundDark,
         cancelButtonAppearance: .init(
             reference: ButtonAppearance.appearance,
             labelAppearance: .init(

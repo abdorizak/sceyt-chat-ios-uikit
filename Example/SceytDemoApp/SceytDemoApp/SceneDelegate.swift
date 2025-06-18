@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         if let window = windowScene.windows.first {
-            window.tintColor = DefaultColors.accent
+            window.tintColor = SceytChatUIKit.shared.theme.colors.accent
             self.window = window
         }
     }

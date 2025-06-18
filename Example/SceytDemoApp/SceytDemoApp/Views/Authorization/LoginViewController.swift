@@ -29,14 +29,14 @@ class LoginViewController: ViewController {
     
     lazy var titleLabel: UILabel = {
         $0.font = Appearance.Fonts.semiBold.withSize(24)
-        $0.textColor = DefaultColors.primaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         $0.text = "Create Account"
         return $0.withoutAutoresizingMask
     }(UILabel())
     
     lazy var subtitleLabel: UILabel = {
         $0.font = Appearance.Fonts.regular.withSize(16)
-        $0.textColor = DefaultColors.secondaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.secondaryText
         $0.text = "Create an account by completing these details."
         $0.numberOfLines = 0
         return $0.withoutAutoresizingMask
@@ -44,7 +44,7 @@ class LoginViewController: ViewController {
     
     lazy var firstNameTextField: UITextField = {
         $0.font = Appearance.Fonts.regular.withSize(16)
-        $0.textColor = DefaultColors.primaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         $0.textContentType = .givenName
         $0.borderStyle = .none
         $0.backgroundColor = DefaultColors.surface1
@@ -59,7 +59,7 @@ class LoginViewController: ViewController {
         $0.attributedPlaceholder = NSAttributedString(
             string: "First name",
             attributes: [
-                .foregroundColor: DefaultColors.secondaryText
+                .foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText
             ]
         )
         return $0.withoutAutoresizingMask
@@ -67,10 +67,10 @@ class LoginViewController: ViewController {
     
     lazy var lastNameTextField: UITextField = {
         $0.font = Appearance.Fonts.regular.withSize(16)
-        $0.textColor = DefaultColors.primaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         $0.textContentType = .familyName
         $0.borderStyle = .none
-        $0.backgroundColor = DefaultColors.surface1
+        $0.backgroundColor = SceytChatUIKit.shared.theme.colors.surface1
         $0.layer.cornerRadius = 12
         $0.layer.cornerCurve = .continuous
         
@@ -81,14 +81,14 @@ class LoginViewController: ViewController {
         
         $0.attributedPlaceholder = NSAttributedString(
             string: "Last name",
-            attributes: [.foregroundColor: DefaultColors.secondaryText]
+            attributes: [.foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText]
         )
         return $0.withoutAutoresizingMask
     }(UITextField())
     
     lazy var usernameTextField: UITextField = {
         $0.font = Appearance.Fonts.regular.withSize(16)
-        $0.textColor = DefaultColors.primaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         $0.autocapitalizationType = .none
         $0.autocorrectionType = .no
         $0.spellCheckingType = .no
@@ -96,14 +96,14 @@ class LoginViewController: ViewController {
             $0.inlinePredictionType = .no
         }
         $0.borderStyle = .none
-        $0.backgroundColor = DefaultColors.surface1
+        $0.backgroundColor = SceytChatUIKit.shared.theme.colors.surface1
         $0.layer.cornerRadius = 12
         $0.layer.cornerCurve = .continuous
         
         let label = UILabel()
         label.text = "@"
         label.font = Appearance.Fonts.regular.withSize(16)
-        label.textColor = DefaultColors.primaryText
+        label.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         let view = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0)).withoutAutoresizingMask
         view.resize(anchors: [.width(16)])
         let stackView = UIStackView(arrangedSubviews: [view, label])
@@ -117,7 +117,7 @@ class LoginViewController: ViewController {
         
         $0.attributedPlaceholder = NSAttributedString(
             string: "username",
-            attributes: [.foregroundColor: DefaultColors.secondaryText]
+            attributes: [.foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText]
         )
         return $0.withoutAutoresizingMask
     }(UITextField())
@@ -125,14 +125,14 @@ class LoginViewController: ViewController {
     lazy var errorLabel: UILabel = {
         $0.text = "Username is already taken."
         $0.font = Appearance.Fonts.regular.withSize(12)
-        $0.textColor = DefaultColors.stateWarning
+        $0.textColor = SceytChatUIKit.shared.theme.colors.stateWarning
         $0.isHidden = true
         return $0.withoutAutoresizingMask
     }(UILabel())
     
     lazy var subTitleLabel: UILabel = {
         $0.font = Appearance.Fonts.regular.withSize(13)
-        $0.textColor = DefaultColors.secondaryText
+        $0.textColor = SceytChatUIKit.shared.theme.colors.secondaryText
         $0.attributedText = UsernameValidation.attributedDescription
         $0.numberOfLines = 0
         return $0.withoutAutoresizingMask
@@ -147,13 +147,13 @@ class LoginViewController: ViewController {
                         ofSize: .init(17),
                         weight: .semibold
                     ),
-                    .foregroundColor: DefaultColors.onPrimary
+                    .foregroundColor: SceytChatUIKit.shared.theme.colors.onPrimary
                 ]
             ),
             for: .normal
         )
-        $0.setBackgroundImage(ImageBuilder.build(fillColor: DefaultColors.accent), for: .normal)
-        $0.setBackgroundImage(ImageBuilder.build(fillColor: DefaultColors.accent.withAlphaComponent(0.5)), for: .disabled)
+        $0.setBackgroundImage(ImageBuilder.build(fillColor: SceytChatUIKit.shared.theme.colors.accent), for: .normal)
+        $0.setBackgroundImage(ImageBuilder.build(fillColor: SceytChatUIKit.shared.theme.colors.accent.withAlphaComponent(0.5)), for: .disabled)
         $0.layer.cornerRadius = 8
         $0.layer.masksToBounds = true
         return $0.withoutAutoresizingMask
@@ -337,7 +337,7 @@ extension LoginViewController {
     
     private func updateErrorLabel(isAvailable: Bool?) {
         errorLabel.isHidden = false
-        errorLabel.textColor = isAvailable ?? false ? DefaultColors.stateSuccess : DefaultColors.stateWarning
+        errorLabel.textColor = isAvailable ?? false ? SceytChatUIKit.shared.theme.colors.stateSuccess : SceytChatUIKit.shared.theme.colors.stateWarning
         if let isAvailable {
             errorLabel.text = isAvailable ? "Username is available. You can use it." : "Username is already taken."
         } else {
@@ -347,7 +347,7 @@ extension LoginViewController {
     
     private func handle(validation: UsernameValidation) {
         errorLabel.isHidden = false
-        errorLabel.textColor = DefaultColors.stateWarning
+        errorLabel.textColor = SceytChatUIKit.shared.theme.colors.stateWarning
         errorLabel.text = validation.description.description
     }
     

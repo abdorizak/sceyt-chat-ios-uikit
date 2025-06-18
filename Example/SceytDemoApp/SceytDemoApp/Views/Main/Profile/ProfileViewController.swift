@@ -26,7 +26,7 @@ class ProfileViewController: ViewController {
         if previousTraitCollection?.userInterfaceStyle != traitCollection.userInterfaceStyle {
             tableView.visibleCells.forEach { cell in
                 if let borderLayer = cell.layer.sublayers?.first(where: { $0.name == "bottomBorder" }) {
-                    borderLayer.borderColor = DefaultColors.border.cgColor
+                    borderLayer.borderColor = SceytChatUIKit.shared.theme.colors.border.cgColor
                 }
             }
         }
@@ -203,7 +203,7 @@ extension ProfileViewController: UITableViewDataSource {
                 layer.name = "bottomBorder"
                 cell.layer.addSublayer(layer)
             }
-            layer.borderColor = DefaultColors.border.cgColor
+            layer.borderColor = SceytChatUIKit.shared.theme.colors.border.cgColor
             layer.borderWidth = 1
             layer.frame = CGRect(x: 0, y: cell.height - layer.borderWidth, width: cell.width, height: layer.borderWidth)
         }
@@ -240,7 +240,7 @@ extension ProfileViewController: UITableViewDataSource {
             
             cell.selectionStyle = .none
             let sw = UISwitch()
-            sw.onTintColor = DefaultColors.accent
+            sw.onTintColor = SceytChatUIKit.shared.theme.colors.accent
             
             switch OptionsSection(rawValue: indexPath.row)! {
             case .notification:
@@ -274,11 +274,11 @@ extension ProfileViewController: UITableViewDataSource {
             return cell
         case .logout:
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: UITableViewCell.self)
-            cell.backgroundColor = DefaultColors.backgroundSections
+            cell.backgroundColor = SceytChatUIKit.shared.theme.colors.backgroundSections
             cell.indentationLevel = 1
             cell.indentationWidth = 16
             cell.textLabel?.text = "Log Out"
-            cell.textLabel?.textColor = DefaultColors.stateWarning
+            cell.textLabel?.textColor = SceytChatUIKit.shared.theme.colors.stateWarning
             return cell
         }
     }
