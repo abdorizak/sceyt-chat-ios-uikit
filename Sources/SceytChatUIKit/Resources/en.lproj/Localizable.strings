@@ -36,6 +36,7 @@
 "channel.member.inactive" = "Inactive User";
 "channel.member.role.title" = "Change Role";
 "channel.member.typing" = "typing";
+"channel.member.recording" = "recording";
 
 "channel.new.title" = "Start Chat";
 "channel.new.createPublic" = "New Channel";

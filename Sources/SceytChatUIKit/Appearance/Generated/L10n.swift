@@ -352,6 +352,8 @@ public enum L10n {
       public static let deleted = L10n.tr("Localizable", "channel.member.deleted", fallback: "Deleted User")
       /// Inactive User
       public static let inactive = L10n.tr("Localizable", "channel.member.inactive", fallback: "Inactive User")
+      /// recording
+      public static let recording = L10n.tr("Localizable", "channel.member.recording", fallback: "recording")
       /// typing
       public static let typing = L10n.tr("Localizable", "channel.member.typing", fallback: "typing")
       public enum Role {

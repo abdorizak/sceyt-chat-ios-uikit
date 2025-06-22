@@ -187,6 +187,18 @@ open class ChannelListViewController: ViewController,
                     return
                 }
             }
+        case let .recording(isRecording, user, channel):
+            for cell in tableView.visibleCells where cell is ChannelCell {
+                let channelCell = (cell as! ChannelCell)
+                if channelCell.data.channel.id == channel.id {
+                    if isRecording {
+                        channelCell.didStartRecording(user: user)
+                    } else {
+                        channelCell.didStopRecording(user: user)
+                    }
+                    return
+                }
+            }
         case .showChannel(let channel):
             channelListRouter.showChannelViewController(channel: channel)
         }

@@ -261,7 +261,7 @@ extension ChannelListViewController {
             let message = NSMutableAttributedString(string: "")
             if !data.channel.isDirect {
                 message.append(NSAttributedString(
-                    string: "\(Components.typingView.display(typer: appearance.typingUserNameFormatter.format(user), split: .firstWord)): ",
+                    string: "\(Components.chatActionView.display(user: appearance.typingUserNameFormatter.format(user), split: .firstWord)): ",
                     attributes: [
                         .font: appearance.lastMessageSenderNameLabelAppearance.font,
                         .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
@@ -280,6 +280,34 @@ extension ChannelListViewController {
         }
         
         open func didStopTyping(user: ChatUser) {
+            update(messageText: data.attributedView)
+            messageLabel.setNeedsLayout()
+            messageLabel.layoutIfNeeded()
+        }
+        
+        open func didStartRecording(user: ChatUser) {
+            let message = NSMutableAttributedString(string: "")
+            if !data.channel.isDirect {
+                message.append(NSAttributedString(
+                    string: "\(Components.chatActionView.display(user: appearance.typingUserNameFormatter.format(user), split: .firstWord)): ",
+                    attributes: [
+                        .font: appearance.lastMessageSenderNameLabelAppearance.font,
+                        .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
+                    ]
+                ))
+            }
+            message.append(NSAttributedString(
+                string: "\(L10n.Channel.Member.recording)...",
+                attributes: [
+                    .font: appearance.typingLabelAppearance.font,
+                    .foregroundColor: appearance.typingLabelAppearance.foregroundColor]
+            ))
+            update(messageText: message)
+            messageLabel.setNeedsLayout()
+            messageLabel.layoutIfNeeded()
+        }
+        
+        open func didStopRecording(user: ChatUser) {
             update(messageText: data.attributedView)
             messageLabel.setNeedsLayout()
             messageLabel.layoutIfNeeded()

@@ -15,6 +15,7 @@ extension ChannelViewController {
         public enum Mode {
             case `default`
             case typing
+            case recording
         }
 
         open lazy var profileImageView = ImageButton()
@@ -26,7 +27,7 @@ extension ChannelViewController {
         open lazy var subLabel = UILabel()
             .withoutAutoresizingMask
 
-        open lazy var typingView = Components.typingView
+        open lazy var chatActionView = Components.chatActionView
             .init()
             .withoutAutoresizingMask
         
@@ -34,7 +35,7 @@ extension ChannelViewController {
             column: [
                 headLabel,
                 subLabel,
-                typingView
+                chatActionView
             ],
             spacing: 0
         )
@@ -48,7 +49,7 @@ extension ChannelViewController {
 
         open override func setup() {
             super.setup()
-            typingView.isHidden = true
+            chatActionView.isHidden = true
             subLabel.isHidden = true
             
             profileImageView.layer.masksToBounds = true
@@ -70,14 +71,14 @@ extension ChannelViewController {
             headLabel.font = appearance.titleLabelAppearance.font
             subLabel.textColor = appearance.subtitleLabelAppearance.foregroundColor
             subLabel.font = appearance.subtitleLabelAppearance.font
-            typingView.label.textColor = appearance.subtitleLabelAppearance.foregroundColor
-            typingView.label.font = appearance.subtitleLabelAppearance.font
+            chatActionView.label.textColor = appearance.subtitleLabelAppearance.foregroundColor
+            chatActionView.label.font = appearance.subtitleLabelAppearance.font
         }
 
         open override func setupLayout() {
             super.setupLayout()
             addSubview(profileImageView)
-            addSubview(typingView)
+            addSubview(chatActionView)
             addSubview(stackView)
             
             profileImageView.widthAnchor.pin(to: profileImageView.heightAnchor)
@@ -95,10 +96,10 @@ extension ChannelViewController {
         private func updateMode() {
             if mode == .default {
                 subLabel.isHidden = false
-                typingView.isHidden = true
+                chatActionView.isHidden = true
             } else {
                 subLabel.isHidden = true
-                typingView.isHidden = false
+                chatActionView.isHidden = false
             }
         }
     }

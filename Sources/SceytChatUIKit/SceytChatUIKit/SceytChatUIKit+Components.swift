@@ -192,7 +192,7 @@ extension SceytChatUIKit {
         public static var startChatActionsView: StartChatViewController.ActionsView.Type = StartChatViewController.ActionsView.self
         public static var textLabel: TextLabel.Type = TextLabel.self
         public static var timeLabel: TimeLabel.Type = TimeLabel.self
-        public static var typingView: TypingView.Type = TypingView.self
+        public static var chatActionView: ChatActionView.Type = ChatActionView.self
         public static var selectedUserListView: SelectedUserListView.Type = SelectedUserListView.self
         public static var selectedChannelListView: SelectedChannelListView.Type = SelectedChannelListView.self
         

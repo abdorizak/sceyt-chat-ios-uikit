@@ -1,5 +1,5 @@
 //
-//  TypingView.swift
+//  ChatActionView.swift
 //  SceytChatUIKit
 //
 //  Created by Hovsep Keropyan on 29.09.22.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-open class TypingView: View {
+open class ChatActionView: View {
 
     open lazy var indicator = IndicatorView
         .init()
@@ -19,25 +19,25 @@ open class TypingView: View {
     open lazy var label = UILabel()
         .withoutAutoresizingMask
 
-    open private(set) var typers = [String]()
+    open private(set) var users = [String]()
     
     open var timer: Timer?
 
-    func update(typer: String, typing: Bool) {
-        let view = Self.display(typer: typer)
-        if !typing {
-            typers.removeAll { $0 == view }
-        } else if !typers.contains(view) {
-            typers.insert(view, at: 0)
+    func update(user: String, isActive: Bool) {
+        let view = Self.display(user: user)
+        if !isActive {
+            users.removeAll { $0 == view }
+        } else if !users.contains(view) {
+            users.insert(view, at: 0)
         }
 
-        guard typers.count > 0 else {
+        guard users.count > 0 else {
             stop()
             return
         }
 
         if timer == nil {
-            updateTyping()
+            updateAction()
             start()
         }
     }
@@ -68,23 +68,23 @@ open class TypingView: View {
         didSet {
             if isHidden {
                 stop()
-            } else if superview != nil, !typers.isEmpty {
+            } else if superview != nil, !users.isEmpty {
                 start()
             }
         }
     }
 
-    open func updateTyping() {
-        if typers.count > 0 {
-            let m = typers.removeFirst()
-            typers.append(m)
+    open func updateAction() {
+        if users.count > 0 {
+            let m = users.removeFirst()
+            users.append(m)
             label.text = m.isEmpty ? hold : m + " " + hold
             label.setNeedsDisplay()
         } else {
             stop()
         }
     }
-
+    
     open func start() {
         if timer?.isValid == true {
             return
@@ -94,8 +94,8 @@ open class TypingView: View {
                 withTimeInterval: 2,
                 repeats: true,
                 block: { [weak self] _ in
-            self?.updateTyping()
-        })
+                    self?.updateAction()
+                })
         indicator.start()
     }
 
@@ -107,13 +107,13 @@ open class TypingView: View {
         indicator.stop()
     }
 
-    open class func display(typer: String, split: DisplaySplit = .maxLength(10)) -> String {
+    open class func display(user: String, split: DisplaySplit = .maxLength(10)) -> String {
        
-        var splits = typer.split(separator: " ")
+        var splits = user.split(separator: " ")
         var display: String
         switch splits.count {
         case 0:
-            display = typer
+            display = user
         case 1:
             display = String(splits[0])
             splits.removeAll()
@@ -145,7 +145,7 @@ open class TypingView: View {
     }
 }
 
-extension TypingView {
+extension ChatActionView {
 
     open class IndicatorView: View {
 
@@ -203,7 +203,7 @@ extension TypingView {
     }
 }
 
-public extension TypingView {
+public extension ChatActionView {
     
     enum DisplaySplit {
         case firstWord

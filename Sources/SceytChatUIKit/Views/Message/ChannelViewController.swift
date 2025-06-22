@@ -446,8 +446,12 @@ open class ChannelViewController: ViewController,
                         }
                     }
                 case .didStartRecording:
+                    logger.info("🎧 did start recording")
+                    self.channelViewModel.isRecording = true
                     didStartVoiceRecording()
                 case .didStopRecording:
+                    logger.info("🎧 did stop recording")
+                    self.channelViewModel.isRecording = false
                     didStopVoiceRecording()
                 }
             }.store(in: &subscriptions)
@@ -821,9 +825,9 @@ open class ChannelViewController: ViewController,
     ) -> Int {
         if let titleView = navigationItem.titleView as? HeaderView,
            titleView.mode == .typing {
-            titleView.typingView.update(typer: member, typing: isTyping)
+            titleView.chatActionView.update(user: member, isActive: isTyping)
             navigationController?.navigationBar.setNeedsLayout()
-            return titleView.typingView.typers.count
+            return titleView.chatActionView.users.count
         }
         titleView.mode = .typing
         
@@ -838,13 +842,46 @@ open class ChannelViewController: ViewController,
         )
         
         titleView.headLabel.attributedText = head
-        titleView.typingView.label.font = titleView.appearance.subtitleLabelAppearance.font
-        titleView.typingView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
-        titleView.typingView.update(
-            typer: member,
-            typing: isTyping
+        titleView.chatActionView.label.font = titleView.appearance.subtitleLabelAppearance.font
+        titleView.chatActionView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
+        titleView.chatActionView.update(
+            user: member,
+            isActive: isTyping
         )
-        return titleView.typingView.typers.count
+        return titleView.chatActionView.users.count
+    }
+    
+    open func showRecording(
+        member: String,
+        isRecording: Bool
+    ) -> Int {
+        if let titleView = navigationItem.titleView as? HeaderView,
+           titleView.mode == .typing {
+            titleView.chatActionView.update(user: member, isActive: isRecording)
+            navigationController?.navigationBar.setNeedsLayout()
+            return titleView.chatActionView.users.count
+        }
+        titleView.mode = .typing
+        
+        var attrs = [NSAttributedString.Key: Any]()
+        
+        attrs[.font] = titleView.appearance.titleLabelAppearance.font
+        attrs[.foregroundColor] = titleView.appearance.titleLabelAppearance.foregroundColor
+        
+        let head = NSMutableAttributedString(
+            string: appearance.headerAppearance.titleFormatter.format(channelViewModel.channel),
+            attributes: attrs
+        )
+        
+        titleView.headLabel.attributedText = head
+        titleView.chatActionView.hold = "Recording..."
+        titleView.chatActionView.label.font = titleView.appearance.subtitleLabelAppearance.font
+        titleView.chatActionView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
+        titleView.chatActionView.update(
+            user: member,
+            isActive: isRecording
+        )
+        return titleView.chatActionView.users.count
     }
     
     // MARK: Actions
@@ -1426,6 +1463,8 @@ open class ChannelViewController: ViewController,
                 self.didSelectAvatar(layoutModel: model)
             case .didTapMentionUser(let userId):
                 self.didSelectMentionUser(userId: userId, layoutModel: model)
+            case .didTapPhoneNumber(let phoneNumber):
+                self.didSelectPhoneNumber(phoneNumber, layoutModel: model)
             case .didSwipe:
                 self.reply(layoutModel: model, in: false)
             }
@@ -1710,6 +1749,10 @@ open class ChannelViewController: ViewController,
                 self?.showProfile(user: user)
             }
         }
+    }
+    
+    open func didSelectPhoneNumber(_ phoneNumber: String, layoutModel: MessageLayoutModel) {
+        logger.debug("show Profile for user by phone number \(phoneNumber)")
         
     }
     
@@ -1965,6 +2008,22 @@ open class ChannelViewController: ViewController,
                     updateTitle()
                 }
             }
+        case .recording(let isRecording, let user):
+            if !channelViewModel.channel.isDirect {
+                if showRecording(member: appearance.headerAppearance.typingUserNameFormatter.format(user),
+                              isRecording: isRecording) == 0 {
+                    updateTitle()
+                }
+            } else {
+                if isRecording {
+                    _ = showRecording(
+                        member: channelViewModel.channel.channelType == .direct ? "" : appearance.headerAppearance.typingUserNameFormatter.format(user),
+                        isRecording: isRecording
+                    )
+                } else {
+                    updateTitle()
+                }
+            }
         case .changePresence(let userPresence):
             DispatchQueue.main.async { [weak self] in
                 guard let self
@@ -1973,7 +2032,7 @@ open class ChannelViewController: ViewController,
                 case .default:
                     self.showTitle(title: self.channelViewModel.getTitleForHeader(with: appearance.headerAppearance),
                                    subTitle: self.channelViewModel.getSubtitleForHeader(with: appearance.headerAppearance))
-                case .typing:
+                case .typing, .recording:
                     // Force the view to update
                     self.titleView.mode = self.titleView.mode
                 }
@@ -2201,6 +2260,9 @@ open class ChannelViewController: ViewController,
         guard let model = identifier.value as? MessageLayoutModel,
               model.message.state != .deleted
         else { return [] }
+        
+        let target = identifier.userInfo?["target"] as? MessageCellTarget
+        logger.debug("context menu type is: \(target)")
         
         var items: [MenuItem] = []
         if channelViewModel.canShowInfo(model: model) {
