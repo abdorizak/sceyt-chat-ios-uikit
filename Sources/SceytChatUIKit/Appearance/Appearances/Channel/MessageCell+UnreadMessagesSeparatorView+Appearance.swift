@@ -82,7 +82,7 @@ extension MessageCell.UnreadMessagesSeparatorView {
         public init(
             backgroundColor: UIColor = DefaultColors.bubbleIncoming,
             labelAppearance: LabelAppearance = .init(
-                foregroundColor: .secondaryText,
+                foregroundColor: DefaultColors.secondaryText,
                 font: Fonts.semiBold.withSize(14)
             )
         ) {

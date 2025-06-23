@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension UIView {
+extension UIView {
     var withoutAutoresizingMask: Self {
         translatesAutoresizingMaskIntoConstraints = false
         return self
@@ -126,7 +126,7 @@ extension UIView {
     }
 }
 
-public extension UIView {
+extension UIView {
     func contains(
         gestureRecognizer: UIGestureRecognizer,
         contentInsets: UIEdgeInsets = .zero

@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension UICollectionView {
+extension UICollectionView {
 
     enum SupplementaryViewKind: String {
         case header
@@ -96,7 +96,7 @@ public extension UICollectionView {
     }
 }
 
-public extension UICollectionReusableView {
+extension UICollectionReusableView {
 
     static var reuseId: String {
         String(describing: self)

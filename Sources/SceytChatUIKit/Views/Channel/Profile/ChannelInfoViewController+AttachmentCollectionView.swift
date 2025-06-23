@@ -141,8 +141,8 @@ public extension ChannelInfoViewController.AttachmentCollectionView.Layout {
         public init(sectionInset: UIEdgeInsets = .zero,
                     interitemSpacing: CGFloat = .nan,
                     lineSpacing: CGFloat = .nan,
-                    estimatedItemSize: CGSize = .nan,
-                    itemSize: CGSize = .nan,
+                    estimatedItemSize: CGSize = .zero,
+                    itemSize: CGSize = .zero,
                     sectionHeadersPinToVisibleBounds: Bool = false
         ) {
             self.sectionInset = sectionInset

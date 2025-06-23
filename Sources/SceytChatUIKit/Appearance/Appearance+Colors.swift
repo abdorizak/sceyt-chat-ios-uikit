@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension UIColor {
+extension UIColor {
     
     static var accent: UIColor { SceytChatUIKit.shared.theme.colors.accent }
     static var accent2: UIColor { SceytChatUIKit.shared.theme.colors.accent2 }
@@ -37,11 +37,7 @@ public extension UIColor {
     static var stateWarning: UIColor { SceytChatUIKit.shared.theme.colors.stateWarning }
     static var stateSuccess: UIColor { SceytChatUIKit.shared.theme.colors.stateSuccess }
     static var stateAttention: UIColor { SceytChatUIKit.shared.theme.colors.stateAttention }
-        
-    static func initial(title: String) -> UIColor {
-        let initialColors = SceytChatUIKit.shared.config.defaultAvatarBackgroundColors
-        return initialColors[abs(title.hash) % initialColors.count]
-    }
+
 }
 
 public struct DefaultColors {
@@ -65,12 +61,13 @@ public struct DefaultColors {
     public static let iconSecondary: UIColor = UIColor(light: UIColor(rgb: 0x707388), dark: UIColor(rgb: 0x969A9F))
     public static let overlayBackground1: UIColor = UIColor(light: UIColor(rgb: 0x000000, alpha: 0.3), dark: UIColor(rgb: 0x000000, alpha: 0.4))
     public static let overlayBackground2: UIColor = UIColor(light: UIColor(rgb: 0x000000, alpha: 0.3), dark: UIColor(rgb: 0x000000, alpha: 0.3))
-    
+    public static let shadowColor: UIColor = UIColor(rgb: 0x111539, alpha: 0.08)
     public static let primaryText: UIColor = UIColor(light: UIColor(rgb: 0x111539), dark: UIColor(rgb: 0xE1E3E6))
     public static let secondaryText: UIColor = UIColor(light: UIColor(rgb: 0x707388), dark: UIColor(rgb: 0x969A9F))
     public static let footnoteText: UIColor = UIColor(light: UIColor(rgb: 0xA0A1B0), dark: UIColor(rgb: 0x76787A))
     public static let onPrimary: UIColor = UIColor(light: UIColor(rgb: 0xFFFFFF), dark: UIColor(rgb: 0xFFFFFF))
     
+    public static var stateWarning: UIColor = UIColor(light: UIColor(rgb: 0xFA4C56), dark: UIColor(rgb: 0xFA4C56))
     public static let defaultRed: UIColor = UIColor(light: UIColor(rgb: 0xFA4C56), dark: UIColor(rgb: 0xFA4C56))
     public static let stateSuccess: UIColor = UIColor(light: UIColor(rgb: 0x24C383), dark: UIColor(rgb: 0x24C383))
     public static let stateAttention: UIColor = UIColor(light: UIColor(rgb: 0xFBB019), dark: UIColor(rgb: 0xFBB019))
@@ -91,13 +88,18 @@ public struct DefaultColors {
     public static var bubbleOutgoingHighlighted: UIColor = UIColor(light: .accent.light.withAlphaComponent(0.30).blend(with: .background.light),
                                                                    dark: .accent.dark.withAlphaComponent(0.30).blend(with: .background.dark))
     public static var bubbleOutgoingHighlightedSecondary: UIColor = UIColor(light: .accent.light.withAlphaComponent(0.34).blend(with: .background.light),
-                                                                    dark: .accent.dark.withAlphaComponent(0.34).blend(with: .background.dark))
-
+                                                                            dark: .accent.dark.withAlphaComponent(0.34).blend(with: .background.dark))
+    
+    
+    public static func initial(title: String) -> UIColor {
+        let initialColors = SceytChatUIKit.shared.config.defaultAvatarBackgroundColors
+        return initialColors[abs(title.hash) % initialColors.count]
+    }
 }
 
-public extension UIColor {
+extension UIColor {
     
-    public func blend(with background: UIColor) -> UIColor {
+    func blend(with background: UIColor) -> UIColor {
         var fgRed: CGFloat = 0, fgGreen: CGFloat = 0, fgBlue: CGFloat = 0, fgAlpha: CGFloat = 0
         var bgRed: CGFloat = 0, bgGreen: CGFloat = 0, bgBlue: CGFloat = 0, bgAlpha: CGFloat = 0
         
@@ -112,17 +114,13 @@ public extension UIColor {
         return UIColor(red: blendedRed, green: blendedGreen, blue: blendedBlue, alpha: blendedAlpha)
     }
     
-    public var light: UIColor {
+    var light: UIColor {
         resolvedColor(with: .init(userInterfaceStyle: .light))
     }
     
-    public var dark: UIColor {
+    var dark: UIColor {
         resolvedColor(with: .init(userInterfaceStyle: .dark))
     }
-}
-
-
-public extension UIColor {
     
     convenience init(light: String, dark: String) {
         if #available(iOS 13.0, *) {
@@ -147,9 +145,6 @@ public extension UIColor {
             self.init(cgColor: light.cgColor)
         }
     }
-}
-
-public extension UIColor {
     
     convenience init(hex: String, alpha: CGFloat = 1) {
         let scanner = Scanner(string: hex.trimmingCharacters(in: NSCharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "#"))))

@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension UITableView {
+extension UITableView {
 
     var rowAutomaticDimension: Self {
         rowHeight = UITableView.automaticDimension

@@ -24,7 +24,7 @@ public struct LabelAppearance {
         backgroundColor: UIColor = .clear
     ) {
         self._foregroundColor = Trackable(value: foregroundColor)
-        self._font = Trackable(value: font)
+        self._font = Trackable(value: font.asDynamic())
         self._backgroundColor = Trackable(value: backgroundColor)
     }
     
@@ -40,7 +40,7 @@ public struct LabelAppearance {
         self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
         
         if let foregroundColor { self.foregroundColor = foregroundColor }
-        if let font { self.font = font }
+        if let font { self.font = font.asDynamic() }
         if let backgroundColor { self.backgroundColor = backgroundColor }
     }
 }
@@ -62,7 +62,7 @@ public struct OptionalLabelAppearance {
         backgroundColor: UIColor = .clear
     ) {
         self._foregroundColor = Trackable(value: foregroundColor)
-        self._font = Trackable(value: font)
+        self._font = Trackable(value: font.asDynamic())
         self._backgroundColor = Trackable(value: backgroundColor)
     }
     
@@ -78,7 +78,24 @@ public struct OptionalLabelAppearance {
         self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
         
         if let foregroundColor { self.foregroundColor = foregroundColor }
-        if let font { self.font = font }
+        if let font { self.font = font.asDynamic() }
         if let backgroundColor { self.backgroundColor = backgroundColor }
+    }
+}
+
+extension UIFont {
+    func asDynamic(textStyle: UIFont.TextStyle? = nil) -> UIFont {
+        let style = textStyle ?? UIFont.preferredTextStyle(for: pointSize)
+        return UIFontMetrics(forTextStyle: style).scaledFont(for: self)
+    }
+
+    static func preferredTextStyle(for pointSize: CGFloat) -> UIFont.TextStyle {
+        switch pointSize {
+        case 0..<13: return .footnote
+        case 13..<15: return .subheadline
+        case 15..<17: return .body
+        case 17..<20: return .headline
+        default: return .title3
+        }
     }
 }

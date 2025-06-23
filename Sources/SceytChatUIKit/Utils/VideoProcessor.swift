@@ -701,13 +701,13 @@ private extension URL {
     }
 }
 
-public extension AVAsset {
+extension AVAsset {
     var isSlowMotionVideo: Bool {
         (self as? AVComposition)?.tracks.count ?? 0 > 1
     }
 }
 
-public extension AVComposition {
+extension AVComposition {
     var slowMoDuration: Float64 {
         if let timeMapping = tracks.last?.segments.last?.timeMapping {
             return CMTimeGetSeconds(CMTimeAdd(timeMapping.source.duration, timeMapping.target.start))

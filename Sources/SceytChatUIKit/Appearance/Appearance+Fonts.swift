@@ -23,7 +23,7 @@ public extension Appearance {
     }
 }
 
-public extension UIFont {
+extension UIFont {
     func with(traits: UIFontDescriptor.SymbolicTraits, pointSize: CGFloat = .nan) -> UIFont {
         var symbolicTraits = fontDescriptor.symbolicTraits
         symbolicTraits.insert(traits)

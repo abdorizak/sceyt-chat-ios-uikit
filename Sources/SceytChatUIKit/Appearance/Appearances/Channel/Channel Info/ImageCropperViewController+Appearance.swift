@@ -13,7 +13,7 @@ extension ImageCropperViewController: AppearanceProviding {
         navigationBarAppearance: NavigationBarAppearance.appearance,
         backgroundColor: .background,
         maskColor: .black.withAlphaComponent(0.5),
-        bottomBarBackgroundColor: DefaultColors.backgroundDark,
+        bottomBarBackgroundColor: UIColor(light: UIColor(rgb: 0x19191B), dark: UIColor(rgb: 0x19191B)),
         cancelButtonAppearance: .init(
             reference: ButtonAppearance.appearance,
             labelAppearance: .init(
