@@ -178,6 +178,13 @@
 "message.action.title.reply-in-thread" = "Reply in thread";
 "message.action.title.forward" = "Forward";
 "message.action.title.select" = "Select";
+
+"message.action.title.call" = "Call";
+"message.action.title.copy" = "Copy Number";
+"message.action.title.chat" = "Chat";
+"message.action.title.audioCall" = "Audio Call";
+"message.action.title.videoCall" = "Video Call";
+
 "message.action.subtitle.deleteAll" = "Delete For All";
 "message.action.subtitle.deleteMe" = "Delete For Me";
 "message.alert.delete.title" = "Delete message?";

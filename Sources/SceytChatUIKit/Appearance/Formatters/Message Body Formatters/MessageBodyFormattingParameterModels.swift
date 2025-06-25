@@ -14,6 +14,7 @@ public struct MessageBodyFormatterAttributes {
     let deletedStateText: String
     let bodyLabelAppearance: LabelAppearance
     let linkLabelAppearance: LabelAppearance
+    let phoneNumberLabelAppearance: LabelAppearance
     let mentionLabelAppearance: LabelAppearance
     let deletedLabelAppearance: LabelAppearance
     let mentionUserNameFormatter: any UserFormatting
@@ -25,6 +26,7 @@ public struct LastMessageBodyFormatterAttributes {
     let deletedStateText: String
     let bodyLabelAppearance: LabelAppearance
     let linkLabelAppearance: LabelAppearance
+    let phoneNumberLabelAppearance: LabelAppearance
     let mentionLabelAppearance: LabelAppearance
     let deletedLabelAppearance: LabelAppearance
     let attachmentNameFormatter: any AttachmentFormatting

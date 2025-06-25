@@ -31,6 +31,8 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
             let mentionColor = messageBodyAttributes.mentionLabelAppearance.foregroundColor
             let linkColor = messageBodyAttributes.linkLabelAppearance.foregroundColor
             let linkFont = messageBodyAttributes.linkLabelAppearance.font
+            let phoneNumberColor = messageBodyAttributes.linkLabelAppearance.foregroundColor
+            let phoneNumberFont = messageBodyAttributes.linkLabelAppearance.font
             
             var content = message.body.replacingOccurrences(of: "\n", with: " ")
             content = content.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -54,6 +56,17 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
                     .underlineStyle: NSUnderlineStyle.single.rawValue
                 ]
                 text.addAttributes(linkAttributes, range: match.range)
+            }
+            
+            let phoneNumberMatches = DataDetector.getPhoneNumbers(text: content)
+            for phoneNumberMatch in phoneNumberMatches {
+                let linkAttributes: [NSAttributedString.Key : Any] = [
+                    .font: phoneNumberFont,
+                    .foregroundColor: phoneNumberColor,
+                    .underlineColor: phoneNumberColor,
+                    .underlineStyle: NSUnderlineStyle.single.rawValue
+                ]
+                text.addAttributes(linkAttributes, range: phoneNumberMatch.range)
             }
             
             let mentionedUsers = message.mentionedUsers?.map { ($0.id, messageBodyAttributes.mentionUserNameFormatter.format($0)) }

@@ -327,6 +327,7 @@ open class MessageCell: CollectionViewCell,
         NSLayoutConstraint.deactivate(contentView.constraints + containerView.constraints + (contentConstraints ?? []))
         imageTask?.cancel()
         contextMenu?.disconnect(from: bubbleView, identifier: .init(value: data))
+        contextMenu?.disconnect(from: textLabel, identifier: .init(value: data))
         constraintsAffectingLayout(for: .horizontal)
         replyIcon.isHidden = true
     }
@@ -464,6 +465,11 @@ open class MessageCell: CollectionViewCell,
             case .mention(_, let id):
                 onAction?(.didTapMentionUser(id))
                 return true
+            case .phone(_, let phoneNumber):
+                if let phoneNumber {
+                    onAction?(.didTapPhoneNumber(phoneNumber))
+                }
+                return true
             }
             if let url = URL(string: data.attributedView.content.attributedSubstring(from: item.range).string) {
                 onAction?(.didTapLink(url))
@@ -493,6 +499,12 @@ open class MessageCell: CollectionViewCell,
                     } else if let url = URL(string: data.attributedView.content.attributedSubstring(from: item.range).string) {
                         onAction?(.didLongPressLink(url))
                     }
+                } else if case .phone(let range, let phoneNumber) = item {
+                    longPressItem = .init(view: textLabel, item: item, cell: self)
+                    selectPhoneNumber(range: item.range)
+                    if let phoneNumber = phoneNumber {
+                        onAction?(.didLongPressPhoneNumber(phoneNumber))
+                    }
                 } else {
                     contextMenu?.handleLogPress(sender: sender, on: bubbleView, identifier: .init(value: data))
                 }
@@ -514,7 +526,13 @@ open class MessageCell: CollectionViewCell,
                 if longPressItem.item == nil {
                     contextMenu?.handleLogPress(sender: sender, on: longPressItem.view, identifier: .init(value: data))
                 } else if let item = longPressItem.item {
-                    deSelectLink(range: item.range)
+                    switch item {
+                    case .link(_, _):
+                        deSelectLink(range: item.range)
+                    case .phone(_, _):
+                        deSelectPhoneNumber(range: item.range)
+                    default: break
+                    }
                 }
             }
             self.longPressItem = nil
@@ -528,15 +546,23 @@ open class MessageCell: CollectionViewCell,
             connectContextMenu()
         }
     }
-    
-    private func connectContextMenu() {
+
+    open func connectContextMenu() {
         let alignment: ContextMenu.HorizontalAlignment = data.message.incoming ? .leading : .trailing
+
         contextMenu?.connect(
             to: bubbleView,
             identifier: .init(value: data),
             alignment: effectiveUserInterfaceLayoutDirection == .rightToLeft ? alignment.reversed : alignment
         )
+
+        contextMenu?.connect(
+            to: textLabel,
+            identifier: .init(value: data), // important: no userInfo here during initial connection
+            alignment: effectiveUserInterfaceLayoutDirection == .rightToLeft ? alignment.reversed : alignment
+        )
     }
+
     
     private func selectLink(range: NSRange) {
         guard let text = textLabel.attributedText?.mutableCopy() as? NSMutableAttributedString
@@ -551,6 +577,27 @@ open class MessageCell: CollectionViewCell,
     private func deSelectLink(range: NSRange) {
         guard let text = textLabel.attributedText?.mutableCopy() as? NSMutableAttributedString
         else { return }
+        if range.location >= 0 && range.length >= 0 && range.upperBound <= text.length {
+            text.removeAttribute(.backgroundColor, range: range)
+        }
+        textLabel.attributedText = text
+    }
+    
+    private func selectPhoneNumber(range: NSRange) {
+        guard let text = textLabel.attributedText?.mutableCopy() as? NSMutableAttributedString else { return }
+        let color = UIColor.systemBlue.withAlphaComponent(0.2)
+        if range.location >= 0 && range.length > 0 && range.upperBound <= text.length {
+            text.addAttributes([.backgroundColor: color], range: range)
+        }
+        UIView.transition(with: textLabel, duration: 0.15, options: .transitionCrossDissolve, animations: {
+            self.textLabel.attributedText = text
+        }, completion: nil)
+        textLabel.setNeedsDisplay()
+        textLabel.layoutIfNeeded()
+    }
+
+    private func deSelectPhoneNumber(range: NSRange) {
+        guard let text = textLabel.attributedText?.mutableCopy() as? NSMutableAttributedString else { return }
         if range.location >= 0 && range.length >= 0 && range.upperBound <= text.length {
             text.removeAttribute(.backgroundColor, range: range)
         }
@@ -626,8 +673,10 @@ public extension MessageCell {
         case playedAudio(URL)
         case didTapLink(URL)
         case didLongPressLink(URL)
-        case didTapAvatar
+        case didTapPhoneNumber(String)
+        case didLongPressPhoneNumber(String)
         case didTapMentionUser(String)
+        case didTapAvatar
         case didSwipe
     }
     

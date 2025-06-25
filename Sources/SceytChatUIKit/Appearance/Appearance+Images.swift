@@ -136,7 +136,18 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.messageForward.image,
                                                      renderingMode: .template(.accent)))!
         }()
-        
+        public static var messageActionCall: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionCall.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
+        public static var messageActionChat: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionChat.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
+        public static var messageActionVideo: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionVideo.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
         public static var messageActionInfo: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.actionInfo.image,
                                                      renderingMode: .template(.primaryText)))!
@@ -607,6 +618,9 @@ extension UIImage {
     public static var emojiSymbols: UIImage { Images.emojiSymbols }
     
     public static var messageActionInfo: UIImage { Images.messageActionInfo }
+    public static var messageActionChat: UIImage { Images.messageActionChat }
+    public static var messageActionCall: UIImage { Images.messageActionCall }
+    public static var messageActionVideo: UIImage { Images.messageActionVideo }
     public static var messageActionEdit: UIImage { Images.messageActionEdit }
     public static var messageActionReply: UIImage { Images.messageActionReply }
     public static var messageActionReplyInThread: UIImage { Images.messageActionReplyInThread }

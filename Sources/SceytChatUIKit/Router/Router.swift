@@ -74,6 +74,21 @@ open class Router<ViewController: UIViewController>: NSObject {
                             handler: { completion?(action.0) })
                 }, withCancel: true)
         }
+    
+    open func showPhoneAlert(
+        _ phone: String,
+        actions: [(String, SheetAction.Style)],
+        completion: ((String) -> Void)? = nil) {
+            rootViewController.view.endEditing(true)
+            rootViewController.showBottomSheet(
+                title: phone,
+                actions: actions.map { action in
+                        .init(
+                            title: action.0,
+                            style: action.1,
+                            handler: { completion?(action.0) })
+                }, withCancel: true)
+        }
 }
 
 public extension Router {

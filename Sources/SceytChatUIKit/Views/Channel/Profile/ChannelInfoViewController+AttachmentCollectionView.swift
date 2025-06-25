@@ -42,6 +42,16 @@ extension ChannelInfoViewController {
         open override func layoutSubviews() {
             super.layoutSubviews()
             
+            // ⚠️ DO NOT CALL invalidateLayout() directly inside layoutSubviews
+            // Originally this was added to force layout recalculation when itemSize.width == 0,
+            // but calling invalidateLayout() inside layoutSubviews creates a risk of infinite recursion
+            // if the collectionViewLayout's itemSize is not yet resolved.
+            //
+            // If you need to force invalidation when itemSize is zero,
+            // schedule it on the next runloop instead:
+            // DispatchQueue.main.async { self?.collectionViewLayout.invalidateLayout() }
+            //
+            // This avoids dangerous layout loops and app freeze.
             if (collectionViewLayout as? UICollectionViewFlowLayout)?.itemSize.width == 0 {
                 collectionViewLayout.invalidateLayout()
             }
@@ -141,8 +151,8 @@ public extension ChannelInfoViewController.AttachmentCollectionView.Layout {
         public init(sectionInset: UIEdgeInsets = .zero,
                     interitemSpacing: CGFloat = .nan,
                     lineSpacing: CGFloat = .nan,
-                    estimatedItemSize: CGSize = .zero,
-                    itemSize: CGSize = .zero,
+                    estimatedItemSize: CGSize = .init(width: CGFloat.nan, height: .nan),
+                    itemSize: CGSize = .init(width: CGFloat.nan, height: .nan),
                     sectionHeadersPinToVisibleBounds: Bool = false
         ) {
             self.sectionInset = sectionInset

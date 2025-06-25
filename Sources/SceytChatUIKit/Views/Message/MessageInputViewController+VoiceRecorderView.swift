@@ -26,11 +26,19 @@ extension MessageInputViewController {
             case unlock, lock, locked, cancel, recorded
         }
         
+        enum RecordingState {
+            case idle, start, stop, process
+        }
+        
+        private var recordingEventTimer: Timer?
+        
         private var state = State.unlock {
             didSet {
                 setState(state, animated: true)
             }
         }
+        
+        private var recordingState: RecordingState = .idle
         
         private func setState(_ state: State, animated: Bool = true) {
             if self.state != state { self.state = state }
@@ -235,15 +243,20 @@ extension MessageInputViewController {
                     case .durationChanged(let duration):
                         self.slidingView.duration = duration
                     case .reset:
+                        self.recordingState = .idle
                         self.slidingView.stopAnimating()
                         self.slidingView.duration = 0
                         self.reset()
                     case .noPermission:
+                        self.recordingState = .idle
                         self.slidingView.stopAnimating()
                         self.onEvent(.noPermission)
                     case .start:
+                        self.recordingState = .start
                         self.slidingView.startAnimating()
+                        self.startSendingStartRecordingEvents()
                     case .stopped:
+                        self.recordingState = .stop
                         self.slidingView.stopAnimating()
                         self.slidingView.duration = 0
                         self.onEvent(.didStopRecording)
@@ -303,6 +316,17 @@ extension MessageInputViewController {
             else { return }
             micButton.center = currentCenter
             lockButton.bottom = micButton.top - 8 + MessageInputViewController.Layouts.recorderShadowBlur
+        }
+        
+        private func startSendingStartRecordingEvents() {
+            recordingEventTimer?.invalidate()
+
+            recordingEventTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+                guard let self = self else { return }
+                if self.recordingState == .start {
+                    self.onEvent(.didStartRecording)
+                }
+            }
         }
         
         private func reset(animated: Bool = true) {

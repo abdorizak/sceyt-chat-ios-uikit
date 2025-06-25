@@ -825,9 +825,9 @@ open class ChannelViewController: ViewController,
     ) -> Int {
         if let titleView = navigationItem.titleView as? HeaderView,
            titleView.mode == .typing {
-            titleView.chatActionView.update(user: member, isActive: isTyping)
+            titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.typing)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.7)]), isActive: isTyping)
             navigationController?.navigationBar.setNeedsLayout()
-            return titleView.chatActionView.users.count
+            return titleView.chatActionView.liveActions.count
         }
         titleView.mode = .typing
         
@@ -844,11 +844,8 @@ open class ChannelViewController: ViewController,
         titleView.headLabel.attributedText = head
         titleView.chatActionView.label.font = titleView.appearance.subtitleLabelAppearance.font
         titleView.chatActionView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
-        titleView.chatActionView.update(
-            user: member,
-            isActive: isTyping
-        )
-        return titleView.chatActionView.users.count
+        titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.typing)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.7)]), isActive: isTyping)
+        return titleView.chatActionView.liveActions.count
     }
     
     open func showRecording(
@@ -856,12 +853,12 @@ open class ChannelViewController: ViewController,
         isRecording: Bool
     ) -> Int {
         if let titleView = navigationItem.titleView as? HeaderView,
-           titleView.mode == .typing {
-            titleView.chatActionView.update(user: member, isActive: isRecording)
+           titleView.mode == .recording {
+            titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.recording)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.8), UIColor.secondaryText.withAlphaComponent(0.6),                            UIColor.secondaryText.withAlphaComponent(0.4)]), isActive: isRecording)
             navigationController?.navigationBar.setNeedsLayout()
-            return titleView.chatActionView.users.count
+            return titleView.chatActionView.liveActions.count
         }
-        titleView.mode = .typing
+        titleView.mode = .recording
         
         var attrs = [NSAttributedString.Key: Any]()
         
@@ -874,14 +871,10 @@ open class ChannelViewController: ViewController,
         )
         
         titleView.headLabel.attributedText = head
-        titleView.chatActionView.hold = "Recording..."
         titleView.chatActionView.label.font = titleView.appearance.subtitleLabelAppearance.font
         titleView.chatActionView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
-        titleView.chatActionView.update(
-            user: member,
-            isActive: isRecording
-        )
-        return titleView.chatActionView.users.count
+        titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.recording)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.8), UIColor.secondaryText.withAlphaComponent(0.6),                            UIColor.secondaryText.withAlphaComponent(0.4)]), isActive: isRecording)
+        return titleView.chatActionView.liveActions.count
     }
     
     // MARK: Actions
@@ -1463,7 +1456,7 @@ open class ChannelViewController: ViewController,
                 self.didSelectAvatar(layoutModel: model)
             case .didTapMentionUser(let userId):
                 self.didSelectMentionUser(userId: userId, layoutModel: model)
-            case .didTapPhoneNumber(let phoneNumber):
+            case .didTapPhoneNumber(let phoneNumber), .didLongPressPhoneNumber(let phoneNumber):
                 self.didSelectPhoneNumber(phoneNumber, layoutModel: model)
             case .didSwipe:
                 self.reply(layoutModel: model, in: false)
@@ -1752,8 +1745,23 @@ open class ChannelViewController: ViewController,
     }
     
     open func didSelectPhoneNumber(_ phoneNumber: String, layoutModel: MessageLayoutModel) {
-        logger.debug("show Profile for user by phone number \(phoneNumber)")
-        
+        logger.debug("did select phone number \(phoneNumber)")
+        guard let phoneNumberLink = URL(string: "tel://\(phoneNumber)") else {
+            return
+        }
+        self.router
+            .showPhoneAlert(
+                phoneNumber,
+                actions: [(L10n.Link.openIn, .default), (L10n.Link.copy, .default)])
+        { [weak self] actionTitle in
+            if actionTitle == L10n.Link.openIn {
+                self?.showLink(phoneNumberLink)
+            } else if actionTitle == L10n.Link.copy {
+                UIPasteboard.general.string = phoneNumber
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
+        }
     }
     
     open func showProfile(user: ChatUser) {
@@ -2284,9 +2292,6 @@ open class ChannelViewController: ViewController,
         guard let model = identifier.value as? MessageLayoutModel,
               model.message.state != .deleted
         else { return [] }
-        
-        let target = identifier.userInfo?["target"] as? MessageCellTarget
-        logger.debug("context menu type is: \(target)")
         
         var items: [MenuItem] = []
         if channelViewModel.canShowInfo(model: model) {

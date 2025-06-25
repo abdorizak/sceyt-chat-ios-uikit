@@ -8,30 +8,41 @@
 
 import UIKit
 
+open class ChatLiveAction {
+    let userName: String
+    let actionName: String
+    let indicatorColors: [UIColor]
+    
+    init(userName: String, actionName: String, indicatorColors: [UIColor]) {
+        self.userName = userName
+        self.actionName = actionName
+        self.indicatorColors = indicatorColors
+    }
+}
+
 open class ChatActionView: View {
 
     open lazy var indicator = IndicatorView
         .init()
         .withoutAutoresizingMask
 
-    open var hold = L10n.Channel.Member.typing
-
     open lazy var label = UILabel()
         .withoutAutoresizingMask
 
-    open private(set) var users = [String]()
+    open private(set) var liveActions = [ChatLiveAction]()
     
     open var timer: Timer?
 
-    func update(user: String, isActive: Bool) {
-        let view = Self.display(user: user)
+    func update(liveAction: ChatLiveAction, isActive: Bool) {
+        let finalName = liveAction.userName.isEmpty ? liveAction.userName : Self.display(user: liveAction.userName)
+        logger.info("𐧾Received new action, username is \(liveAction.userName) name is \(liveAction.actionName)")
         if !isActive {
-            users.removeAll { $0 == view }
-        } else if !users.contains(view) {
-            users.insert(view, at: 0)
+            liveActions.removeAll { $0.userName == finalName && $0.actionName == liveAction.actionName }
+        } else if !liveActions.contains(where: {$0.userName == finalName && $0.actionName == liveAction.actionName}) {
+            liveActions.append(liveAction)
         }
 
-        guard users.count > 0 else {
+        guard liveActions.count > 0 else {
             stop()
             return
         }
@@ -64,22 +75,13 @@ open class ChatActionView: View {
         label.textColor = .secondaryText
     }
 
-    open override var isHidden: Bool {
-        didSet {
-            if isHidden {
-                stop()
-            } else if superview != nil, !users.isEmpty {
-                start()
-            }
-        }
-    }
-
     open func updateAction() {
-        if users.count > 0 {
-            let m = users.removeFirst()
-            users.append(m)
-            label.text = m.isEmpty ? hold : m + " " + hold
+        if liveActions.count > 0 {
+            let liveAction = liveActions.removeFirst()
+            label.text = liveAction.actionName.isEmpty ? liveAction.actionName : liveAction.userName + " " + liveAction.actionName
+            logger.info("𐧾Display new action, username is \(liveAction.userName) name is \(liveAction.actionName)")
             label.setNeedsDisplay()
+            indicator.colors = liveAction.indicatorColors.map({$0.cgColor})
         } else {
             stop()
         }
@@ -91,7 +93,7 @@ open class ChatActionView: View {
         }
         timer = Timer
             .scheduledTimer(
-                withTimeInterval: 2,
+                withTimeInterval: 1.2,
                 repeats: true,
                 block: { [weak self] _ in
                     self?.updateAction()
@@ -148,14 +150,20 @@ open class ChatActionView: View {
 extension ChatActionView {
 
     open class IndicatorView: View {
+        
+        open var colors: [CGColor] = [
+            UIColor.secondaryText.withAlphaComponent(1).cgColor,
+            UIColor.secondaryText.withAlphaComponent(0.7).cgColor
+        ] {
+            didSet {
+                setNeedsDisplay()
+            }
+        }
 
         open override func setup() {
             super.setup()
             isOpaque = false
         }
-
-        open lazy var colors = [UIColor.secondaryText.withAlphaComponent(1).cgColor,
-                                UIColor.secondaryText.withAlphaComponent(0.7).cgColor]
 
         open var ellipseSize: CGFloat = 4 {
             didSet { setNeedsDisplay() }
@@ -183,9 +191,8 @@ extension ChatActionView {
                 ctx?.setFillColor(fillColor(pos: index))
                 ctx?.fillEllipse(in: ellipseRect(pos: index))
             }
-            colors.insert(colors.removeLast(), at: 0)
         }
-
+        
         open var timer: Timer?
         open func start() {
             timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true, block: {[weak self] (_) in
@@ -193,7 +200,7 @@ extension ChatActionView {
             })
             RunLoop.main.add(timer!, forMode: .common)
         }
-
+        
         open func stop() {
             if timer?.isValid == true {
                 timer?.invalidate()
