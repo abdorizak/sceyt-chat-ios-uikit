@@ -1752,9 +1752,9 @@ open class ChannelViewController: ViewController,
         self.router
             .showPhoneAlert(
                 phoneNumber,
-                actions: [(L10n.Link.openIn, .default), (L10n.Link.copy, .default)])
+                actions: [(L10n.Message.Action.Title.call, .default), (L10n.Link.copy, .default)])
         { [weak self] actionTitle in
-            if actionTitle == L10n.Link.openIn {
+            if actionTitle == L10n.Message.Action.Title.call {
                 self?.showLink(phoneNumberLink)
             } else if actionTitle == L10n.Link.copy {
                 UIPasteboard.general.string = phoneNumber
