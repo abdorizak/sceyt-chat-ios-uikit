@@ -63,9 +63,9 @@ open class ChatActionView: View {
         label.bottomAnchor.pin(to: bottomAnchor)
         label.topAnchor.pin(to: topAnchor)
         indicator.leadingAnchor.pin(to: label.trailingAnchor, constant: 6)
-        indicator.topAnchor.pin(to: centerYAnchor)
-        indicator.resize(anchors: [.height(indicator.ellipseSize),
-            .width(3 * indicator.ellipseSize + 2 * indicator.ellipseDistance)])
+        indicator.centerYAnchor.pin(to: centerYAnchor)
+        indicator.setContentHuggingPriority(.required, for: .horizontal)
+        indicator.setContentHuggingPriority(.required, for: .vertical)
     }
 
     open override func setupAppearance() {
@@ -73,6 +73,9 @@ open class ChatActionView: View {
         label.lineBreakMode = .byCharWrapping
         label.font = Fonts.regular.withSize(13)
         label.textColor = .secondaryText
+        
+        indicator.ellipseSize = 5
+        indicator.ellipseDistance = 4
     }
 
     open func updateAction() {
@@ -151,11 +154,15 @@ extension ChatActionView {
 
     open class IndicatorView: View {
         
+        private var colorIndexOffset = 0
+        
         open var colors: [CGColor] = [
             UIColor.secondaryText.withAlphaComponent(1).cgColor,
             UIColor.secondaryText.withAlphaComponent(0.7).cgColor
         ] {
             didSet {
+                colorIndexOffset = 0
+                invalidateIntrinsicContentSize()
                 setNeedsDisplay()
             }
         }
@@ -164,13 +171,19 @@ extension ChatActionView {
             super.setup()
             isOpaque = false
         }
-
+        
         open var ellipseSize: CGFloat = 4 {
-            didSet { setNeedsDisplay() }
+            didSet {
+                invalidateIntrinsicContentSize()
+                setNeedsDisplay()
+            }
         }
-
+        
         open var ellipseDistance: CGFloat = 3 {
-            didSet { setNeedsDisplay() }
+            didSet {
+                invalidateIntrinsicContentSize()
+                setNeedsDisplay()
+            }
         }
 
         open func fillColor(pos: Int) -> CGColor {
@@ -184,13 +197,21 @@ extension ChatActionView {
             let x = CGFloat(pos) * ellipseSize + CGFloat(pos) * ellipseDistance
             return CGRect(x: x, y: 0, width: ellipseSize, height: ellipseSize)
         }
+        
+        open override var intrinsicContentSize: CGSize {
+            let count = colors.count
+            let width = CGFloat(count) * ellipseSize + CGFloat(max(count - 1, 0)) * ellipseDistance
+            return CGSize(width: width, height: ellipseSize)
+        }
 
         open override func draw(_ rect: CGRect) {
             let ctx = UIGraphicsGetCurrentContext()
             for index in 0 ..< colors.count {
-                ctx?.setFillColor(fillColor(pos: index))
+                let colorIndex = (index + colorIndexOffset) % colors.count
+                ctx?.setFillColor(colors[colorIndex])
                 ctx?.fillEllipse(in: ellipseRect(pos: index))
             }
+            colorIndexOffset = (colorIndexOffset + 1) % colors.count
         }
         
         open var timer: Timer?
@@ -198,6 +219,7 @@ extension ChatActionView {
             timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true, block: {[weak self] (_) in
                 self?.setNeedsDisplay()
             })
+            
             RunLoop.main.add(timer!, forMode: .common)
         }
         
