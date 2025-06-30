@@ -321,7 +321,7 @@ extension MessageInputViewController {
         private func startSendingStartRecordingEvents() {
             recordingEventTimer?.invalidate()
 
-            recordingEventTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+            recordingEventTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
                 guard let self = self else { return }
                 if self.recordingState == .start {
                     self.onEvent(.didStartRecording)

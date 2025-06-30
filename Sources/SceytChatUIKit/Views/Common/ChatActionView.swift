@@ -35,10 +35,11 @@ open class ChatActionView: View {
 
     func update(liveAction: ChatLiveAction, isActive: Bool) {
         let finalName = liveAction.userName.isEmpty ? liveAction.userName : Self.display(user: liveAction.userName)
-        logger.info("𐧾Received new action, username is \(liveAction.userName) name is \(liveAction.actionName)")
         if !isActive {
+            logger.info("𐧾Received new stop action, username is \(liveAction.userName) name is \(liveAction.actionName)")
             liveActions.removeAll { $0.userName == finalName && $0.actionName == liveAction.actionName }
         } else if !liveActions.contains(where: {$0.userName == finalName && $0.actionName == liveAction.actionName}) {
+            logger.info("𐧾Received new start action, username is \(liveAction.userName) name is \(liveAction.actionName)")
             liveActions.append(liveAction)
         }
 
@@ -105,10 +106,8 @@ open class ChatActionView: View {
     }
 
     open func stop() {
-        if timer?.isValid == true {
-            timer?.invalidate()
-            timer = nil
-        }
+        timer?.invalidate()
+        timer = nil
         indicator.stop()
     }
 
@@ -216,6 +215,9 @@ extension ChatActionView {
         
         open var timer: Timer?
         open func start() {
+            guard timer == nil else {
+                return
+            }
             timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true, block: {[weak self] (_) in
                 self?.setNeedsDisplay()
             })
