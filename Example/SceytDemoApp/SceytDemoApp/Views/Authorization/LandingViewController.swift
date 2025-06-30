@@ -102,7 +102,7 @@ class LandingViewController: ViewController {
         guard let vc = storyboard.instantiateViewController(withIdentifier: "AccountPickerViewController") as? AccountPickerViewController else { return }
         
         vc.onUserIdSelected = { userId in
-            Config.currentUserId = "m"// userId
+            Config.currentUserId = userId
             AppCoordinator.shared.showMainFlow()
         }
         let nav = CustomInteractiveTransitionNavigationController(rootViewController: vc)
