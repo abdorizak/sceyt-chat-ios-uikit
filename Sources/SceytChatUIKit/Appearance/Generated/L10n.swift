@@ -551,8 +551,10 @@ public enum L10n {
         public static let call = L10n.tr("Localizable", "message.action.title.call", fallback: "Call")
         /// Chat
         public static let chat = L10n.tr("Localizable", "message.action.title.chat", fallback: "Chat")
+        /// Copy
+        public static let copy = L10n.tr("Localizable", "message.action.title.copy", fallback: "Copy")
         /// Copy Number
-        public static let copy = L10n.tr("Localizable", "message.action.title.copy", fallback: "Copy Number")
+        public static let copyNumber = L10n.tr("Localizable", "message.action.title.copyNumber", fallback: "Copy Number")
         /// Delete
         public static let delete = L10n.tr("Localizable", "message.action.title.delete", fallback: "Delete")
         /// Edit

@@ -2349,7 +2349,7 @@ open class ChannelViewController: ViewController,
                 }
             ),
             .init(
-                title: L10n.Message.Action.Title.copy,
+                title: L10n.Message.Action.Title.copyNumber,
                 image: .messageActionCopy,
                 imageRenderingMode: .alwaysTemplate,
                 action: { [weak self] _ in
