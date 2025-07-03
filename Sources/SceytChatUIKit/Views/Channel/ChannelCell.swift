@@ -257,23 +257,30 @@ extension ChannelListViewController {
             appearance.unreadCountFormatter.format(channel.newMessageCount)
         }
         
-        open func didStartTyping(user: ChatUser) {
-            let message = NSMutableAttributedString(string: "")
+        open func buildAttributedMessage(for user: ChatUser, action: String) -> NSAttributedString {
+            let message = NSMutableAttributedString()
+
             if !data.channel.isDirect {
-                message.append(NSAttributedString(
-                    string: "\(Components.chatActionView.display(user: appearance.typingUserNameFormatter.format(user), split: .firstWord)): ",
-                    attributes: [
-                        .font: appearance.lastMessageSenderNameLabelAppearance.font,
-                        .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
-                    ]
-                ))
+                let userName = appearance.typingUserNameFormatter.format(user)
+                let nameAttributes: [NSAttributedString.Key: Any] = [
+                    .font: appearance.lastMessageSenderNameLabelAppearance.font,
+                    .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
+                ]
+                message.append(NSAttributedString(string: "\(userName): ", attributes: nameAttributes))
             }
-            message.append(NSAttributedString(
-                string: "\(L10n.Channel.Member.typing)...",
-                attributes: [
-                    .font: appearance.typingLabelAppearance.font,
-                    .foregroundColor: appearance.typingLabelAppearance.foregroundColor]
-            ))
+
+            let actionAttributes: [NSAttributedString.Key: Any] = [
+                .font: appearance.typingLabelAppearance.font,
+                .foregroundColor: appearance.typingLabelAppearance.foregroundColor
+            ]
+            message.append(NSAttributedString(string: action, attributes: actionAttributes))
+
+            return message
+        }
+        
+        open func didStartTyping(user: ChatUser) {
+            let text = "\(L10n.Channel.Member.typing)..."
+            let message = buildAttributedMessage(for: user, action: text)
             update(messageText: message)
             messageLabel.setNeedsLayout()
             messageLabel.layoutIfNeeded()
@@ -286,22 +293,8 @@ extension ChannelListViewController {
         }
         
         open func didStartRecording(user: ChatUser) {
-            let message = NSMutableAttributedString(string: "")
-            if !data.channel.isDirect {
-                message.append(NSAttributedString(
-                    string: "\(Components.chatActionView.display(user: appearance.typingUserNameFormatter.format(user), split: .firstWord)): ",
-                    attributes: [
-                        .font: appearance.lastMessageSenderNameLabelAppearance.font,
-                        .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
-                    ]
-                ))
-            }
-            message.append(NSAttributedString(
-                string: "\(L10n.Channel.Member.recording)...",
-                attributes: [
-                    .font: appearance.typingLabelAppearance.font,
-                    .foregroundColor: appearance.typingLabelAppearance.foregroundColor]
-            ))
+            let text = "\(L10n.Channel.Member.recording)..."
+            let message = buildAttributedMessage(for: user, action: text)
             update(messageText: message)
             messageLabel.setNeedsLayout()
             messageLabel.layoutIfNeeded()

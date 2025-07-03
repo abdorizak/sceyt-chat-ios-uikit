@@ -157,3 +157,12 @@ public protocol DraftMessageBodyFormatting: Formatting {
     /// - Returns: An `NSAttributedString` representing the formatted draft message body.
     func format(_ attributes: DraftMessageBodyFormatterAttributes) -> NSAttributedString
 }
+
+/// A protocol that defines formatting user action
+public protocol ChannelEventTitleFormatting: Formatting {
+    /// Formats a draft message body into an attributed string.
+    ///
+    /// - Parameter attributes: The `DraftMessageBodyFormatterAttributes` instance containing the attributes needed for formatting.
+    /// - Returns: An `NSAttributedString` representing the formatted draft message body.
+    func format(_ attributes: ChannelEventTitleFormatterAttributes) -> NSAttributedString
+}

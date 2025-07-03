@@ -422,6 +422,7 @@ open class ChannelViewController: ViewController,
             .sink { [unowned self] in
                 switch $0 {
                 case .send(let shouldClearText):
+                    self.channelViewModel.isTyping = false
                     sendMessage(
                         createMessage(shouldClearText: shouldClearText),
                         shouldClearText: shouldClearText
@@ -819,64 +820,55 @@ open class ChannelViewController: ViewController,
         titleView.subLabel.attributedText = sub
     }
     
-    open func showTyping(
-        member: String,
-        isTyping: Bool
+    open func showActivity(
+        channel: ChatChannel,
+        user: ChatUser,
+        isActive: Bool,
+        mode: HeaderView.Mode,
+        indicator: Indicator.Configuration
     ) -> Int {
-        if let titleView = navigationItem.titleView as? HeaderView,
-           titleView.mode == .typing {
-            titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.typing)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.7)]), isActive: isTyping)
+
+        if let titleView = navigationItem.titleView as? HeaderView, titleView.mode == mode {
+            titleView.channelEventView.update(channel: channel, model: ChannelEventModel(user: user, event: mode == .recording ? .recording : .typing, indicatorConfiguration: indicator), isActive: isActive)
             navigationController?.navigationBar.setNeedsLayout()
-            return titleView.chatActionView.liveActions.count
+            return titleView.channelEventView.models.count
         }
-        titleView.mode = .typing
-        
-        var attrs = [NSAttributedString.Key: Any]()
-        
-        attrs[.font] = titleView.appearance.titleLabelAppearance.font
-        attrs[.foregroundColor] = titleView.appearance.titleLabelAppearance.foregroundColor
-        
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: titleView.appearance.titleLabelAppearance.font,
+            .foregroundColor: titleView.appearance.titleLabelAppearance.foregroundColor
+        ]
+
         let head = NSMutableAttributedString(
             string: appearance.headerAppearance.titleFormatter.format(channelViewModel.channel),
             attributes: attrs
         )
-        
+
         titleView.headLabel.attributedText = head
-        titleView.chatActionView.label.font = titleView.appearance.subtitleLabelAppearance.font
-        titleView.chatActionView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
-        titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.typing)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.7)]), isActive: isTyping)
-        return titleView.chatActionView.liveActions.count
+        titleView.channelEventView.label.font = titleView.appearance.subtitleLabelAppearance.font
+        titleView.channelEventView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
+        titleView.channelEventView.update(channel: channel, model: ChannelEventModel(user: user, event: mode == .recording ? .recording : .typing, indicatorConfiguration: indicator), isActive: isActive)
+        titleView.mode = mode
+        return titleView.channelEventView.models.count
     }
-    
-    open func showRecording(
-        member: String,
-        isRecording: Bool
-    ) -> Int {
-        if let titleView = navigationItem.titleView as? HeaderView,
-           titleView.mode == .recording {
-            titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.recording)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.8), UIColor.secondaryText.withAlphaComponent(0.6),                            UIColor.secondaryText.withAlphaComponent(0.4)]), isActive: isRecording)
-            navigationController?.navigationBar.setNeedsLayout()
-            return titleView.chatActionView.liveActions.count
-        }
-        titleView.mode = .recording
-        
-        var attrs = [NSAttributedString.Key: Any]()
-        
-        attrs[.font] = titleView.appearance.titleLabelAppearance.font
-        attrs[.foregroundColor] = titleView.appearance.titleLabelAppearance.foregroundColor
-        
-        let head = NSMutableAttributedString(
-            string: appearance.headerAppearance.titleFormatter.format(channelViewModel.channel),
-            attributes: attrs
+
+    open func showTyping(channel: ChatChannel, user: ChatUser, isTyping: Bool) -> Int {
+        return showActivity(channel: channel, user: user, isActive: isTyping, mode: .typing, indicator: .indicator(colors: [
+                UIColor.secondaryText.withAlphaComponent(1),
+                UIColor.secondaryText.withAlphaComponent(0.7)
+            ])
         )
-        
-        titleView.headLabel.attributedText = head
-        titleView.chatActionView.label.font = titleView.appearance.subtitleLabelAppearance.font
-        titleView.chatActionView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
-        titleView.chatActionView.update(liveAction: ChatLiveAction(userName: member, actionName: "\(L10n.Channel.Member.recording)...", indicatorColors: [UIColor.secondaryText.withAlphaComponent(1),                            UIColor.secondaryText.withAlphaComponent(0.8), UIColor.secondaryText.withAlphaComponent(0.6),                            UIColor.secondaryText.withAlphaComponent(0.4)]), isActive: isRecording)
-        return titleView.chatActionView.liveActions.count
     }
     
+    open func showRecording(channel: ChatChannel, user: ChatUser, isRecording: Bool) -> Int {
+        return showActivity(channel: channel, user: user, isActive: isRecording, mode: .recording, indicator: .indicator(colors: [
+            UIColor.secondaryText.withAlphaComponent(1),
+            UIColor.secondaryText.withAlphaComponent(0.8),
+            UIColor.secondaryText.withAlphaComponent(0.6),
+            UIColor.secondaryText.withAlphaComponent(0.4)
+        ])
+        )
+    }
+   
     // MARK: Actions
     
     @objc
@@ -2026,32 +2018,24 @@ open class ChannelViewController: ViewController,
             unreadMessageIndexPath = indexPath
         case .typing(let isTyping, let user):
             if !channelViewModel.channel.isDirect {
-                if showTyping(member: appearance.headerAppearance.typingUserNameFormatter.format(user),
-                              isTyping: isTyping) == 0 {
+                if showTyping(channel: channelViewModel.channel, user: user, isTyping: isTyping) == 0 {
                     updateTitle()
                 }
             } else {
                 if isTyping {
-                    _ = showTyping(
-                        member: channelViewModel.channel.channelType == .direct ? "" : appearance.headerAppearance.typingUserNameFormatter.format(user),
-                        isTyping: isTyping
-                    )
+                    _ = showTyping(channel: channelViewModel.channel, user: user, isTyping: isTyping)
                 } else {
                     updateTitle()
                 }
             }
         case .recording(let isRecording, let user):
             if !channelViewModel.channel.isDirect {
-                if showRecording(member: appearance.headerAppearance.typingUserNameFormatter.format(user),
-                              isRecording: isRecording) == 0 {
+                if showRecording(channel: channelViewModel.channel, user: user, isRecording: isRecording) == 0 {
                     updateTitle()
                 }
             } else {
                 if isRecording {
-                    _ = showRecording(
-                        member: channelViewModel.channel.channelType == .direct ? "" : appearance.headerAppearance.typingUserNameFormatter.format(user),
-                        isRecording: isRecording
-                    )
+                    _ = showRecording(channel: channelViewModel.channel, user: user, isRecording: isRecording)
                 } else {
                     updateTitle()
                 }

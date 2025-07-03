@@ -27,7 +27,7 @@ extension ChannelViewController {
         open lazy var subLabel = UILabel()
             .withoutAutoresizingMask
 
-        open lazy var chatActionView = Components.chatActionView
+        open lazy var channelEventView = Components.channelEventView
             .init()
             .withoutAutoresizingMask
         
@@ -35,21 +35,29 @@ extension ChannelViewController {
             column: [
                 headLabel,
                 subLabel,
-                chatActionView
+                channelEventView
             ],
             spacing: 0
         )
             .withoutAutoresizingMask
 
-        open var mode: Mode = .default {
-            didSet {
+        private var _mode: Mode = .default
+
+        
+        open var mode: Mode {
+            get { _mode }
+            set {
+                guard newValue != _mode else { return }
+
+                let oldValue = _mode
+                _mode = newValue
                 updateMode()
             }
         }
 
         open override func setup() {
             super.setup()
-            chatActionView.isHidden = true
+            channelEventView.isHidden = true
             subLabel.isHidden = true
             
             profileImageView.layer.masksToBounds = true
@@ -71,14 +79,14 @@ extension ChannelViewController {
             headLabel.font = appearance.titleLabelAppearance.font
             subLabel.textColor = appearance.subtitleLabelAppearance.foregroundColor
             subLabel.font = appearance.subtitleLabelAppearance.font
-            chatActionView.label.textColor = appearance.subtitleLabelAppearance.foregroundColor
-            chatActionView.label.font = appearance.subtitleLabelAppearance.font
+            channelEventView.label.textColor = appearance.subtitleLabelAppearance.foregroundColor
+            channelEventView.label.font = appearance.subtitleLabelAppearance.font
         }
 
         open override func setupLayout() {
             super.setupLayout()
             addSubview(profileImageView)
-            addSubview(chatActionView)
+            addSubview(channelEventView)
             addSubview(stackView)
             
             profileImageView.widthAnchor.pin(to: profileImageView.heightAnchor)
@@ -96,10 +104,10 @@ extension ChannelViewController {
         private func updateMode() {
             if mode == .default {
                 subLabel.isHidden = false
-                chatActionView.isHidden = true
+                channelEventView.isHidden = true
             } else {
                 subLabel.isHidden = true
-                chatActionView.isHidden = false
+                channelEventView.isHidden = false
             }
         }
     }
