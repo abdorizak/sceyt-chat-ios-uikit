@@ -848,6 +848,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         }
     }
     
+    //MARK: Recording audio
+    open var isRecording = false {
+        didSet {
+            guard !channel.unSynched else { return }
+            isRecording ? provider.channelOperator.sendEvent(ChannelEvent.startRecording) : provider.channelOperator.sendEvent(ChannelEvent.stopRecording)
+        }
+    }
+    
     //MARK: load messages
     
     open func calculateMessageFetchOffset(
@@ -1112,7 +1120,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         }
     }
     
-    open func markMessageAsDisplayed(_ messages: [ChatMessage]) {return;
+    open func markMessageAsDisplayed(_ messages: [ChatMessage]) {
         guard !markMessagesTaskStarted,
                 !messages.isEmpty
         else { return }
@@ -1953,6 +1961,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             handleChannel(channel, didStartTyping: channelEvent.user)
         case ChannelEvent.stopTyping:
             handleChannel(channel, didStopTyping: channelEvent.user)
+        case ChannelEvent.startRecording:
+            handleChannel(channel, didStartRecording: channelEvent.user)
+        case ChannelEvent.stopRecording:
+            handleChannel(channel, didStopRecording: channelEvent.user)
         default:
             break
         }
@@ -1980,6 +1992,33 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
               user.id != SceytChatUIKit.shared.currentUserId
         else { return }
         event = .typing(isTyping: false, user: .init(user: user))
+        peerPresence = user.presence
+        schedulers[user.id]?.stop()
+        schedulers[user.id] = nil
+    }
+    
+    //MARK: Channel recording event handlers
+    open func handleChannel(_ channel: Channel, didStartRecording user: User) {
+        guard self.channel.id == channel.id,
+              user.id != SceytChatUIKit.shared.currentUserId
+        else { return }
+        
+        event = .recording(isRecording: true, user: .init(user: user))
+        peerPresence = user.presence
+        schedulers[user.id]?.stop()
+        schedulers[user.id] = nil
+        schedulers[user.id] = Scheduler.new(deadline: .now() + 3) { [weak self] _ in
+            guard let self else { return }
+            self.schedulers[user.id] = nil
+            self.event = .recording(isRecording: false, user: .init(user: user))
+        }
+    }
+    
+    open func handleChannel(_ channel: Channel, didStopRecording user: User) {
+        guard self.channel.id == channel.id,
+              user.id != SceytChatUIKit.shared.currentUserId
+        else { return }
+        event = .recording(isRecording: false, user: .init(user: user))
         peerPresence = user.presence
         schedulers[user.id]?.stop()
         schedulers[user.id] = nil
@@ -2212,6 +2251,7 @@ public extension ChannelViewModel {
         case scrollAndSelect(indexPath: IndexPath, messageId: MessageId)
         case didSetUnreadIndexPath(indexPath: IndexPath)
         case typing(isTyping: Bool, user: ChatUser)
+        case recording(isRecording: Bool, user: ChatUser)
         case changePresence(userPresence: UserPresence)
         case updateChannel
         case showNoMessage

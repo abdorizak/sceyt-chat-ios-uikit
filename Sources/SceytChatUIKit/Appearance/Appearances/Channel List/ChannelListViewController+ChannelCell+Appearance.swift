@@ -73,6 +73,10 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             foregroundColor: .secondaryText,
             font: Fonts.regular.withSize(15)
         ),
+        phoneNumberLabelAppearance: LabelAppearance(
+            foregroundColor: .secondaryText,
+            font: Fonts.regular.withSize(15)
+        ),
         
         // Icons
         mutedIcon: .mute,
@@ -152,6 +156,9 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
         @Trackable<Appearance, LabelAppearance>
         public var linkLabelAppearance: LabelAppearance
         
+        @Trackable<Appearance, LabelAppearance>
+        public var phoneNumberLabelAppearance: LabelAppearance
+        
         // Icons
         @Trackable<Appearance, UIImage>
         public var mutedIcon: UIImage
@@ -227,7 +234,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             unreadMentionLabelAppearance: LabelAppearance,
             unreadMentionMutedStateLabelAppearance: LabelAppearance,
             linkLabelAppearance: LabelAppearance,
-            
+            phoneNumberLabelAppearance: LabelAppearance,
             // Icons
             mutedIcon: UIImage,
             pinIcon: UIImage,
@@ -269,7 +276,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             self._unreadMentionLabelAppearance = Trackable(value: unreadMentionLabelAppearance)
             self._unreadMentionMutedStateLabelAppearance = Trackable(value: unreadMentionMutedStateLabelAppearance)
             self._linkLabelAppearance = Trackable(value: linkLabelAppearance)
-            
+            self._phoneNumberLabelAppearance = Trackable(value: phoneNumberLabelAppearance)
             // Icons
             self._mutedIcon = Trackable(value: mutedIcon)
             self._pinIcon = Trackable(value: pinIcon)
@@ -314,7 +321,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             unreadMentionLabelAppearance: LabelAppearance? = nil,
             unreadMentionMutedStateLabelAppearance: LabelAppearance? = nil,
             linkLabelAppearance: LabelAppearance? = nil,
-            
+            phoneNumberLabelAppearance: LabelAppearance? = nil,
             // Icons
             mutedIcon: UIImage? = nil,
             pinIcon: UIImage? = nil,
@@ -354,6 +361,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             self._unreadMentionLabelAppearance = Trackable(reference: reference, referencePath: \.unreadMentionLabelAppearance)
             self._unreadMentionMutedStateLabelAppearance = Trackable(reference: reference, referencePath: \.unreadMentionMutedStateLabelAppearance)
             self._linkLabelAppearance = Trackable(reference: reference, referencePath: \.linkLabelAppearance)
+            self._phoneNumberLabelAppearance = Trackable(reference: reference, referencePath: \.phoneNumberLabelAppearance)
             self._mutedIcon = Trackable(reference: reference, referencePath: \.mutedIcon)
             self._pinIcon = Trackable(reference: reference, referencePath: \.pinIcon)
             self._messageDeliveryStatusIcons = Trackable(reference: reference, referencePath: \.messageDeliveryStatusIcons)
@@ -390,6 +398,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             if let unreadMentionLabelAppearance { self.unreadMentionLabelAppearance = unreadMentionLabelAppearance }
             if let unreadMentionMutedStateLabelAppearance { self.unreadMentionMutedStateLabelAppearance = unreadMentionMutedStateLabelAppearance }
             if let linkLabelAppearance { self.linkLabelAppearance = linkLabelAppearance }
+            if let phoneNumberLabelAppearance { self.phoneNumberLabelAppearance = phoneNumberLabelAppearance }
             if let mutedIcon { self.mutedIcon = mutedIcon }
             if let pinIcon { self.pinIcon = pinIcon }
             if let messageDeliveryStatusIcons { self.messageDeliveryStatusIcons = messageDeliveryStatusIcons }

@@ -37,6 +37,11 @@ open class Router<ViewController: UIViewController>: NSObject {
     }
     
     @objc
+    public func push(_ viewControllers: UIViewController, animated: Bool = true) {
+        rootViewController.navigationController?.pushViewController(viewControllers, animated: animated)
+    }
+    
+    @objc
     public func dismiss(animated: Bool = true, completion: (() -> Void)? = nil) {
         if let nav = rootViewController.navigationController {
             nav.dismiss(animated: animated, completion: completion)
@@ -62,6 +67,21 @@ open class Router<ViewController: UIViewController>: NSObject {
             rootViewController.view.endEditing(true)
             rootViewController.showBottomSheet(
                 title: link.absoluteString,
+                actions: actions.map { action in
+                        .init(
+                            title: action.0,
+                            style: action.1,
+                            handler: { completion?(action.0) })
+                }, withCancel: true)
+        }
+    
+    open func showPhoneAlert(
+        _ phone: String,
+        actions: [(String, SheetAction.Style)],
+        completion: ((String) -> Void)? = nil) {
+            rootViewController.view.endEditing(true)
+            rootViewController.showBottomSheet(
+                title: phone,
                 actions: actions.map { action in
                         .init(
                             title: action.0,

@@ -11,7 +11,7 @@ import MobileCoreServices
 import UIKit
 import UniformTypeIdentifiers
 
-public extension URL {
+extension URL {
     func mimeType() -> String {
         var mimeType: String?
         let pathExtension = self.pathExtension

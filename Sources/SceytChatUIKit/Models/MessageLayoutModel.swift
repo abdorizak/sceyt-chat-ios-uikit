@@ -611,6 +611,7 @@ open class MessageLayoutModel {
                 deletedStateText: appearance.deletedStateText,
                 bodyLabelAppearance: appearance.bodyLabelAppearance,
                 linkLabelAppearance: appearance.linkLabelAppearance,
+                phoneNumberLabelAppearance: appearance.phoneNumberLabelAppearance,
                 mentionLabelAppearance: appearance.mentionLabelAppearance,
                 deletedLabelAppearance: appearance.deletedMessageLabelAppearance,
                 mentionUserNameFormatter: appearance.mentionUserNameFormatter
@@ -805,7 +806,7 @@ public extension MessageLayoutModel {
         public static let voice    = MessageContentOptions(rawValue: 1 << 5)
         
         public static let attachment: MessageContentOptions = [.image, .file, .voice]
-        public static let all: MessageContentOptions = [.name, .text, .image, file, link, voice]
+        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice]
     }
     
     struct MessageUpdateOptions: OptionSet {
@@ -868,11 +869,13 @@ public extension MessageLayoutModel {
     enum ContentItem {
         case link(NSRange, URL?)
         case mention(NSRange, String)
+        case phone(NSRange, String?)
         
         public var range: NSRange {
             switch self {
             case let .link(range, _),
-                let .mention(range, _):
+                let .mention(range, _),
+                let .phone(range, _):
                 return range
             }
         }

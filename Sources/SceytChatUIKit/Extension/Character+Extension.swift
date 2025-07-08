@@ -8,7 +8,7 @@
 
 import Foundation
 
-public extension Character {
+extension Character {
     /// A simple emoji is one scalar and presented to the user as an Emoji
     var isSimpleEmoji: Bool {
         guard let firstProperties = unicodeScalars.first?.properties else {

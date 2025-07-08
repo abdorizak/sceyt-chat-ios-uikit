@@ -46,6 +46,11 @@ public class Identifier: NSObject {
         self.value = value
     }
     
+    public convenience init(value: any Hashable, userInfo: [AnyHashable: Any]) {
+        self.init(value: value)
+        self.userInfo = userInfo
+    }
+    
     public override var hash: Int {
         value.hashValue
     }

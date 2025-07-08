@@ -314,6 +314,10 @@ open class ChannelListViewModel: NSObject,
             handleChannel(channel, didStartTyping: channelEvent.user)
         case ChannelEvent.stopTyping:
             handleChannel(channel, didStopTyping: channelEvent.user)
+        case ChannelEvent.startRecording:
+            handleChannel(channel, didStartRecording: channelEvent.user)
+        case ChannelEvent.stopRecording:
+            handleChannel(channel, didStopRecording: channelEvent.user)
         default:
             break
         }
@@ -330,6 +334,19 @@ open class ChannelListViewModel: NSObject,
         guard user.id != SceytChatUIKit.shared.currentUserId
         else { return }
         event = .typing(false, .init(user: user), .init(channel: channel))
+    }
+    
+    //MARK: Channel recording event handlers
+    open func handleChannel(_ channel: Channel, didStartRecording user: User) {
+        guard user.id != SceytChatUIKit.shared.currentUserId
+        else { return }
+        event = .recording(true, .init(user: user), .init(channel: channel))
+    }
+    
+    open func handleChannel(_ channel: Channel, didStopRecording user: User) {
+        guard user.id != SceytChatUIKit.shared.currentUserId
+        else { return }
+        event = .recording(false, .init(user: user), .init(channel: channel))
     }
     
     //MARK: Select channel
@@ -363,6 +380,7 @@ public extension ChannelListViewModel {
         case reloadSearch
         case unreadMessagesCount(Int)
         case typing(Bool, ChatUser, ChatChannel)
+        case recording(Bool, ChatUser, ChatChannel)
         case connection(ConnectionState)
         case showChannel(ChatChannel)
     }

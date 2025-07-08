@@ -48,6 +48,10 @@
 		C54DF6CF2AECF19300767983 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54DF6CE2AECF19300767983 /* Config.swift */; };
 		C5B97EA42B5692070070C913 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = C5B97EA32B5692070070C913 /* SceytChatUIKit */; };
 		C5F467D42AF020B2009AB0E5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = C5F467D32AF020B2009AB0E5 /* README.md */; };
+		ED2CBA082E018007001C5468 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = ED2CBA072E018007001C5468 /* SceytChatUIKit */; };
+		EDC887682E01C1A00077B1B2 /* Constraints+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC887672E01C1980077B1B2 /* Constraints+Extensions.swift */; };
+		EDC8876A2E01C1F30077B1B2 /* UIColor+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC887692E01C1EF0077B1B2 /* UIColor+Extensions.swift */; };
+		EDC8876C2E01C2D90077B1B2 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC8876B2E01C2D20077B1B2 /* UIViewController+Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +87,9 @@
 		C54DF6C82AECF09400767983 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C54DF6CE2AECF19300767983 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		C5F467D32AF020B2009AB0E5 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
+		EDC887672E01C1980077B1B2 /* Constraints+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Constraints+Extensions.swift"; sourceTree = "<group>"; };
+		EDC887692E01C1EF0077B1B2 /* UIColor+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Extensions.swift"; sourceTree = "<group>"; };
+		EDC8876B2E01C2D20077B1B2 /* UIViewController+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Extensions.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +106,7 @@
 				560E295D2CC6788C003A4A17 /* SceytChatUIKit in Frameworks */,
 				5692FDFE2CC1416B00803B3F /* SceytChatUIKit in Frameworks */,
 				23E2A10C2D5CD79900CA0E09 /* SceytChatUIKit in Frameworks */,
+				ED2CBA082E018007001C5468 /* SceytChatUIKit in Frameworks */,
 				5694FF382C664FBA008DA2DC /* SceytChatUIKit in Frameworks */,
 				C5B97EA42B5692070070C913 /* SceytChatUIKit in Frameworks */,
 				5674A3052C7C8E6600C51A07 /* SceytChatUIKit in Frameworks */,
@@ -172,6 +180,9 @@
 				5649B9AE2CBFB43100E3B190 /* String+Extensions.swift */,
 				5649B9B42CBFB4D800E3B190 /* UITableView+Extensions.swift */,
 				5649B9B62CBFB4E600E3B190 /* UIView+Extensiosn.swift */,
+				EDC8876B2E01C2D20077B1B2 /* UIViewController+Extensions.swift */,
+				EDC887672E01C1980077B1B2 /* Constraints+Extensions.swift */,
+				EDC887692E01C1EF0077B1B2 /* UIColor+Extensions.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -239,6 +250,7 @@
 				56F069CE2CC62D61003D74D8 /* SceytChatUIKit */,
 				560E295C2CC6788C003A4A17 /* SceytChatUIKit */,
 				23E2A10B2D5CD79900CA0E09 /* SceytChatUIKit */,
+				ED2CBA072E018007001C5468 /* SceytChatUIKit */,
 			);
 			productName = SceytDemoApp;
 			productReference = C54DF6B72AECF09100767983 /* SceytDemoApp.app */;
@@ -270,7 +282,7 @@
 			);
 			mainGroup = C54DF6AE2AECF09100767983;
 			packageReferences = (
-				23E2A10A2D5CD79900CA0E09 /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */,
+				ED2CBA062E018007001C5468 /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */,
 			);
 			productRefGroup = C54DF6B82AECF09100767983 /* Products */;
 			projectDirPath = "";
@@ -306,6 +318,7 @@
 				5649B9BB2CBFBA0000E3B190 /* RequestManager.swift in Sources */,
 				561169E32CBD512D00DC1979 /* CustomInteractiveTransitionNavigationController.swift in Sources */,
 				5692FE002CC159B300803B3F /* CustomChannelInfoViewController.swift in Sources */,
+				EDC887682E01C1A00077B1B2 /* Constraints+Extensions.swift in Sources */,
 				5649B9B92CBFB62800E3B190 /* UsernameValidation.swift in Sources */,
 				C51C93102B5660CB0069F9DA /* ConnectionService.swift in Sources */,
 				56F88D9E2C00D3890010C3E4 /* UserDisplayNameFormatter.swift in Sources */,
@@ -323,7 +336,9 @@
 				C54DF6BB2AECF09100767983 /* AppDelegate.swift in Sources */,
 				5649B99D2CBE79F000E3B190 /* ProfileViewController.swift in Sources */,
 				5649B9AA2CBFA91400E3B190 /* Debouncer.swift in Sources */,
+				EDC8876C2E01C2D90077B1B2 /* UIViewController+Extensions.swift in Sources */,
 				C54DF6BD2AECF09100767983 /* SceneDelegate.swift in Sources */,
+				EDC8876A2E01C1F30077B1B2 /* UIColor+Extensions.swift in Sources */,
 				561169DD2CBD44A300DC1979 /* SplashViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -477,7 +492,7 @@
 				CODE_SIGN_ENTITLEMENTS = SceytDemoApp/SceytDemoApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 9;
-				DEVELOPMENT_TEAM = 289SR6UP83;
+				DEVELOPMENT_TEAM = 4RZ2G29C7B;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SceytDemoApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Sceyt Chat";
@@ -496,7 +511,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sceyt.chat.demo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varmtech.chat.demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -516,7 +531,7 @@
 				CODE_SIGN_ENTITLEMENTS = SceytDemoApp/SceytDemoApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 9;
-				DEVELOPMENT_TEAM = 289SR6UP83;
+				DEVELOPMENT_TEAM = 4RZ2G29C7B;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SceytDemoApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Sceyt Chat";
@@ -535,7 +550,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sceyt.chat.demo;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varmtech.chat.demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -571,7 +586,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		23E2A10A2D5CD79900CA0E09 /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */ = {
+		ED2CBA062E018007001C5468 /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../../sceyt-chat-ios-uikit";
 		};
@@ -623,6 +638,10 @@
 			productName = SceytChatUIKit;
 		};
 		C5B97EA32B5692070070C913 /* SceytChatUIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SceytChatUIKit;
+		};
+		ED2CBA072E018007001C5468 /* SceytChatUIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SceytChatUIKit;
 		};

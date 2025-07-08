@@ -275,7 +275,7 @@ open class ImageBuilder {
     open class func addShadow(to image: UIImage,
                               blur: CGFloat = 8,
                               offset: CGSize = .init(width: 0, height: 2),
-                              color: UIColor = UIColor(rgb: 0x111539, alpha: 0.08)) -> UIImage
+                              color: UIColor = DefaultColors.shadowColor) -> UIImage
     {
         func addShadow(to image: UIImage) -> UIImage {
             let shadowRect = CGRect(

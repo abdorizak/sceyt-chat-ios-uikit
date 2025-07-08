@@ -39,7 +39,7 @@ open class ChannelListRouter: Router<ChannelListViewController> {
         viewController.hidesBottomBarWhenPushed = true
         viewController.channelViewModel = Components.channelViewModel
             .init(channel: channel)
-        setViewControllers([rootViewController, viewController], animated: animated)
+        push(viewController, animated: animated)
     }
     
     open class func findAndShowChannel(id: ChannelId) {

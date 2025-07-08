@@ -40,6 +40,17 @@ open class DataDetector {
         guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return [] }
         return detector.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
     }
+    
+    public class func getPhoneNumbers(text: String) -> [NSTextCheckingResult] {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.phoneNumber.rawValue) else { return [] }
+        return detector.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
+    }
+    
+    public class func containsPhoneNumber(text: String) -> Bool {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.phoneNumber.rawValue) else { return false }
+        return detector.firstMatch(in: text, range: NSRange(location: 0, length: text.utf16.count)) != nil
+    }
+
 }
 
 public extension DataDetector {
