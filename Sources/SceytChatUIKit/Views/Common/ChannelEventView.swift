@@ -94,7 +94,7 @@ open class ChannelEventView: View {
         indicatorView = view
         addSubview(view)
         NSLayoutConstraint.activate([
-            view.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 6),
+            view.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: 2),
             view.centerYAnchor.constraint(equalTo: label.centerYAnchor),
             view.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor)
         ])

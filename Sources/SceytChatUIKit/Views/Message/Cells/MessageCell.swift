@@ -467,6 +467,10 @@ open class MessageCell: CollectionViewCell,
                 return true
             case .phone(_, let phoneNumber):
                 if let phoneNumber {
+                    selectPhoneNumber(range: item.range)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        self?.deSelectPhoneNumber(range: item.range)
+                    }
                     onAction?(.didTapPhoneNumber(phoneNumber))
                 }
                 return true
@@ -541,6 +545,7 @@ open class MessageCell: CollectionViewCell,
         }
         return longPressItem
     }
+    
     private func connectContextMenuIfNeeded(identifier: Identifier) {
         if contextMenu?.alignments[identifier] == nil {
             connectContextMenu()

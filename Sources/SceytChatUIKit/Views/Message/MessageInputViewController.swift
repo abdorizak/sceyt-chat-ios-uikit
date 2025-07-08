@@ -963,6 +963,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     open func toggleAttribute(component: ChatMessage.BodyAttribute.AttributeType, range: NSRange, textView: UITextView) {
+        // Prevent text attribute changes when recording audio
+        if isRecording {
+            return
+        }
+        
         guard let mutableText = textView.attributedText.mutableCopy() as? NSMutableAttributedString
         else { return }
         
@@ -1042,6 +1047,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     // MARK: UITextViewDelegate
 
     open func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Prevent text input when recording audio
+        if isRecording {
+            return false
+        }
+        
         textView.typingAttributes[.foregroundColor] = appearance.inputAppearance.textInputAppearance.labelAppearance.foregroundColor
         
         if text == " " {
@@ -1064,6 +1074,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     public func textViewDidChangeSelection(_ textView: UITextView) {
+        // Prevent text selection when recording audio
+        if isRecording {
+            return
+        }
+        
         var selectedRange = textView.selectedRange
         if selectedRange.length > 0 {
             if textView.text[selectedRange.location] == mentionTriggerPrefix {
@@ -1087,6 +1102,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     public func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        // Prevent showing edit menu when recording audio
+        if isRecording {
+            return nil
+        }
+        
         let filteredActions: Set<String> = Set([
             "com.apple.menu.format",
             "com.apple.menu.replace"
