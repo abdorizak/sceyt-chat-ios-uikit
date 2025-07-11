@@ -322,8 +322,12 @@ extension ChannelDTO {
                 if hash < 0 {
                     hash *= -1
                 }
-                if hash == channel.id && dto.metadata == channel.metadata {
-                    return dto.convert()
+                if hash == channel.id {
+                    let dtoMetadata = try? ChatChannel.Metadata.decode(dto.metadata ?? "")
+                    let channelMetadata = try? ChatChannel.Metadata.decode(channel.metadata ?? "")
+                    if dtoMetadata?.isSelf == channelMetadata?.isSelf {
+                        return dto.convert()
+                    }
                 }
             }
         }
