@@ -23,12 +23,7 @@ public struct Crypto {
         guard let data = value.data(using: .utf8)
         else { return 0 }
         
-        let hash: Data
-        if #available(iOS 13.0, *) {
-            hash = data.sha256
-        } else {
-            hash = data.md5
-        }
+        let hash: Data = data.sha256
         return hash.withUnsafeBytes { pointer in
             pointer.load(as: Int64.self)
         }
