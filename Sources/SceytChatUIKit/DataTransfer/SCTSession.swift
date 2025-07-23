@@ -210,6 +210,7 @@ open class SCTUploadOperation: AsyncOperation {
             logger.debug("check \(FileManager.default.fileExists(atPath: filePath))")
             let transferId = UUID().uuidString
             if attachment.type == "video" {
+                taskInfo.updateProgress(0.01)
                 let videoProcessInfo = SCVideoProcessInfo()
                 let result = await Components.videoProcessor.export(from: filePath, processInfo: videoProcessInfo)
                 switch result {
