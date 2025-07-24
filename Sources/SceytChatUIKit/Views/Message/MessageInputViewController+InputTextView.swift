@@ -21,6 +21,11 @@ extension MessageInputViewController {
             layer.borderColor = appearance.textInputAppearance.borderColor
         }
         
+        deinit {
+            typingTimer?.invalidate()
+            typingTimer = nil
+        }
+        
         open override func setup() {
             super.setup()
             textContainerInset = .init(top: 8, left: 12, bottom: 8, right: 12)
