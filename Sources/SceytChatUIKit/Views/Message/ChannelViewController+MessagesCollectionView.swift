@@ -11,7 +11,10 @@ import UIKit
 public extension ChannelViewController {
     open class MessagesCollectionView: CollectionView {
         
-        private var canReloadDataIndex = 0
+        /// A flag to indicate if `performBatchUpdates` is currently in progress
+        private var isPerformBatchUpdates = false
+        /// A flag to delay `reloadData` if called during batch updates
+        private var needsReloadData = false
         
         public required init() {
             super.init(
@@ -71,24 +74,40 @@ public extension ChannelViewController {
             lastVisibleAttributes?.indexPath
         }
         
-        open func reloadDataIfNeeded() {
-            canReloadDataIndex -= 1
-            if canReloadDataIndex < 0 {
-                canReloadDataIndex = 0
-                super.reloadData()
-            }
-        }
-        
+        /// Wraps performBatchUpdates with state tracking and safe reload fallback
         open func performUpdates(_ updates: (() -> Void), completion: ((Bool) -> Void)? = nil) {
-            canReloadDataIndex += 1
+            isPerformBatchUpdates = true
             performBatchUpdates {
                 updates()
             } completion: { [weak self] in
-                if let self {
-                    canReloadDataIndex -= 1
+                // Ensure we're back on the main queue before resetting flags and doing reload
+                DispatchQueue.main.async {[weak self] in
+                    if let self {
+                        isPerformBatchUpdates = false
+                        if needsReloadData {
+                            // Defer actual reload until batch updates are done
+                            reloadData()
+                            // Ensure layout is updated immediately without waiting for next runloop
+                            layoutIfNeeded()
+                        }
+                    }
                 }
                 completion?($0)
             }
+        }
+        
+        /// Override reloadData to prevent crashes if called during performBatchUpdates
+        open override func reloadData() {
+            // If batch updates are in progress, defer the reload
+            if isPerformBatchUpdates {
+                needsReloadData = true
+                return
+            }
+            // Safe to reload immediately
+            super.reloadData()
+            // Force layout update now to avoid visual glitches or async issues
+            layoutIfNeeded()
+            needsReloadData = false
         }
         
         open func reloadDataAndKeepOffset() {
@@ -97,7 +116,6 @@ public extension ChannelViewController {
             
             let beforeContentSize = safeContentSize
             reloadData()
-            layoutIfNeeded()
             let afterContentSize = safeContentSize
             
             let newOffset = CGPoint(
@@ -110,7 +128,6 @@ public extension ChannelViewController {
         open func reloadDataAndScrollToBottom(animated: Bool = false) {
             setContentOffset(contentOffset, animated: false)
             reloadData()
-            layoutIfNeeded()
             scrollToBottom(animated: animated)
         }
         

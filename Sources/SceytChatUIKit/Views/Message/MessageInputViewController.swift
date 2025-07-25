@@ -645,20 +645,6 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         action = .send(true)
         currentState = nil
         nextState = nil
-        //        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-        //            guard let self else { return }
-        //            let rnd1 = arc4random_uniform(UInt32(min(Self.loren.count, 40)))
-        //            let rnd2 = arc4random_uniform(UInt32(min(Self.loren.count, 30)))
-        //            let link1 = links.randomElement() ?? ""
-        //            let link2 = links.randomElement() ?? ""
-        //            let link3 = links.randomElement() ?? ""
-        //            self.inputTextView.text = "\(Self._textIndex) \(link1) \(Self.loren.substring(toIndex: Int(rnd1))) \(link2) \(Self.loren.substring(toIndex: Int(rnd2))) \(link3)"
-        //            Self._textIndex += 1
-        //            if Self._textIndex > 1000, Self._textIndex % 1000 == 0 {
-        //                return
-        //            }
-        //            self.sendButtonAction(self.sendButton)
-        //        }
     }
     
     open func addReply(layoutModel: MessageLayoutModel) {
