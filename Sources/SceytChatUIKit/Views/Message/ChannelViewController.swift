@@ -468,8 +468,8 @@ open class ChannelViewController: ViewController,
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.updateNavigationItems()
-                self.collectionView.reloadDataIfNeeded()
+                updateNavigationItems()
+                collectionView.reloadData()
             }.store(in: &subscriptions)
         
         channelViewModel.$isEditing
@@ -479,16 +479,16 @@ open class ChannelViewController: ViewController,
                 guard let self else { return }
                 self.updateNavigationItems()
                 if isEditing {
-                    self.shouldAnimateEditing = true
-                    self.collectionView.reloadDataIfNeeded()
+                    shouldAnimateEditing = true
+                    collectionView.reloadData()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
                         self?.shouldAnimateEditing = false
                     }
-                    self.bottomView.removeFromSuperview()
+                    bottomView.removeFromSuperview()
                 } else {
                     UIView.animate(withDuration: 0.3) { [weak self] in
                         guard let self else { return }
-                        self.collectionView.visibleCells.forEach {
+                        collectionView.visibleCells.forEach {
                             guard let cell = $0 as? MessageCell, cell.isEditing else { return }
                             let checkBoxSize = MessageCell.Layouts.checkBoxSize + 2 * MessageCell.Layouts.checkBoxPadding
                             cell.contentView.alpha = 1
@@ -498,7 +498,7 @@ open class ChannelViewController: ViewController,
                             }
                         }
                     } completion: { [weak self] _ in
-                        self?.collectionView.reloadDataIfNeeded()
+                        self?.collectionView.reloadData()
                     }
                     self.showBottomViewIfNeeded()
                 }
@@ -1994,7 +1994,7 @@ open class ChannelViewController: ViewController,
             if let selectMessageId, let indexPath = channelViewModel.indexPathOf(messageId: selectMessageId) {
                 onEvent(.reloadDataAndSelect(indexPath: indexPath, messageId: selectMessageId))
             } else {
-                collectionView.reloadDataIfNeeded()
+                collectionView.reloadData()
             }
             updateUnreadViewVisibility()
             showEmptyViewIfNeeded()
