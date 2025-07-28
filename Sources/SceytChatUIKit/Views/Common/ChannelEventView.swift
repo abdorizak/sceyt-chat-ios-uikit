@@ -12,7 +12,7 @@ public struct ChannelEventTitleFormatterAttributes {
     public let channel: ChatChannel
     public let models: [ChannelEventModel]
     
-    init(channel: ChatChannel, models: [ChannelEventModel]) {
+    public init(channel: ChatChannel, models: [ChannelEventModel]) {
         self.channel = channel
         self.models = models
     }
@@ -32,11 +32,11 @@ public struct ChannelEventModel {
 
 open class ChannelEventView: View {
 
-    private var indicatorView: ChatActionIndicator?
+    public var indicatorView: ChatActionIndicator?
     open lazy var label = UILabel()
         .withoutAutoresizingMask
     public private(set) var channel: ChatChannel?
-    public private(set) var models: [ChannelEventModel] = []
+    public  var models: [ChannelEventModel] = []
     private var timer: Timer?
         
     deinit {
