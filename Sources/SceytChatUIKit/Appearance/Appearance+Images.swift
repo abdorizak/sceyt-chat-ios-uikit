@@ -255,6 +255,12 @@ public extension Appearance {
                                          .init(image: Assets.channelUnreadBubble1.image,
                                                renderingMode: .template(.secondaryText)))!
         }()
+        public static var channelUnreadMentionBubble: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.circleBackground44.image,
+                                                     renderingMode: .template(.backgroundSections)),
+                                         .init(image: Assets.iconMention.image,
+                                               renderingMode: .template(.secondaryText)))!
+        }()
         public static var channelProfileURI: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.circleBackground32.image,
                                                      renderingMode: .template(.accent3)),
@@ -653,6 +659,7 @@ extension UIImage {
     public static var channelCreatePrivate: UIImage { Images.channelCreatePrivate }
     
     public static var channelUnreadBubble: UIImage { Images.channelUnreadBubble }
+    public static var channelUnreadMentionBubble: UIImage { Images.channelUnreadMentionBubble }
     public static var channelProfileURI: UIImage { Images.channelProfileURI }
     public static var channelProfileQR: UIImage { Images.channelProfileQR }
     public static var channelProfileBell: UIImage { Images.channelProfileBell }
