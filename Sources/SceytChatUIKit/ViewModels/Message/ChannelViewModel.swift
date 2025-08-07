@@ -204,7 +204,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         SceytChatUIKit.shared.chatClient.removeChannelDelegate(identifier: channelDelegateIdentifier)
         if isTyping {
             provider.channelOperator.sendEvent(ChannelEvent.stopTyping)
-            provider.channelOperator.stopTyping()
+        }
+        if isRecording {
+            provider.channelOperator.sendEvent(ChannelEvent.stopRecording)
         }
         SyncService.sendPendingMarkers()
     }
