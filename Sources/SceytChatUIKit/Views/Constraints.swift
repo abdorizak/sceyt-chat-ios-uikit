@@ -55,7 +55,7 @@ public enum LayoutDimensionType {
     public static var height: LayoutDimensionType { LayoutDimensionType.height() }
 }
 
-public extension UIView {
+extension UIView {
 
     @discardableResult
     @inlinable
@@ -250,7 +250,7 @@ public extension UIView {
     }
 }
 
-public extension NSLayoutConstraint {
+extension NSLayoutConstraint {
 
     @discardableResult
     @inlinable
@@ -273,25 +273,28 @@ public extension NSLayoutConstraint {
     }
 }
 
-public extension NSLayoutAnchor {
+extension NSLayoutAnchor {
 
     @discardableResult
+    @usableFromInline
     @objc func pin(to anchor: NSLayoutAnchor, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
         constraint(equalTo: anchor, constant: constant).activate(activate)
     }
 
     @discardableResult
+    @usableFromInline
     @objc func pin(greaterThanOrEqualTo anchor: NSLayoutAnchor, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
         constraint(greaterThanOrEqualTo: anchor, constant: constant).activate(activate)
     }
 
     @discardableResult
+    @usableFromInline
     @objc func pin(lessThanOrEqualTo anchor: NSLayoutAnchor, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
         constraint(lessThanOrEqualTo: anchor, constant: constant).activate(activate)
     }
 }
 
-public extension NSLayoutDimension {
+extension NSLayoutDimension {
     
     @discardableResult
     @objc func pin(to anchor: NSLayoutDimension, multiplier: CGFloat = 1, constant: CGFloat = 0, activate: Bool = true) -> NSLayoutConstraint {
@@ -324,7 +327,7 @@ public extension NSLayoutDimension {
     }
 }
 
-public extension UIView {
+extension UIView {
     @discardableResult
     func unpin<AnchorType>(firstAnchor: NSLayoutAnchor<AnchorType>, pinnedTo secondAnchor: NSLayoutAnchor<AnchorType>? = nil) -> [NSLayoutConstraint] {
         if let filtered = superview?.constraints.filter({ $0.firstAnchor == firstAnchor && $0.secondAnchor == secondAnchor }),

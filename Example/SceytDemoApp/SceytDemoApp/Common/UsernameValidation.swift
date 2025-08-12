@@ -6,8 +6,8 @@
 //  Copyright © 2024 Sceyt LLC. All rights reserved.
 //
 
-import Foundation
 import UIKit
+import SceytChatUIKit
 
 enum UsernameValidation {
     case tooShort
@@ -31,14 +31,14 @@ enum UsernameValidation {
         
         let fullTextAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: .init(13), weight: .regular),
-            .foregroundColor: UIColor.secondaryText.light
+            .foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText.light
         ]
         
         attributedText.addAttributes(fullTextAttributes, range: NSRange(location: 0, length: fullText.count))
         
         let boldAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: .init(13), weight: .bold),
-            .foregroundColor: UIColor.secondaryText.light
+            .foregroundColor: SceytChatUIKit.shared.theme.colors.secondaryText.light
         ]
         
         let rangesToBold = [

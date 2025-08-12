@@ -352,6 +352,8 @@ public enum L10n {
       public static let deleted = L10n.tr("Localizable", "channel.member.deleted", fallback: "Deleted User")
       /// Inactive User
       public static let inactive = L10n.tr("Localizable", "channel.member.inactive", fallback: "Inactive User")
+      /// recording
+      public static let recording = L10n.tr("Localizable", "channel.member.recording", fallback: "recording")
       /// typing
       public static let typing = L10n.tr("Localizable", "channel.member.typing", fallback: "typing")
       public enum Role {
@@ -543,8 +545,16 @@ public enum L10n {
       public enum Title {
         /// Add
         public static let add = L10n.tr("Localizable", "message.action.title.add", fallback: "Add")
+        /// Audio Call
+        public static let audioCall = L10n.tr("Localizable", "message.action.title.audioCall", fallback: "Audio Call")
+        /// Call
+        public static let call = L10n.tr("Localizable", "message.action.title.call", fallback: "Call")
+        /// Chat
+        public static let chat = L10n.tr("Localizable", "message.action.title.chat", fallback: "Chat")
         /// Copy
         public static let copy = L10n.tr("Localizable", "message.action.title.copy", fallback: "Copy")
+        /// Copy Number
+        public static let copyNumber = L10n.tr("Localizable", "message.action.title.copyNumber", fallback: "Copy Number")
         /// Delete
         public static let delete = L10n.tr("Localizable", "message.action.title.delete", fallback: "Delete")
         /// Edit
@@ -565,6 +575,8 @@ public enum L10n {
         public static let report = L10n.tr("Localizable", "message.action.title.report", fallback: "Report")
         /// Select
         public static let select = L10n.tr("Localizable", "message.action.title.select", fallback: "Select")
+        /// Video Call
+        public static let videoCall = L10n.tr("Localizable", "message.action.title.videoCall", fallback: "Video Call")
       }
     }
     public enum Alert {

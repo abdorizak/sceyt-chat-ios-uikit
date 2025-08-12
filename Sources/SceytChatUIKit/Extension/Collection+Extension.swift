@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension Collection where Index == Int {
+extension Collection where Index == Int {
     
     func chunked(into size: Index.Stride) -> [SubSequence] {
         stride(

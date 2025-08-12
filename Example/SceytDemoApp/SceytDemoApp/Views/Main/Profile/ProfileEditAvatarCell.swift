@@ -12,7 +12,7 @@ import SceytChatUIKit
 class ProfileEditAvatarCell: TableViewCell {
     
     lazy var avatarButton: CircleButton = {
-        $0.backgroundColor = .surface2
+        $0.backgroundColor = SceytChatUIKit.shared.theme.colors.surface2
         $0.image = .chatActionCamera
         return $0.withoutAutoresizingMask
     }(CircleButton())

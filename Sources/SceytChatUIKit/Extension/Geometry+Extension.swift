@@ -8,13 +8,13 @@
 
 import UIKit
 
-public extension CGRect {
+extension CGRect {
     var center: CGPoint {
         .init(x: self.midX, y: midY)
     }
 }
 
-public extension CGSize {
+extension CGSize {
     static var nan: CGSize {
         .init(width: CGFloat.nan, height: .nan)
     }
@@ -45,7 +45,7 @@ public extension CGSize {
     var minSide: CGFloat { min(width, height) }
 }
 
-public extension UIPanGestureRecognizer {
+extension UIPanGestureRecognizer {
 
     func projectedLocation(decelerationRate: UIScrollView.DecelerationRate) -> CGPoint {
         let velocityOffset = velocity(in: view).projectedOffset(decelerationRate: .normal)
@@ -55,7 +55,7 @@ public extension UIPanGestureRecognizer {
 
 }
 
-public extension CGPoint {
+extension CGPoint {
 
     func projectedOffset(decelerationRate: UIScrollView.DecelerationRate) -> CGPoint {
         return CGPoint(x: x.projectedOffset(decelerationRate: decelerationRate),
@@ -64,7 +64,7 @@ public extension CGPoint {
 
 }
 
-public extension CGFloat {
+extension CGFloat {
 
     func projectedOffset(decelerationRate: UIScrollView.DecelerationRate) -> CGFloat {
         let multiplier = 1 / (1 - decelerationRate.rawValue) / 1000
@@ -73,7 +73,7 @@ public extension CGFloat {
 
 }
 
-public extension CGPoint {
+extension CGPoint {
 
     static func +(left: CGPoint, right: CGPoint) -> CGPoint {
         return CGPoint(x: left.x + right.x,

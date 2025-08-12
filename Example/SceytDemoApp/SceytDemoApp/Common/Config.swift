@@ -14,7 +14,7 @@ let users = ["zoe", "thomas", "ethan", "charlie", "william", "michael", "james",
 struct Config {
     static let sceytApiURL = "https://us-ohio-api.sceyt.com"
     static let sceytAppId = "8lwox2ge93"
-    static let genToken = "https://tlnig20qy7.execute-api.us-east-2.amazonaws.com/dev/user/genToken?user="
+    static let genToken = "https://vd3eaqzjli.execute-api.us-east-2.amazonaws.com/chat/token?user="
 }
 
 extension Config {

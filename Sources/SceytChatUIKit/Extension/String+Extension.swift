@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension String {
+extension String {
 
     subscript(i: Int) -> String {
         return self[i ..< i + 1]
@@ -30,12 +30,12 @@ public extension String {
     }
 }
 
-public extension NSAttributedString {
+extension NSAttributedString {
 
     var isEmpty: Bool { self.length == 0 }
 }
 
-public extension NSAttributedString {
+extension NSAttributedString {
 
     func trimWhitespacesAndNewlines() -> NSAttributedString {
         attributedStringByTrimmingCharacterSet(charSet: .whitespacesAndNewlines)
@@ -49,7 +49,7 @@ public extension NSAttributedString {
 
 }
 
-public extension NSMutableAttributedString {
+extension NSMutableAttributedString {
     
     func addAttributeToEntireString(_ name: NSAttributedString.Key, value: Any) {
         var range: NSRange {
@@ -92,6 +92,6 @@ public extension NSMutableAttributedString {
     }
 }
 
-public extension NSAttributedString.Key {
+extension NSAttributedString.Key {
     static let mention: NSAttributedString.Key = .init("mention")
 }

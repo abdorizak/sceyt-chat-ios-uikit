@@ -15,6 +15,7 @@ extension ChannelViewController {
         public enum Mode {
             case `default`
             case typing
+            case recording
         }
 
         open lazy var profileImageView = ImageButton()
@@ -26,7 +27,7 @@ extension ChannelViewController {
         open lazy var subLabel = UILabel()
             .withoutAutoresizingMask
 
-        open lazy var typingView = Components.typingView
+        open lazy var channelEventView = Components.channelEventView
             .init()
             .withoutAutoresizingMask
         
@@ -34,21 +35,29 @@ extension ChannelViewController {
             column: [
                 headLabel,
                 subLabel,
-                typingView
+                channelEventView
             ],
             spacing: 0
         )
             .withoutAutoresizingMask
 
-        open var mode: Mode = .default {
-            didSet {
+        private var _mode: Mode = .default
+
+        
+        open var mode: Mode {
+            get { _mode }
+            set {
+                guard newValue != _mode else { return }
+
+                let oldValue = _mode
+                _mode = newValue
                 updateMode()
             }
         }
 
         open override func setup() {
             super.setup()
-            typingView.isHidden = true
+            channelEventView.isHidden = true
             subLabel.isHidden = true
             
             profileImageView.layer.masksToBounds = true
@@ -70,14 +79,14 @@ extension ChannelViewController {
             headLabel.font = appearance.titleLabelAppearance.font
             subLabel.textColor = appearance.subtitleLabelAppearance.foregroundColor
             subLabel.font = appearance.subtitleLabelAppearance.font
-            typingView.label.textColor = appearance.subtitleLabelAppearance.foregroundColor
-            typingView.label.font = appearance.subtitleLabelAppearance.font
+            channelEventView.label.textColor = appearance.subtitleLabelAppearance.foregroundColor
+            channelEventView.label.font = appearance.subtitleLabelAppearance.font
         }
 
         open override func setupLayout() {
             super.setupLayout()
             addSubview(profileImageView)
-            addSubview(typingView)
+            addSubview(channelEventView)
             addSubview(stackView)
             
             profileImageView.widthAnchor.pin(to: profileImageView.heightAnchor)
@@ -95,10 +104,10 @@ extension ChannelViewController {
         private func updateMode() {
             if mode == .default {
                 subLabel.isHidden = false
-                typingView.isHidden = true
+                channelEventView.isHidden = true
             } else {
                 subLabel.isHidden = true
-                typingView.isHidden = false
+                channelEventView.isHidden = false
             }
         }
     }

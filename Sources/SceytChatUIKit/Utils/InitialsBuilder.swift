@@ -28,6 +28,6 @@ open class InitialsBuilder {
     }
     
     open class func backgroundColor(display: String) -> UIColor {
-        .initial(title: display)
+        DefaultColors.initial(title: display)
     }
 }

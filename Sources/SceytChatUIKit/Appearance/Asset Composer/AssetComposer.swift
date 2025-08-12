@@ -99,7 +99,7 @@ public extension AssetComposer {
     }
 }
 
-public extension [CGSize] {
+extension [CGSize] {
     
     var max: CGSize {
         reduce(CGSize.zero) { maxSize, size in

@@ -8,14 +8,14 @@
 
 import Foundation
 
-public extension NSCompoundPredicate {
+extension NSCompoundPredicate {
     
     class func andPredicate(_ predicates: NSPredicate...) -> NSCompoundPredicate {
         NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 }
 
-public extension NSPredicate {
+extension NSPredicate {
     
     func and(predicate: NSPredicate) -> NSPredicate {
         NSCompoundPredicate(andPredicateWithSubpredicates: [self, predicate])

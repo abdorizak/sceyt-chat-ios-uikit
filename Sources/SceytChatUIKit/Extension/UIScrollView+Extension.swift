@@ -8,7 +8,7 @@
 
 import UIKit
 
-public extension UIScrollView {
+extension UIScrollView {
     
     func adjustInsetsToKeyboard(notification: Notification, container view: UIView) {
         guard let keyboardValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }

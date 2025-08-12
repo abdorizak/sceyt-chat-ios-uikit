@@ -63,8 +63,12 @@ extension ChannelListViewController {
         private var messageStackViewCenterYConstraint: NSLayoutConstraint?
         private var messageVerticalConstraints: [NSLayoutConstraint] = []
         
+        public var eventModels: [ChannelEventModel] = []
+        private var updateTimer: Timer?
+        
         override open func prepareForReuse() {
             super.prepareForReuse()
+            clearEvents()
             subscriptions.removeAll(keepingCapacity: true)
         }
         
@@ -170,15 +174,72 @@ extension ChannelListViewController {
             separatorView.backgroundColor = appearance.separatorColor
         }
         
+        // MARK: - Event Management Methods
+        private func addEvent(_ event: ChannelEventView.Event, for user: ChatUser) {
+            let model = ChannelEventModel(
+                user: user,
+                event: event,
+                indicatorConfiguration: .indicator()
+            )
+            
+            if !eventModels.contains(where: { $0.user.id == model.user.id && $0.event == model.event }) {
+                eventModels.append(model)
+            }
+            
+            // Start timer if not already running
+            if updateTimer == nil {
+                updateNextAction()
+                startDisplayTimer()
+            }
+        }
+        
+        private func startDisplayTimer() {
+            updateTimer?.invalidate()
+            
+            updateTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+                self?.updateNextAction()
+            }
+        }
+        
+        private func stopDisplayTimer() {
+            updateTimer?.invalidate()
+            updateTimer = nil
+        }
+        
+        // MARK: - Public Methods for External Use
+        
+        private func removeEvent(for userId: UserId) {
+            eventModels.removeAll { $0.user.id == userId }
+            
+            if eventModels.isEmpty {
+                stopDisplayTimer()
+                update(messageText: data.attributedView)
+            }
+        }
+        
+        private func showTypingIndicator(for user: ChatUser) {
+            addEvent(.typing, for: user)
+        }
+        
+        private func showRecordingIndicator(for user: ChatUser) {
+            addEvent(.recording, for: user)
+        }
+        
+        private func hideIndicator(for userId: UserId) {
+            removeEvent(for: userId)
+        }
+        
         private func updateConstraint() {
             if !unreadCount.isHidden {
                 unreadCountWidthAnchorConstraint?.constant = 20
             }
         }
         
-        private func update(messageText: NSAttributedString?) {
+        public func update(messageText: NSAttributedString?) {
             messageLabel.attributedText = messageText
             updateCenterYConstraint()
+            messageLabel.setNeedsLayout()
+            messageLabel.layoutIfNeeded()
         }
         
         private func updateCenterYConstraint() {
@@ -257,32 +318,65 @@ extension ChannelListViewController {
             appearance.unreadCountFormatter.format(channel.newMessageCount)
         }
         
-        open func didStartTyping(user: ChatUser) {
-            let message = NSMutableAttributedString(string: "")
-            if !data.channel.isDirect {
-                message.append(NSAttributedString(
-                    string: "\(Components.typingView.display(typer: appearance.typingUserNameFormatter.format(user), split: .firstWord)): ",
-                    attributes: [
-                        .font: appearance.lastMessageSenderNameLabelAppearance.font,
-                        .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
-                    ]
-                ))
+        open func updateNextAction() {
+            guard !eventModels.isEmpty else {
+                clearEvents()
+                return
             }
-            message.append(NSAttributedString(
-                string: "\(L10n.Channel.Member.typing)...",
-                attributes: [
-                    .font: appearance.typingLabelAppearance.font,
-                    .foregroundColor: appearance.typingLabelAppearance.foregroundColor]
-            ))
-            update(messageText: message)
-            messageLabel.setNeedsLayout()
-            messageLabel.layoutIfNeeded()
+            
+            // Get current event to display
+            let currentModel = eventModels.removeFirst()
+            
+            // Build attributed text using priority models
+            let attributedMessage = buildAttributedMessage(for: [currentModel])
+            update(messageText: attributedMessage)
+
+        }
+
+        open func clearEvents() {
+            eventModels.removeAll()
+            stopDisplayTimer()
+            update(messageText: data.attributedView)
+        }
+        
+        open func buildAttributedMessage(for models: [ChannelEventModel]) -> NSAttributedString {
+            guard let model = models.first else {
+                return data.attributedView
+            }
+            let message = NSMutableAttributedString()
+
+            if !data.channel.isDirect {
+                let userName = appearance.typingUserNameFormatter.format(model.user)
+                let nameAttributes: [NSAttributedString.Key: Any] = [
+                    .font: appearance.lastMessageSenderNameLabelAppearance.font,
+                    .foregroundColor: appearance.lastMessageSenderNameLabelAppearance.foregroundColor
+                ]
+                message.append(NSAttributedString(string: "\(userName): ", attributes: nameAttributes))
+            }
+
+            let actionAttributes: [NSAttributedString.Key: Any] = [
+                .font: appearance.typingLabelAppearance.font,
+                .foregroundColor: appearance.typingLabelAppearance.foregroundColor
+            ]
+            message.append(NSAttributedString(string: "\(model.event.title)...", attributes: actionAttributes))
+
+            return message
+        }
+        
+        open func didStartTyping(user: ChatUser) {
+            showTypingIndicator(for: user)
         }
         
         open func didStopTyping(user: ChatUser) {
-            update(messageText: data.attributedView)
-            messageLabel.setNeedsLayout()
-            messageLabel.layoutIfNeeded()
+            hideIndicator(for: user.id)
+        }
+        
+        open func didStartRecording(user: ChatUser) {
+            showRecordingIndicator(for: user)
+        }
+        
+        open func didStopRecording(user: ChatUser) {
+            hideIndicator(for: user.id)
         }
         
         open func subscribeForPresence() {

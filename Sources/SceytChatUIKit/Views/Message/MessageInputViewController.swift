@@ -645,20 +645,6 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         action = .send(true)
         currentState = nil
         nextState = nil
-        //        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-        //            guard let self else { return }
-        //            let rnd1 = arc4random_uniform(UInt32(min(Self.loren.count, 40)))
-        //            let rnd2 = arc4random_uniform(UInt32(min(Self.loren.count, 30)))
-        //            let link1 = links.randomElement() ?? ""
-        //            let link2 = links.randomElement() ?? ""
-        //            let link3 = links.randomElement() ?? ""
-        //            self.inputTextView.text = "\(Self._textIndex) \(link1) \(Self.loren.substring(toIndex: Int(rnd1))) \(link2) \(Self.loren.substring(toIndex: Int(rnd2))) \(link3)"
-        //            Self._textIndex += 1
-        //            if Self._textIndex > 1000, Self._textIndex % 1000 == 0 {
-        //                return
-        //            }
-        //            self.sendButtonAction(self.sendButton)
-        //        }
     }
     
     open func addReply(layoutModel: MessageLayoutModel) {
@@ -963,6 +949,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     open func toggleAttribute(component: ChatMessage.BodyAttribute.AttributeType, range: NSRange, textView: UITextView) {
+        // Prevent text attribute changes when recording audio
+        if isRecording {
+            return
+        }
+        
         guard let mutableText = textView.attributedText.mutableCopy() as? NSMutableAttributedString
         else { return }
         
@@ -1042,6 +1033,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     // MARK: UITextViewDelegate
 
     open func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Prevent text input when recording audio
+        if isRecording {
+            return false
+        }
+        
         textView.typingAttributes[.foregroundColor] = appearance.inputAppearance.textInputAppearance.labelAppearance.foregroundColor
         
         if text == " " {
@@ -1064,6 +1060,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     public func textViewDidChangeSelection(_ textView: UITextView) {
+        // Prevent text selection when recording audio
+        if isRecording {
+            return
+        }
+        
         var selectedRange = textView.selectedRange
         if selectedRange.length > 0 {
             if textView.text[selectedRange.location] == mentionTriggerPrefix {
@@ -1087,6 +1088,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     public func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        // Prevent showing edit menu when recording audio
+        if isRecording {
+            return nil
+        }
+        
         let filteredActions: Set<String> = Set([
             "com.apple.menu.format",
             "com.apple.menu.replace"

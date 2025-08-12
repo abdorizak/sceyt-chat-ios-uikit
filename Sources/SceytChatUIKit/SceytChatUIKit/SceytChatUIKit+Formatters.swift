@@ -80,6 +80,8 @@ extension SceytChatUIKit {
         
         public var draftMessageBodyFormatter: any DraftMessageBodyFormatting = DraftMessageBodyFormatter()
         
+        public var channelEventTitleFormatter: any ChannelEventTitleFormatting = ChannelEventTitleFormatter()
+        
         public init() {}
     }
 }

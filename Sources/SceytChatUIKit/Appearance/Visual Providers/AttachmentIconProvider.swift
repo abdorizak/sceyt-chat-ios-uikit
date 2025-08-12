@@ -28,7 +28,7 @@ public struct AttachmentIconProvider: AttachmentIconProviding {
 
 public struct SenderNameColorProvider: UserColorProviding {
     public func provideVisual(for user: ChatUser) -> UIColor {
-        .initial(title: user.id)
+        DefaultColors.initial(title: user.id)
     }
 }
 

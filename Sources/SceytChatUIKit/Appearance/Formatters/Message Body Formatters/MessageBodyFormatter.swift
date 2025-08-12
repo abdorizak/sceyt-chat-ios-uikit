@@ -30,6 +30,8 @@ open class MessageBodyFormatter: MessageBodyFormatting {
             let bodyColor = messageBodyAttributes.bodyLabelAppearance.foregroundColor
             let linkFont = messageBodyAttributes.linkLabelAppearance.font
             let linkColor = messageBodyAttributes.linkLabelAppearance.foregroundColor
+            let phoneNumberFont = messageBodyAttributes.linkLabelAppearance.font
+            let phoneNumberColor = messageBodyAttributes.linkLabelAppearance.foregroundColor
             let mentionFont = messageBodyAttributes.mentionLabelAppearance.font
             let mentionColor = messageBodyAttributes.mentionLabelAppearance.foregroundColor
             
@@ -149,6 +151,17 @@ open class MessageBodyFormatter: MessageBodyFormatting {
                 items.append(.link(match.range, match.url))
             }
             
+            let phoneMatches = DataDetector.getPhoneNumbers(text: text.string)
+            for phoneMatche in phoneMatches {
+                let linkAttributes: [NSAttributedString.Key : Any] = [
+                    NSAttributedString.Key.foregroundColor: phoneNumberColor,
+                    NSAttributedString.Key.underlineColor: phoneNumberColor,
+                    NSAttributedString.Key.font: phoneNumberFont,
+                    NSAttributedString.Key.underlineStyle: NSUnderlineStyle.single.rawValue
+                ]
+                text.addAttributes(linkAttributes, range: phoneMatche.range)
+                items.append(.phone(phoneMatche.range, phoneMatche.phoneNumber ?? ""))
+            }
             return (text, items)
         }
     }

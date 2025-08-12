@@ -84,7 +84,7 @@ final class ConnectionService: ClientConnectionHandler {
                 }
             }
             if let data = data {
-                if let token =  (try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: String])?["token"] {
+                if let object = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: Any], let token = object["token"] as? String {
                     _callback(token, error)
                 } else {
                     _callback(nil, NSError(domain: "com.sceyt.uikit.DemoApp", code: -2, userInfo: [NSLocalizedDescriptionKey: "\(String(describing: String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii)))"]))

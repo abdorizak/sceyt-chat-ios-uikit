@@ -11,4 +11,6 @@ import SceytChat
 extension ChannelEvent {
     static let startTyping = "start_typing"
     static let stopTyping = "stop_typing"
+    static let startRecording = "start_recording"
+    static let stopRecording = "stop_recording"
 }

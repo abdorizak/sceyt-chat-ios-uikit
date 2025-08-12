@@ -422,6 +422,7 @@ open class ChannelViewController: ViewController,
             .sink { [unowned self] in
                 switch $0 {
                 case .send(let shouldClearText):
+                    self.channelViewModel.isTyping = false
                     sendMessage(
                         createMessage(shouldClearText: shouldClearText),
                         shouldClearText: shouldClearText
@@ -446,8 +447,12 @@ open class ChannelViewController: ViewController,
                         }
                     }
                 case .didStartRecording:
+                    logger.info("🎧 did start recording")
+                    self.channelViewModel.isRecording = true
                     didStartVoiceRecording()
                 case .didStopRecording:
+                    logger.info("🎧 did stop recording")
+                    self.channelViewModel.isRecording = false
                     didStopVoiceRecording()
                 }
             }.store(in: &subscriptions)
@@ -463,8 +468,8 @@ open class ChannelViewController: ViewController,
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.updateNavigationItems()
-                self.collectionView.reloadDataIfNeeded()
+                updateNavigationItems()
+                collectionView.reloadData()
             }.store(in: &subscriptions)
         
         channelViewModel.$isEditing
@@ -474,16 +479,16 @@ open class ChannelViewController: ViewController,
                 guard let self else { return }
                 self.updateNavigationItems()
                 if isEditing {
-                    self.shouldAnimateEditing = true
-                    self.collectionView.reloadDataIfNeeded()
+                    shouldAnimateEditing = true
+                    collectionView.reloadData()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
                         self?.shouldAnimateEditing = false
                     }
-                    self.bottomView.removeFromSuperview()
+                    bottomView.removeFromSuperview()
                 } else {
                     UIView.animate(withDuration: 0.3) { [weak self] in
                         guard let self else { return }
-                        self.collectionView.visibleCells.forEach {
+                        collectionView.visibleCells.forEach {
                             guard let cell = $0 as? MessageCell, cell.isEditing else { return }
                             let checkBoxSize = MessageCell.Layouts.checkBoxSize + 2 * MessageCell.Layouts.checkBoxPadding
                             cell.contentView.alpha = 1
@@ -493,7 +498,7 @@ open class ChannelViewController: ViewController,
                             }
                         }
                     } completion: { [weak self] _ in
-                        self?.collectionView.reloadDataIfNeeded()
+                        self?.collectionView.reloadData()
                     }
                     self.showBottomViewIfNeeded()
                 }
@@ -815,38 +820,55 @@ open class ChannelViewController: ViewController,
         titleView.subLabel.attributedText = sub
     }
     
-    open func showTyping(
-        member: String,
-        isTyping: Bool
+    open func showActivity(
+        channel: ChatChannel,
+        user: ChatUser,
+        isActive: Bool,
+        mode: HeaderView.Mode,
+        indicator: Indicator.Configuration
     ) -> Int {
-        if let titleView = navigationItem.titleView as? HeaderView,
-           titleView.mode == .typing {
-            titleView.typingView.update(typer: member, typing: isTyping)
+
+        if let titleView = navigationItem.titleView as? HeaderView, titleView.mode == mode {
+            titleView.channelEventView.update(channel: channel, model: ChannelEventModel(user: user, event: mode == .recording ? .recording : .typing, indicatorConfiguration: indicator), isActive: isActive)
             navigationController?.navigationBar.setNeedsLayout()
-            return titleView.typingView.typers.count
+            return titleView.channelEventView.models.count
         }
-        titleView.mode = .typing
-        
-        var attrs = [NSAttributedString.Key: Any]()
-        
-        attrs[.font] = titleView.appearance.titleLabelAppearance.font
-        attrs[.foregroundColor] = titleView.appearance.titleLabelAppearance.foregroundColor
-        
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: titleView.appearance.titleLabelAppearance.font,
+            .foregroundColor: titleView.appearance.titleLabelAppearance.foregroundColor
+        ]
+
         let head = NSMutableAttributedString(
             string: appearance.headerAppearance.titleFormatter.format(channelViewModel.channel),
             attributes: attrs
         )
-        
+
         titleView.headLabel.attributedText = head
-        titleView.typingView.label.font = titleView.appearance.subtitleLabelAppearance.font
-        titleView.typingView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
-        titleView.typingView.update(
-            typer: member,
-            typing: isTyping
+        titleView.channelEventView.label.font = titleView.appearance.subtitleLabelAppearance.font
+        titleView.channelEventView.label.textColor = titleView.appearance.subtitleLabelAppearance.foregroundColor
+        titleView.channelEventView.update(channel: channel, model: ChannelEventModel(user: user, event: mode == .recording ? .recording : .typing, indicatorConfiguration: indicator), isActive: isActive)
+        titleView.mode = mode
+        return titleView.channelEventView.models.count
+    }
+
+    open func showTyping(channel: ChatChannel, user: ChatUser, isTyping: Bool) -> Int {
+        return showActivity(channel: channel, user: user, isActive: isTyping, mode: .typing, indicator: .indicator(colors: [
+                UIColor.secondaryText.withAlphaComponent(1),
+                UIColor.secondaryText.withAlphaComponent(0.7)
+            ])
         )
-        return titleView.typingView.typers.count
     }
     
+    open func showRecording(channel: ChatChannel, user: ChatUser, isRecording: Bool) -> Int {
+        return showActivity(channel: channel, user: user, isActive: isRecording, mode: .recording, indicator: .indicator(colors: [
+            UIColor.secondaryText.withAlphaComponent(1),
+            UIColor.secondaryText.withAlphaComponent(0.8),
+            UIColor.secondaryText.withAlphaComponent(0.6),
+            UIColor.secondaryText.withAlphaComponent(0.4)
+        ])
+        )
+    }
+   
     // MARK: Actions
     
     @objc
@@ -1426,6 +1448,8 @@ open class ChannelViewController: ViewController,
                 self.didSelectAvatar(layoutModel: model)
             case .didTapMentionUser(let userId):
                 self.didSelectMentionUser(userId: userId, layoutModel: model)
+            case .didTapPhoneNumber(let phoneNumber), .didLongPressPhoneNumber(let phoneNumber):
+                self.didSelectPhoneNumber(phoneNumber, layoutModel: model)
             case .didSwipe:
                 self.reply(layoutModel: model, in: false)
             }
@@ -1710,7 +1734,26 @@ open class ChannelViewController: ViewController,
                 self?.showProfile(user: user)
             }
         }
-        
+    }
+    
+    open func didSelectPhoneNumber(_ phoneNumber: String, layoutModel: MessageLayoutModel) {
+        logger.debug("did select phone number \(phoneNumber)")
+        guard let phoneNumberLink = URL(string: "tel://\(phoneNumber)") else {
+            return
+        }
+        self.router
+            .showPhoneAlert(
+                phoneNumber,
+                actions: [(L10n.Message.Action.Title.call, .default), (L10n.Link.copy, .default)])
+        { [weak self] actionTitle in
+            if actionTitle == L10n.Message.Action.Title.call {
+                self?.showLink(phoneNumberLink)
+            } else if actionTitle == L10n.Link.copy {
+                UIPasteboard.general.string = phoneNumber
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            }
+        }
     }
     
     open func showProfile(user: ChatUser) {
@@ -1893,13 +1936,37 @@ open class ChannelViewController: ViewController,
                         }
                     }
                 }
+
                 guard let self = self else { return }
+
                 if isInsertingItemsToTop {
+                    // Get content height after new items were inserted
                     let contentHeightAfterInsertion = self.collectionView.contentSize.height
+
+                    // Calculate how much the content height has grown
                     let heightDifference = contentHeightAfterInsertion - contentHeightBeforeInsertion
-                    let newOffsetY = offsetBeforeInsertion + heightDifference
+
+                    // Preserve scroll position by adjusting offset based on height increase
+                    var newOffsetY = offsetBeforeInsertion + heightDifference
+
+                    // Handle special case: initial load when collectionView was empty
+                    if contentHeightBeforeInsertion == 0 && offsetBeforeInsertion == 0 {
+
+                        // If content doesn't fill the screen, no need to scroll - just keep offset at top
+                        if collectionView.frame.height > collectionView.contentSize.height {
+                            newOffsetY = 0.0
+                        } else {
+                            // If content is scrollable, subtract visible height (excluding bottom inset)
+                            // to align first inserted items with the top of the visible area
+                            let visibleHeight = collectionView.bounds.height - collectionView.adjustedContentInset.bottom
+                            newOffsetY -= visibleHeight
+                        }
+                    }
+
+                    // Apply the adjusted offset to maintain scroll position smoothly
                     self.collectionView.contentOffset.y = newOffsetY
                 }
+
                 UIView.performWithoutAnimation {
                     let reloads = paths.reloads + moves.map(\.to)
                     if !reloads.isEmpty {
@@ -1908,7 +1975,7 @@ open class ChannelViewController: ViewController,
                         }
                     }
                 }
-                
+
                 if needsToScrollBottom, !(self.collectionView.isDragging || self.collectionView.isDecelerating) {
                     scrollBottom = true
                 } else {
@@ -1927,7 +1994,7 @@ open class ChannelViewController: ViewController,
             if let selectMessageId, let indexPath = channelViewModel.indexPathOf(messageId: selectMessageId) {
                 onEvent(.reloadDataAndSelect(indexPath: indexPath, messageId: selectMessageId))
             } else {
-                collectionView.reloadDataIfNeeded()
+                collectionView.reloadData()
             }
             updateUnreadViewVisibility()
             showEmptyViewIfNeeded()
@@ -1951,16 +2018,24 @@ open class ChannelViewController: ViewController,
             unreadMessageIndexPath = indexPath
         case .typing(let isTyping, let user):
             if !channelViewModel.channel.isDirect {
-                if showTyping(member: appearance.headerAppearance.typingUserNameFormatter.format(user),
-                              isTyping: isTyping) == 0 {
+                if showTyping(channel: channelViewModel.channel, user: user, isTyping: isTyping) == 0 {
                     updateTitle()
                 }
             } else {
                 if isTyping {
-                    _ = showTyping(
-                        member: channelViewModel.channel.channelType == .direct ? "" : appearance.headerAppearance.typingUserNameFormatter.format(user),
-                        isTyping: isTyping
-                    )
+                    _ = showTyping(channel: channelViewModel.channel, user: user, isTyping: isTyping)
+                } else {
+                    updateTitle()
+                }
+            }
+        case .recording(let isRecording, let user):
+            if !channelViewModel.channel.isDirect {
+                if showRecording(channel: channelViewModel.channel, user: user, isRecording: isRecording) == 0 {
+                    updateTitle()
+                }
+            } else {
+                if isRecording {
+                    _ = showRecording(channel: channelViewModel.channel, user: user, isRecording: isRecording)
                 } else {
                     updateTitle()
                 }
@@ -1973,7 +2048,7 @@ open class ChannelViewController: ViewController,
                 case .default:
                     self.showTitle(title: self.channelViewModel.getTitleForHeader(with: appearance.headerAppearance),
                                    subTitle: self.channelViewModel.getSubtitleForHeader(with: appearance.headerAppearance))
-                case .typing:
+                case .typing, .recording:
                     // Force the view to update
                     self.titleView.mode = self.titleView.mode
                 }
