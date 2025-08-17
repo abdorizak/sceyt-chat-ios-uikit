@@ -108,6 +108,7 @@ public struct MessageSearchCoordinator: SearchCoordinator {
     }
     
     public func setLoadedNearMessages(messageId: MessageId) {
+        debugPrint("[EVENT] setLoadedNearMessages", messageId)
         loadNearMessages.insert(messageId)
     }
 

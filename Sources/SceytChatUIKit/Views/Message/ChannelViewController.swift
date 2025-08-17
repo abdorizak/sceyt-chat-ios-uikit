@@ -10,16 +10,17 @@ import SceytChat
 import UIKit
 
 open class ChannelViewController: ViewController,
-                      UIGestureRecognizerDelegate,
-                      UICollectionViewDelegateFlowLayout,
-                      UICollectionViewDataSource,
-                      UINavigationControllerDelegate,
-                      UISearchBarDelegate,
-                      ContextMenuDataSource,
-                      ContextMenuDelegate,
-                      ContextMenuSnapshotDelegate,
-                      AttachmentPreviewDataSourceDelegate
-{
+                                  UIGestureRecognizerDelegate,
+                                  UICollectionViewDelegateFlowLayout,
+                                  UICollectionViewDataSource,
+                                  UINavigationControllerDelegate,
+                                  UISearchBarDelegate,
+                                  ContextMenuDataSource,
+                                  ContextMenuDelegate,
+                                  ContextMenuSnapshotDelegate,
+                                  AttachmentPreviewDataSourceDelegate,
+                                  MessagesCollectionViewLayoutDelegate {
+    
     open var channelViewModel: ChannelViewModel!
     
     open lazy var router = Components.channelRouter
@@ -277,6 +278,7 @@ open class ChannelViewController: ViewController,
         
         collectionView.delegate = self
         collectionView.dataSource = self
+        collectionView.messagesLayoutDelegate = self
         
         updateUnreadViewVisibility()
         updateTitle()
@@ -634,7 +636,7 @@ open class ChannelViewController: ViewController,
     func goTo(indexPath: IndexPath, completion: @escaping (MessageCell) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: true)
+            self.collectionView.scrollToItem(at: indexPath, pos: .centered, animated: true)
             UIView.animate(withDuration: 0.3, delay: 0, options: .allowUserInteraction) { [weak self] in
             } completion: { [weak self] _ in
                 guard let self else { return }
@@ -1084,6 +1086,14 @@ open class ChannelViewController: ViewController,
                 loader.hide()
             }
         }
+    }
+    
+    // MARK: MessagesCollectionView delegate
+    public func uniqueIDForItem(at indexPath: IndexPath) -> String? {
+        if let message = channelViewModel.layoutModel(at: indexPath)?.message {
+            return "\(message.tid)" + "\(message.createdAt)"
+        }
+        return nil
     }
     
     // MARK: UIGestureRecognizer delegate
@@ -1836,7 +1846,7 @@ open class ChannelViewController: ViewController,
             guard let self else { return }
             UIView.animate(withDuration: 0.3, delay: 0, options: .allowUserInteraction) { [weak self] in
                 guard let self else { return }
-                self.collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: false)
+                self.collectionView.scrollToItem(at: indexPath, pos: .centered, animated: false)
             } completion: { [weak self] _ in
                 guard let self else { return }
                 if let cell = self.collectionView.cellForItem(at: indexPath) as? MessageCell {
@@ -1877,6 +1887,7 @@ open class ChannelViewController: ViewController,
     // MARK: ViewModel Events
     
     open func onEvent(_ event: ChannelViewModel.Event) {
+        debugPrint("[EVENT] V: \(event)")
         switch event {
         case .update(let paths):
             var inserts = paths.inserts.sorted()
@@ -1912,6 +1923,13 @@ open class ChannelViewController: ViewController,
                 isInsertingItemsToTop = true
             } else {
                 isInsertingItemsToTop = false
+            }
+            if isInsertingItemsToTop {
+                debugPrint("[EVENT] CACHE DELETED TOP UPDATE")
+                collectionView.reloadDataAndKeepOffset()
+                return
+            } else {
+                debugPrint("[EVENT] CACHE DELETED ANY UPDATE", "deletes", deletes.count, "inserts", inserts.count)
             }
             
             var isInsertLastIndexPath: Bool {
@@ -2133,6 +2151,14 @@ open class ChannelViewController: ViewController,
             if selectMessageId == messageId,
                 lastAnimatedIndexPath == indexPath,
                collectionView.visibleAttributes.contains(where: {$0.indexPath == indexPath}) {
+                if let cell = collectionView.cell(for: indexPath, cellType: MessageCell.self),
+                   cell.highlightMode == .none {
+                    if channelViewModel.isSearching {
+                        cell.highlightMode = .search
+                    } else if userSelectOnRepliedMessage != nil {
+                        cell.highlightMode = .reply
+                    }
+                }
                 return
             }
             var mode = MessageCell.HighlightMode.search
@@ -2164,7 +2190,7 @@ open class ChannelViewController: ViewController,
             }
             
             lastAnimatedIndexPath = indexPath
-            collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: true)
+            collectionView.scrollToItem(at: indexPath, pos: .centered, animated: true)
             searchControlsView
                 .update(
                     with: channelViewModel.searchResult,
@@ -2172,10 +2198,10 @@ open class ChannelViewController: ViewController,
                 )
             //ReSelect after animation
         case let .reloadDataAndSelect(indexPath, messageId):
-            var pos: CollectionView.ScrollPosition {
+            var pos: MessagesCollectionView.MessageScrollPosition {
                 switch channelViewModel.searchDirection {
                 case .none:
-                    return .centeredHorizontally
+                    return .centered
                 case .next:
                     return .top
                 case .prev:
@@ -2200,7 +2226,7 @@ open class ChannelViewController: ViewController,
                 selectMessageId = messageId
             }
             NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
-            collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: true)
+            collectionView.scrollToItem(at: indexPath, pos: .centered, animated: true)
             showEmptyViewIfNeeded()
         }
     }

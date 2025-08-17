@@ -178,7 +178,7 @@ open class ChannelMessageProvider: DataProvider {
     
     open func loadNearMessages(
         near messageId: MessageId,
-        completion: ((Error?) -> Void)? = nil
+        completion: ((Result<[Message], Error>) -> Void)? = nil
     ) {
         loadNearMessages(
             query: defaultQuery,
@@ -190,18 +190,17 @@ open class ChannelMessageProvider: DataProvider {
     open func loadNearMessages(
         query: MessageListQuery,
         near messageId: MessageId,
-        completion: ((Error?) -> Void)? = nil) {
+        completion: ((Result<[Message], Error>) -> Void)? = nil) {
             query.loadNear(messageId: messageId)
             {  (_, messages, error) in
-                guard let messages = messages
+                guard let messages
                 else {
-                    completion?(error)
+                    completion?(.failure(error ?? SceytChatError.unknown))
                     return
                 }
-                self.store(
-                    messages: messages,
-                    completion: completion
-                )
+                self.store(messages: messages) {error in
+                    completion?(.success(messages))
+                }
                 self.sendReceivedMarker(messages: messages)
             }
         }
@@ -211,12 +210,14 @@ open class ChannelMessageProvider: DataProvider {
         triggerMessage: MessageId? = nil,
         completion: ((Error?) -> Void)? = nil
     ) {
+        debugPrint("[MESSAGE STORE] START", messages.count)
         database.write ({
             $0.createOrUpdate(
                 messages: messages,
                 channelId: self.channelId
             )
         }) { error in
+            debugPrint("[MESSAGE STORE] END", error)
             completion?(error)
         }
         

@@ -14,6 +14,7 @@ class AccountPickerViewController: ViewController {
     // MARK: - Properties
     var onUserIdSelected: ((String) -> Void)?
     let userIds = Array(users.shuffled().prefix(5))
+    let recentSignedInUsers = RecentSignedUsers.users
     
     // MARK: - Views
     lazy var titleLabel = {
@@ -57,30 +58,60 @@ extension AccountPickerViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         tableView.cellForRow(at: indexPath)?.accessoryView = UIImageView(image: .radioSelected)
-        onUserIdSelected?(userIds[indexPath.row])
+        var user: String {
+            if indexPath.section == 0, !recentSignedInUsers.isEmpty {
+                return recentSignedInUsers[indexPath.row]
+            }
+             return userIds[indexPath.row]
+        }
+        onUserIdSelected?(user)
         dismiss(animated: true)
     }
 }
 
 extension AccountPickerViewController: UITableViewDataSource {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        recentSignedInUsers.isEmpty ? 1 : 2
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        userIds.count
+        if section == 0, !recentSignedInUsers.isEmpty {
+            return recentSignedInUsers.count
+        }
+         return userIds.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(for: indexPath, cellType: UITableViewCell.self)
+        
+        var user: String {
+            if indexPath.section == 0, !recentSignedInUsers.isEmpty {
+                return recentSignedInUsers[indexPath.row]
+            }
+             return userIds[indexPath.row]
+        }
         
         let bgColorView = UIView()
         bgColorView.backgroundColor = SceytChatUIKit.shared.theme.colors.surface1
         cell.selectedBackgroundView = bgColorView
         
         cell.backgroundColor = .clear
-        cell.textLabel?.text = "@\(userIds[indexPath.row])"
+        cell.textLabel?.text = "@\(user)"
         cell.textLabel?.font = .systemFont(ofSize: .init(16), weight: .semibold)
         cell.textLabel?.textColor = SceytChatUIKit.shared.theme.colors.primaryText
         cell.imageView?.image = .defaultAvatar
         cell.accessoryView = UIImageView(image: .radio)
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        if !recentSignedInUsers.isEmpty {
+            if section == 0 {
+                return "Recent Signed users"
+            } else if section == 1 {
+                return "All users"
+            }
+        }
+        return nil
     }
 }

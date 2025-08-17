@@ -37,4 +37,8 @@ open class ChatLoadRange: Equatable {
         lhs.startMessageId == rhs.startMessageId &&
         lhs.endMessageId == rhs.endMessageId
     }
+    
+    public func contains(_ messageId: MessageId) -> Bool {
+        messageId >= startMessageId && messageId <= endMessageId
+    }
 }

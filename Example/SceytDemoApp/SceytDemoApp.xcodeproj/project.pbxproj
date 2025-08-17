@@ -7,19 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		23E2A10C2D5CD79900CA0E09 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 23E2A10B2D5CD79900CA0E09 /* SceytChatUIKit */; };
-		560E295D2CC6788C003A4A17 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 560E295C2CC6788C003A4A17 /* SceytChatUIKit */; };
+		160E96EB2E43E0FE000E646F /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 160E96EA2E43E0FE000E646F /* SceytChatUIKit */; };
+		16CA98232E413367002ABAD9 /* RecentSignedUsers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16CA98222E413367002ABAD9 /* RecentSignedUsers.swift */; };
 		561169DD2CBD44A300DC1979 /* SplashViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561169DC2CBD44A300DC1979 /* SplashViewController.swift */; };
 		561169DF2CBD460100DC1979 /* LandingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561169DE2CBD460100DC1979 /* LandingViewController.swift */; };
 		561169E12CBD511500DC1979 /* CustomPresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561169E02CBD511500DC1979 /* CustomPresentationController.swift */; };
 		561169E32CBD512D00DC1979 /* CustomInteractiveTransitionNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561169E22CBD512D00DC1979 /* CustomInteractiveTransitionNavigationController.swift */; };
 		561169E52CBD51AC00DC1979 /* AccountPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561169E42CBD51AC00DC1979 /* AccountPickerViewController.swift */; };
-		5649B9992CBE5C4400E3B190 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5649B9982CBE5C4400E3B190 /* SceytChatUIKit */; };
 		5649B99D2CBE79F000E3B190 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B99C2CBE79F000E3B190 /* ProfileViewController.swift */; };
 		5649B99F2CBE907400E3B190 /* EditProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B99E2CBE907400E3B190 /* EditProfileViewController.swift */; };
 		5649B9A82CBFA84800E3B190 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9A72CBFA84800E3B190 /* AppCoordinator.swift */; };
 		5649B9AA2CBFA91400E3B190 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9A92CBFA91400E3B190 /* Debouncer.swift */; };
-		5649B9AD2CBFAADE00E3B190 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5649B9AC2CBFAADE00E3B190 /* SceytChatUIKit */; };
 		5649B9AF2CBFB43100E3B190 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9AE2CBFB43100E3B190 /* String+Extensions.swift */; };
 		5649B9B12CBFB44F00E3B190 /* ProfileEditNameCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9B02CBFB44F00E3B190 /* ProfileEditNameCell.swift */; };
 		5649B9B32CBFB45D00E3B190 /* ProfileEditAvatarCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9B22CBFB45D00E3B190 /* ProfileEditAvatarCell.swift */; };
@@ -27,14 +25,7 @@
 		5649B9B72CBFB4E600E3B190 /* UIView+Extensiosn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9B62CBFB4E600E3B190 /* UIView+Extensiosn.swift */; };
 		5649B9B92CBFB62800E3B190 /* UsernameValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9B82CBFB62800E3B190 /* UsernameValidation.swift */; };
 		5649B9BB2CBFBA0000E3B190 /* RequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5649B9BA2CBFBA0000E3B190 /* RequestManager.swift */; };
-		5674A3052C7C8E6600C51A07 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5674A3042C7C8E6600C51A07 /* SceytChatUIKit */; };
-		5674A30D2C7CC17E00C51A07 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5674A30C2C7CC17E00C51A07 /* SceytChatUIKit */; };
-		5674A3162C7F670300C51A07 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5674A3152C7F670300C51A07 /* SceytChatUIKit */; };
-		5682FA142CBFDBD6007413C1 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5682FA132CBFDBD6007413C1 /* SceytChatUIKit */; };
-		5692FDFE2CC1416B00803B3F /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5692FDFD2CC1416B00803B3F /* SceytChatUIKit */; };
 		5692FE002CC159B300803B3F /* CustomChannelInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5692FDFF2CC159B300803B3F /* CustomChannelInfoViewController.swift */; };
-		5694FF382C664FBA008DA2DC /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5694FF372C664FBA008DA2DC /* SceytChatUIKit */; };
-		56F069CF2CC62D61003D74D8 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 56F069CE2CC62D61003D74D8 /* SceytChatUIKit */; };
 		56F88D9E2C00D3890010C3E4 /* UserDisplayNameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F88D9D2C00D3890010C3E4 /* UserDisplayNameFormatter.swift */; };
 		C51C930E2B565C9C0069F9DA /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C930D2B565C9C0069F9DA /* LoginViewController.swift */; };
 		C51C93102B5660CB0069F9DA /* ConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C930F2B5660CB0069F9DA /* ConnectionService.swift */; };
@@ -46,16 +37,14 @@
 		C54DF6C42AECF09400767983 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C54DF6C32AECF09400767983 /* Assets.xcassets */; };
 		C54DF6C72AECF09400767983 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C54DF6C52AECF09400767983 /* LaunchScreen.storyboard */; };
 		C54DF6CF2AECF19300767983 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54DF6CE2AECF19300767983 /* Config.swift */; };
-		C5B97EA42B5692070070C913 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = C5B97EA32B5692070070C913 /* SceytChatUIKit */; };
 		C5F467D42AF020B2009AB0E5 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = C5F467D32AF020B2009AB0E5 /* README.md */; };
-		ED1046B72E1933AE001294FA /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = ED1046B62E1933AE001294FA /* SceytChatUIKit */; };
-		ED2CBA082E018007001C5468 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = ED2CBA072E018007001C5468 /* SceytChatUIKit */; };
 		EDC887682E01C1A00077B1B2 /* Constraints+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC887672E01C1980077B1B2 /* Constraints+Extensions.swift */; };
 		EDC8876A2E01C1F30077B1B2 /* UIColor+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC887692E01C1EF0077B1B2 /* UIColor+Extensions.swift */; };
 		EDC8876C2E01C2D90077B1B2 /* UIViewController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC8876B2E01C2D20077B1B2 /* UIViewController+Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		16CA98222E413367002ABAD9 /* RecentSignedUsers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentSignedUsers.swift; sourceTree = "<group>"; };
 		561169DC2CBD44A300DC1979 /* SplashViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashViewController.swift; sourceTree = "<group>"; };
 		561169DE2CBD460100DC1979 /* LandingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingViewController.swift; sourceTree = "<group>"; };
 		561169E02CBD511500DC1979 /* CustomPresentationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomPresentationController.swift; sourceTree = "<group>"; };
@@ -98,20 +87,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				56F069CF2CC62D61003D74D8 /* SceytChatUIKit in Frameworks */,
-				5674A3162C7F670300C51A07 /* SceytChatUIKit in Frameworks */,
-				5674A30D2C7CC17E00C51A07 /* SceytChatUIKit in Frameworks */,
-				5649B9992CBE5C4400E3B190 /* SceytChatUIKit in Frameworks */,
-				5649B9AD2CBFAADE00E3B190 /* SceytChatUIKit in Frameworks */,
-				5682FA142CBFDBD6007413C1 /* SceytChatUIKit in Frameworks */,
-				560E295D2CC6788C003A4A17 /* SceytChatUIKit in Frameworks */,
-				5692FDFE2CC1416B00803B3F /* SceytChatUIKit in Frameworks */,
-				23E2A10C2D5CD79900CA0E09 /* SceytChatUIKit in Frameworks */,
-				ED2CBA082E018007001C5468 /* SceytChatUIKit in Frameworks */,
-				ED1046B72E1933AE001294FA /* SceytChatUIKit in Frameworks */,
-				5694FF382C664FBA008DA2DC /* SceytChatUIKit in Frameworks */,
-				C5B97EA42B5692070070C913 /* SceytChatUIKit in Frameworks */,
-				5674A3052C7C8E6600C51A07 /* SceytChatUIKit in Frameworks */,
+				160E96EB2E43E0FE000E646F /* SceytChatUIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,6 +155,7 @@
 		5649B9BC2CBFBCBF00E3B190 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				16CA98222E413367002ABAD9 /* RecentSignedUsers.swift */,
 				5649B9AE2CBFB43100E3B190 /* String+Extensions.swift */,
 				5649B9B42CBFB4D800E3B190 /* UITableView+Extensions.swift */,
 				5649B9B62CBFB4E600E3B190 /* UIView+Extensiosn.swift */,
@@ -240,20 +217,8 @@
 			);
 			name = SceytDemoApp;
 			packageProductDependencies = (
-				C5B97EA32B5692070070C913 /* SceytChatUIKit */,
-				5694FF372C664FBA008DA2DC /* SceytChatUIKit */,
 				5674A3042C7C8E6600C51A07 /* SceytChatUIKit */,
-				5674A30C2C7CC17E00C51A07 /* SceytChatUIKit */,
-				5674A3152C7F670300C51A07 /* SceytChatUIKit */,
-				5649B9982CBE5C4400E3B190 /* SceytChatUIKit */,
-				5649B9AC2CBFAADE00E3B190 /* SceytChatUIKit */,
-				5682FA132CBFDBD6007413C1 /* SceytChatUIKit */,
-				5692FDFD2CC1416B00803B3F /* SceytChatUIKit */,
-				56F069CE2CC62D61003D74D8 /* SceytChatUIKit */,
-				560E295C2CC6788C003A4A17 /* SceytChatUIKit */,
-				23E2A10B2D5CD79900CA0E09 /* SceytChatUIKit */,
-				ED2CBA072E018007001C5468 /* SceytChatUIKit */,
-				ED1046B62E1933AE001294FA /* SceytChatUIKit */,
+				160E96EA2E43E0FE000E646F /* SceytChatUIKit */,
 			);
 			productName = SceytDemoApp;
 			productReference = C54DF6B72AECF09100767983 /* SceytDemoApp.app */;
@@ -285,7 +250,7 @@
 			);
 			mainGroup = C54DF6AE2AECF09100767983;
 			packageReferences = (
-				ED1046B52E1933AE001294FA /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */,
+				160E96E92E43E0FE000E646F /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */,
 			);
 			productRefGroup = C54DF6B82AECF09100767983 /* Products */;
 			projectDirPath = "";
@@ -340,6 +305,7 @@
 				5649B99D2CBE79F000E3B190 /* ProfileViewController.swift in Sources */,
 				5649B9AA2CBFA91400E3B190 /* Debouncer.swift in Sources */,
 				EDC8876C2E01C2D90077B1B2 /* UIViewController+Extensions.swift in Sources */,
+				16CA98232E413367002ABAD9 /* RecentSignedUsers.swift in Sources */,
 				C54DF6BD2AECF09100767983 /* SceneDelegate.swift in Sources */,
 				EDC8876A2E01C1F30077B1B2 /* UIColor+Extensions.swift in Sources */,
 				561169DD2CBD44A300DC1979 /* SplashViewController.swift in Sources */,
@@ -589,66 +555,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		ED1046B52E1933AE001294FA /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */ = {
+		160E96E92E43E0FE000E646F /* XCLocalSwiftPackageReference "../../../sceyt-chat-ios-uikit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../../sceyt-chat-ios-uikit";
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		23E2A10B2D5CD79900CA0E09 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		560E295C2CC6788C003A4A17 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5649B9982CBE5C4400E3B190 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5649B9AC2CBFAADE00E3B190 /* SceytChatUIKit */ = {
+		160E96EA2E43E0FE000E646F /* SceytChatUIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SceytChatUIKit;
 		};
 		5674A3042C7C8E6600C51A07 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5674A30C2C7CC17E00C51A07 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5674A3152C7F670300C51A07 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5682FA132CBFDBD6007413C1 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5692FDFD2CC1416B00803B3F /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		5694FF372C664FBA008DA2DC /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		56F069CE2CC62D61003D74D8 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		C5B97EA32B5692070070C913 /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		ED1046B62E1933AE001294FA /* SceytChatUIKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = SceytChatUIKit;
-		};
-		ED2CBA072E018007001C5468 /* SceytChatUIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SceytChatUIKit;
 		};

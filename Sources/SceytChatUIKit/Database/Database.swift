@@ -27,7 +27,7 @@ public protocol Database {
                      completion: ((Result<Fetch, Error>) -> Void)?)
     
     var viewContext: NSManagedObjectContext { get }
-    var backgroundPerformContext: NSManagedObjectContext { get }
+    func newBackgroundPerformContext() -> NSManagedObjectContext
     var backgroundReadOnlyContext: NSManagedObjectContext { get }
     var backgroundReadOnlyObservableContext: NSManagedObjectContext { get }
     
@@ -73,13 +73,13 @@ public extension Database {
         completion: (() -> Void)? = nil
     ) {
         
-        if resetStalenessInterval {
-            self.backgroundPerformContext.stalenessInterval = 0
-        }
-        self.backgroundPerformContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.backgroundPerformContext.stalenessInterval = -1
-        }
+//        if resetStalenessInterval {
+//            self.backgroundPerformContext.stalenessInterval = 0
+//        }
+//        self.backgroundPerformContext.refreshAllObjects()
+//        if resetStalenessInterval {
+//            self.backgroundPerformContext.stalenessInterval = -1
+//        }
         
         if resetStalenessInterval {
             self.backgroundReadOnlyObservableContext.stalenessInterval = 0
@@ -134,7 +134,6 @@ public final class PersistentContainer: NSPersistentContainer, Database {
         }
         viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         viewContext.automaticallyMergesChangesFromParent = true
-        addObservers()
     }
     
     private func tryRecreatePersistentStore(completion: @escaping ((Error?) -> Void)) {
@@ -181,12 +180,13 @@ public final class PersistentContainer: NSPersistentContainer, Database {
         persistentStoreDescriptions = [description]
     }
     
-    public lazy var backgroundPerformContext: NSManagedObjectContext = {
+    public func newBackgroundPerformContext() -> NSManagedObjectContext {
         let context = newBackgroundContext()
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         context.automaticallyMergesChangesFromParent = true
+        context.userInfo["isWriteContext"] = true
         return context
-    }()
+    }
    
     public lazy var backgroundReadOnlyContext: NSManagedObjectContext = {
         let context = newBackgroundContext()
@@ -213,20 +213,25 @@ public final class PersistentContainer: NSPersistentContainer, Database {
     public final func write(resultQueue: DispatchQueue,
                             _ perform: @escaping (NSManagedObjectContext) throws -> Void,
                             completion: ((Error?) -> Void)? = nil) {
+        let backgroundPerformContext = newBackgroundPerformContext()
+        addObservers(context: backgroundPerformContext)
         backgroundPerformContext.perform {[weak self] in
             guard let self = self else { return }
+            
             do {
-                defer { resultQueue.async { completion?(nil) } }
-                try perform(self.backgroundPerformContext)
-                for object in self.backgroundPerformContext.updatedObjects {
-                    if object.changedValues().isEmpty {
-                        self.backgroundPerformContext.refresh(object, mergeChanges: false)
+                defer {
+                    resultQueue.async {
+                        self.removeObservers(context: backgroundPerformContext)
+                        completion?(nil)
                     }
                 }
-                if self.backgroundPerformContext.hasChanges {
-                    self.logUncommittedChanges(context: self.backgroundPerformContext)
+                try perform(backgroundPerformContext)
+                debugPrint(
+                    "[MESSAGE STORE] WRITE")                
+                if backgroundPerformContext.hasChanges {
+                    self.logUncommittedChanges(context: backgroundPerformContext)
                     logger.info("[DATABASE] Will save on backgroundPerformContext")
-                    try self.backgroundPerformContext.save()
+                    try backgroundPerformContext.save()
                     logger.info("[DATABASE] Saved on backgroundPerformContext")
                 }
             } catch {
@@ -283,17 +288,18 @@ public final class PersistentContainer: NSPersistentContainer, Database {
     
     public final func syncWrite(_ perform: @escaping (NSManagedObjectContext) throws -> Void) throws {
         var _error: Error?
+        let backgroundPerformContext = newBackgroundPerformContext()
         backgroundPerformContext.performAndWait {
             do {
-                try perform(self.backgroundPerformContext)
-                self.backgroundPerformContext.updatedObjects.forEach {
+                try perform(backgroundPerformContext)
+                backgroundPerformContext.updatedObjects.forEach {
                     guard $0.changedValues().isEmpty else {
                         return
                     }
-                    self.backgroundPerformContext.refresh($0, mergeChanges: false)
+                    backgroundPerformContext.refresh($0, mergeChanges: false)
                 }
-                guard self.backgroundPerformContext.hasChanges else { return }
-                try self.backgroundPerformContext.save()
+                guard backgroundPerformContext.hasChanges else { return }
+                try backgroundPerformContext.save()
                 
             } catch {
                 _error = error
@@ -357,16 +363,18 @@ public final class PersistentContainer: NSPersistentContainer, Database {
     }
     
     public func recreate(completion: @escaping ((Error?) -> Void)) {
+        let backgroundPerformContext = newBackgroundPerformContext()
         backgroundPerformContext.perform {
             self.tryRecreatePersistentStore(completion: completion)
         }
     }
     
     public func deleteAll(completion: (() -> Void)? = nil) {
+        let backgroundPerformContext = newBackgroundPerformContext()
         backgroundPerformContext.perform {
             for key in self.managedObjectModel.entitiesByName.keys {
                 let request = NSFetchRequest<NSFetchRequestResult>(entityName: key)
-                try? self.backgroundPerformContext.batchDelete(fetchRequest: request)
+                try? backgroundPerformContext.batchDelete(fetchRequest: request)
             }
             completion?()
         }
@@ -377,7 +385,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
             .removeObserver(
                 self,
                 name: .NSManagedObjectContextDidSave,
-                object: backgroundPerformContext)
+                object: nil)
 
     }
 }
@@ -404,21 +412,30 @@ public extension PersistentContainer {
 
 private extension PersistentContainer {
     
-    func addObservers() {
+    func addObservers(context: NSManagedObjectContext) {
         let notificationCenter = NotificationCenter.default
-        notificationCenter.addObserver(self, selector: #selector(didSave(notification: )), name: .NSManagedObjectContextDidSave, object: backgroundPerformContext)
+        notificationCenter.addObserver(self, selector: #selector(didSave(notification: )), name: .NSManagedObjectContextDidSave, object: context)
     }
     
-    func removeObservers() {
+    func removeObservers(context: NSManagedObjectContext) {
         let notificationCenter = NotificationCenter.default
-        notificationCenter.removeObserver(self, name: .NSManagedObjectContextDidSave, object: nil)
+        notificationCenter.removeObserver(self, name: .NSManagedObjectContextDidSave, object: context)
     }
     
     @objc
     func didSave(notification: Notification) {
-        if (notification.object as? NSManagedObjectContext) === backgroundPerformContext {
-            backgroundReadOnlyObservableContext.perform {
-                self.backgroundReadOnlyObservableContext.mergeChanges(fromContextDidSave: notification)
+        if (notification.object as? NSManagedObjectContext)?.userInfo["isWriteContext"] as? Bool == true {
+            debugPrint("[MESSAGE STORE] WRITE CONTEXT SAVED", notification.userInfo?.keys)
+            backgroundReadOnlyObservableContext.perform {[weak self] in
+                guard let self else { return }
+                backgroundReadOnlyObservableContext.mergeChanges(fromContextDidSave: notification)
+                if let updated = notification.userInfo?[NSUpdatedObjectsKey] as? Set<NSManagedObject> {
+                    for object in updated {
+                        if let existing = try? backgroundReadOnlyObservableContext.existingObject(with: object.objectID) {
+                            backgroundReadOnlyObservableContext.refresh(existing, mergeChanges: true)
+                        }
+                    }
+                }
             }
         }
     }

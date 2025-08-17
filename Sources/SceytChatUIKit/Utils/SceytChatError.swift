@@ -22,6 +22,8 @@ public enum SceytChatError: Int, Error {
     
     case notConnect = 9001
     
+    case unknown = 9999
+    
     var isBadParam: Bool {
         self == .badMessageAttachmentParam ||
         self == .badMessageParam

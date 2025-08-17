@@ -105,7 +105,6 @@ extension NSManagedObjectContext: MessageRangeDatabaseSession {
             lastMessageId,
             channelId
         )
-        
         request.sortDescriptor = .init(keyPath: \LoadRangeDTO.endMessageId, ascending: true)
         return LoadRangeDTO.fetch(request: request, context: self).last
     }

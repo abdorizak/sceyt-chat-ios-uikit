@@ -9,7 +9,6 @@
 import SceytChat
 import UIKit
 import Combine
-
 open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, UnreadMentionsManagerDelegate {
     public typealias ChangeItem = LazyDatabaseObserver<MessageDTO, ChatMessage>.ChangeItemPaths
     //MARK: Events
@@ -42,11 +41,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     }
     
     public let presenceProvider = PresenceProvider.default
-
+    
     // MARK: - Unread Mentions Management
-
+    
     public lazy var unreadMentionsManager = UnreadMentionsManager(channelId: channel.id)
-
+    
     //MARK: Message observer
     open lazy var messageObserver: LazyMessagesObserver = {
         createMessageObserver()
@@ -108,9 +107,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     public private(set) var lastDisplayedMessageId: MessageId = 0
     public private(set) var selectedMessageForAction: (ChatMessage, MessageAction)?
     public static var messagesFetchLimit: UInt = 50
-
+    
     open var canUpdateUnreadPosition = true
-
+    
     //MARK: private properties
     private var schedulers = [UserId: Scheduler]()
     private var isFetchingData = false
@@ -170,18 +169,18 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             identifier: clientDelegateIdentifier
         )
         event = .updateChannel
-
+        
         newMessageCount = channel.newMessageCount
         newMentionCount = channel.newMentionCount
         resetUnreadMentionsIfNeeded()
-
+        
         // Pre-fetch mentions if there are unread mentions
         if newMentionCount > 0 {
             Task {
                 await unreadMentionsManager.refreshUnreadMentions()
             }
         }
-
+        
         markAsReadIfNeeded()
         subscribeToPeerPresence()
         ApplicationStateObserver()
@@ -191,10 +190,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             .didEnterBackground { [weak self] _ in
                 self?.isAppActive = false
             }
-
+        
         // Set up unread mentions manager delegate
         unreadMentionsManager.delegate = self
-
+        
         startDatabaseObserver {}
         if chatClient.connectionState == .connected {
             loadLastMessages()
@@ -214,6 +213,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     //MARK: deinit
     deinit {
+        
         logger.verbose("ChannelViewModel deinit for channel \(channel.id)")
         channelObserver.stopObserver()
         messageObserver.stopObserver()
@@ -325,7 +325,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         }
     
     open func onWillChangeEvent(
-        cache: LazyDatabaseObserver<MessageDTO, ChatMessage>.Cache,
+        cache: LazyDatabaseObserver<MessageDTO, ChatMessage>.CacheData,
         items: ChangeItem
     ) -> Any? {
         
@@ -380,7 +380,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         return makeEvents(cache: cache, items: items)
     }
     
-    private func makeEvents(cache: LazyDatabaseObserver<MessageDTO, ChatMessage>.Cache,
+    private func makeEvents(cache: LazyDatabaseObserver<MessageDTO, ChatMessage>.CacheData,
                             items: ChangeItem)
     -> [Event] {
         var events = [Event]()
@@ -436,8 +436,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             else if let lastNavigatedIndexPath,
                     indexPath > lastNavigatedIndexPath {
                 paths.continuesOptions.insert(.bottom)
-            }
-            else {
+            } else {
                 paths.continuesOptions.insert(.middle)
             }
             updateLayoutModel(at: indexPath)
@@ -449,6 +448,12 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             }
         }
         items.deletes.forEach { indexPath in
+            if indexPath == .zero {
+                paths.continuesOptions.insert(.top)
+            } else if let lastIndexPath,
+                      indexPath > lastIndexPath {
+                paths.continuesOptions.insert(.bottom)
+            }
             union[indexPath] = true
             updateLayoutModel(at: indexPath)
         }
@@ -565,11 +570,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     private func resetStateAfterChangeEvent() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-                guard let self else { return }
-                self.scrollToRepliedMessageId = 0
-                self.scrollToUnreadMentionMessageId = 0
-                self.isRestartingMessageObserver = .none
-            }
+            guard let self else { return }
+            self.scrollToRepliedMessageId = 0
+            self.scrollToUnreadMentionMessageId = 0
+            self.isRestartingMessageObserver = .none
+        }
     }
     
     open func scrollToItemIfNeeded(items: ChangeItem) {
@@ -597,7 +602,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             }
         }
     }
-
+    
     open func onDidChangeEvent(
         isInitial: Bool,
         items: ChangeItem,
@@ -605,20 +610,20 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             var needToScroll = true
             defer {
                 if needToScroll {
-                    scrollToItemIfNeeded(items: items) 
+                    scrollToItemIfNeeded(items: items)
                 }
             }
-
+            
             if isInitial {
-                let messageId = scrollToRepliedMessageId != 0 ? scrollToRepliedMessageId : 
-                               scrollToUnreadMentionMessageId != 0 ? scrollToUnreadMentionMessageId : lastDisplayedMessageId
+                let messageId = scrollToRepliedMessageId != 0 ? scrollToRepliedMessageId :
+                scrollToUnreadMentionMessageId != 0 ? scrollToUnreadMentionMessageId : lastDisplayedMessageId
                 if messageId != 0,
                    let indexPath = items.changeItems
                     .first(where: {$0.item?.id == messageId})?
                     .indexPath {
                     needToScroll = false
                     let animated = scrollToRepliedMessageId != 0 || scrollToUnreadMentionMessageId != 0
-                    event = .reloadDataAndScroll(indexPath: indexPath, animated: animated, pos: .centeredVertically)
+                    event = .reloadDataAndScroll(indexPath: indexPath, animated: animated, pos: .centered)
                     
                     // Mark mention as navigated if this is an unread mention
                     if scrollToUnreadMentionMessageId == messageId {
@@ -628,14 +633,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                     resetStateAfterChangeEvent()
                 } else {
                     if let (indexPath, messageId) = needsToScrollAtIndexPath(items: items) {
-                        switch searchDirection {
-                        case .next:
-                            event = .reloadDataAndScroll(indexPath: indexPath, animated: false, pos: .top)
-                        case .prev:
-                            event = .reloadDataAndScroll(indexPath: indexPath, animated: false, pos: .bottom)
-                        case .none:
-                            break
-                        }
+                        //                        switch searchDirection {
+                        //                        case .next:
+                        //                            event = .reloadDataAndScroll(indexPath: indexPath, animated: false, pos: .top)
+                        //                        case .prev:
+                        //                            event = .reloadDataAndScroll(indexPath: indexPath, animated: false, pos: .bottom)
+                        //                        case .none:
+                        //                            break
+                        //                        }
                         event = .scrollAndSelect(indexPath: indexPath, messageId: messageId)
                         resetStateAfterChangeEvent()
                         needToScroll = false
@@ -676,6 +681,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             if isAppActive {
                 events.forEach {
                     event = $0
+                }
+                if let (indexPath, mid) = needsToScrollAtIndexPath(items: items) {
+                    needToScroll = false
+                    event = .scrollAndSelect(indexPath: indexPath, messageId: mid)
+                    updateStateAfterChangeEvent(for: indexPath)
                 }
             } else {
                 let unread = events.filter {
@@ -766,7 +776,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 logger.error("[MEESS] not found :CLM: key \(indexPaths), ms: \(message)")
                 continue
             }
-
+            
             let model = createLayoutModel(for: message)
             models.append(model)
             layoutModels[.init(message: message)] = model
@@ -1048,11 +1058,18 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         completion: ((Error?) -> Void)? = nil
     ) {
         if chatClient.connectionState == .connected {
-            provider.loadNearMessages(near: id) { [weak self] error in
-                if error == nil {
-                    self?.messageObserver.restartToNear(at: id)
+            provider.loadNearMessages(near: id) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success(let messages):
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {[weak self] in
+                        guard let self else { return }
+                        deleteMessageObserverCache(byNear: messages)
+                    }
+                    completion?(nil)
+                case .failure(let error):
+                    completion?(error)
                 }
-                completion?(error)
             }
         } else {
             completion?(SceytChatError.notConnect)
@@ -1064,11 +1081,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         completion: ((Error?) -> Void)? = nil
     ) {
         if chatClient.connectionState == .connected {
-            provider.loadNearMessages(near: id) { [weak self] error in
-                if error == nil {
-                    self?.messageObserver.restartToNear(at: id)
+            provider.loadNearMessages(near: id) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success(let messages):
+                    deleteMessageObserverCache(byNear: messages)
+                    completion?(nil)
+                case .failure(let error):
+                    completion?(error)
                 }
-                completion?(error)
             }
         } else {
             completion?(SceytChatError.notConnect)
@@ -1081,14 +1102,36 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         completion: ((Error?) -> Void)? = nil
     ) {
         if chatClient.connectionState == .connected {
-            provider.loadNearMessages(near: id) { [weak self] error in
-                if error == nil {
-                    self?.messageObserver.restartToNear(at: id)
+            provider.loadNearMessages(near: id) { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success(let messages):
+                    deleteMessageObserverCache(byNear: messages)
+                    completion?(nil)
+                case .failure(let error):
+                    completion?(error)
                 }
-                completion?(error)
             }
         } else {
             completion?(SceytChatError.notConnect)
+        }
+    }
+    
+    private func deleteMessageObserverCache(byNear messages: [Message]) {
+        let min = messages.min(by: { $0.id < $1.id })?.id
+        let max = messages.max(by: { $0.id < $1.id })?.id
+        let debugMin = messages.min(by: { $0.id < $1.id })
+        let debugMax = messages.max(by: { $0.id < $1.id })
+        messages.forEach { m in
+            debugPrint("[EVENT] FOREACH message",m.body, m.id)
+        }
+        debugPrint("[EVENT] delete message MIN",debugMin?.body, debugMin?.id)
+        debugPrint("[EVENT] delete message MAX",debugMax?.body, debugMax?.id)
+        if let min, let indexPath = indexPathOf(messageId: min) {
+            messageObserver.deleteCache(before: indexPath)
+        }
+        if let max, let indexPath = indexPathOf(messageId: max) {
+            messageObserver.deleteCache(after: indexPath)
         }
     }
     
@@ -1149,7 +1192,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     open func markMessages( _ messages: [ChatMessage], as marker: DefaultMarker) {
         guard !markMessagesTaskStarted,
-                !messages.isEmpty
+              !messages.isEmpty
         else { return }
         
         markMessagesTaskStarted = true
@@ -1161,13 +1204,13 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 $0.userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == marker.rawValue } ) == true ? false : true
             }
             guard !filteredMessages.isEmpty,
-                    let max = filteredMessages.max(by: { $0.id < $1.id }),
-                    let min = filteredMessages.min(by: { $0.id < $1.id })
+                  let max = filteredMessages.max(by: { $0.id < $1.id }),
+                  let min = filteredMessages.min(by: { $0.id < $1.id })
             else {
                 markMessagesTaskStarted = false
                 return
             }
-                        //
+            //
             self.messageMarkerProvider.markIfNeeded(
                 after: min.id,
                 before: max.id,
@@ -1180,7 +1223,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     open func markMessageAsDisplayed(_ messages: [ChatMessage]) {
         guard !markMessagesTaskStarted,
-                !messages.isEmpty
+              !messages.isEmpty
         else { return }
         
         markMessagesQueue.async { [weak self] in
@@ -1209,7 +1252,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             }
         }
     }
-
+    
     open func markChannelAs(read: Bool) {
         guard channel.unread == read
         else { return }
@@ -1233,8 +1276,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         scrollToRepliedMessageId = 0
         scrollToMessageIdIfSearching = 0
         if let lastCacheItem = messageObserver.lastItem,
-            let lastMessageItem = channel.lastMessage,
-            lastCacheItem.id != lastMessageItem.id {
+           let lastMessageItem = channel.lastMessage,
+           lastCacheItem.id != lastMessageItem.id {
             let offset = messageObserver.calculateMessageFetchOffset()
             messageObserver.restartObserver(fetchPredicate: messageObserver.defaultFetchPredicate, offset: offset)
         } else {
@@ -1650,7 +1693,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         isSearchResultsLoading = true
         
         searchResult = .init(
-            channelId: channel.id, 
+            channelId: channel.id,
             searchFields: [
                 .init(
                     key: .body,
@@ -1658,7 +1701,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                     searchWord: query
                 )
             ])
-        
+        messageObserver.pauseObserver()
         searchResult.loadNextMessages({[weak self] messages, error in
             self?.searchResult.resetCache()
             guard let self, let messages, !messages.isEmpty
@@ -1667,54 +1710,137 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 return
             }
             updateSearchedMessageFromDatabase(messages: messages) { [weak self] chatMessages in
-                guard let self, !chatMessages.isEmpty
+                guard let self else { return }
+                messageObserver.resumeObserver()
+                guard !chatMessages.isEmpty
                 else {
-                    self?.isSearchResultsLoading = false
+                    isSearchResultsLoading = false
                     return
                 }
+                chatMessages.forEach { m in
+                    debugPrint("[EVENT] FOUND MESSAGE: \(m.body), \(m.id)")
+                }
                 self.searchResult.addCache(items: chatMessages.map { $0.id }.reversed())
-                if let lastFound = chatMessages.last?.id {
-                    self.scrollToMessageIdIfSearching = lastFound
+                if let messageId = chatMessages.last?.id {
                     searchDirection = .next
-                    self.loadNearMessagesOfSearchMessage(id: lastFound)
+                    let result = cachePosition(messageId: messageId)
+                    if let (index, indexPath) = result {
+                        debugPrint("[EVENT] [scrollToMessageId] messageId: [\(messageId)] indexPath: [\(indexPath)]")
+                        scroll(to: indexPath, messageId: messageId)
+                        updateLastNavigatedIndexPath(indexPath: indexPath)
+                    } else {
+                        messageObserver
+                            .fetchNear(at: messageId, loadLimit: 15) {[weak self] result in
+                                guard let self else { return }
+                                let hasLoadedFullRange = result.count == 30
+                                
+                                self.isSearchResultsLoading = false
+                                debugPrint("[EVENT] [DEL]", result)
+                                if hasLoadedFullRange, let (index, indexPath) = cachePosition(messageId: messageId) {
+                                    
+                                    let item = messageObserver.item(at: indexPath)
+                                    debugPrint("[EVENT] [DEL]", item?.body, item?.id, indexPath)
+                                    
+                                    scroll(to: indexPath, messageId: messageId)
+                                    
+                                    if let firstMessage = result.firstMessage {
+                                        debugPrint("[EVENT] [DEL] CACHE",
+                                                   firstMessage.id,
+                                                   firstMessage.indexPath)
+                                        messageObserver.deleteCache(before: firstMessage.indexPath)
+                                    }
+                                    if let lastMessage = result.lastMessage {
+                                        debugPrint("[EVENT] [DEL] CACHE",
+                                                   lastMessage.id,
+                                                   lastMessage.indexPath)
+                                        messageObserver.deleteCache(after: lastMessage.indexPath)
+                                    }
+                                } else {
+                                    self.scrollToMessageIdIfSearching = messageId
+                                    loadNearMessagesOfSearchMessage(id: messageId) {[weak self] error in
+                                    }
+                                }
+                            }
+                    }
                 }
             }
         })
     }
     
     open func findPreviousSearchedMessage() {
-        guard let messageId = searchResult.prevItem() 
+        guard let messageId = searchResult.prevItem()
         else {
             logger.verbose("find prev searched message - message id not find")
             return
         }
-        if let indexPath = indexPathOf(messageId: messageId) {
+        var foundIndex: Int?
+        let position = cachePosition(messageId: messageId)
+        if let (index, indexPath) = position {
             searchResult.prev()
+            debugPrint("[EVENT] [scrollToMessageId] messageId: [\(messageId)] indexPath: [\(indexPath)]")
             scroll(to: indexPath, messageId: messageId)
-        } else {
-            scrollToMessageIdIfSearching = messageId
+            updateLastNavigatedIndexPath(indexPath: indexPath)
+            if index < 15 {
+                foundIndex = index
+            }
+        }
+        
+        if position == nil || foundIndex != nil {
             searchDirection = .prev
             isSearchResultsLoading = true
-            messageObserver.restartToNear(at: messageId) {[weak self] isDone in
-                guard let self else { return }
-                self.isSearchResultsLoading = false
-                self.searchResult.prev()
-                if isDone {
-                    self.isRestartingMessageObserver = .reloadAndSelect
-                } else if !searchResult.isLoadedNearMessages(for: messageId),
-                            SceytChatUIKit.shared.chatClient.connectionState == .connected {
-                    searchDirection = .prev
-                    scrollToMessageIdIfSearching = messageId
-                    isSearchResultsLoading = true
-                    loadNearMessagesOfSearchMessage(id: messageId) {[weak self] error in
-                        self?.isSearchResultsLoading = false
-                        if let self, error == nil {
-                            self.searchResult.setLoadedNearMessages(messageId: messageId)
-                            self.searchResult.prev()
+            debugPrint("[EVENT] [fetchNear] messageId: [\(messageId)]")
+            messageObserver
+                .fetchNear(
+                    at: messageId,
+                    loadLimit: 15,
+                    done: {[weak self] result in
+                        guard let self else { return }
+                        let hasLoadedFullRange = result.count == 30
+                        
+                        self.isSearchResultsLoading = false
+                        debugPrint("[EVENT] [DEL]", result)
+                        if let (index, indexPath) = cachePosition(messageId: messageId), result.count / 2 >= 15, index >= 15 {
+                            let item = messageObserver.item(at: indexPath)
+                            debugPrint("[EVENT] [DEL]", item?.body, item?.id, indexPath)
+                            
+                            if position == nil {
+                                searchResult.prev()
+                                self.scroll(to: indexPath, messageId: messageId)
+                            }
+                            if let firstMessage = result.firstMessage,
+                               let indexPath = indexPathOf(messageId: firstMessage.id) {
+                                debugPrint("[EVENT] [DEL] CACHE", firstMessage.id, firstMessage.indexPath)
+                                messageObserver.deleteCache(before: indexPath)
+                            }
+                            if let lastMessage = result.lastMessage,
+                               let indexPath = indexPathOf(messageId: lastMessage.id) {
+                                debugPrint("[EVENT] [DEL] CACHE", lastMessage.id, lastMessage.indexPath)
+                                messageObserver.deleteCache(after: indexPath)
+                            }
+                            
+                        } else {
+                            debugPrint("[EVENT] [NOT FOUND]", messageId)
+                            searchDirection = .prev
+                            isSearchResultsLoading = true
+                            scrollToMessageIdIfSearching = messageId
+                            loadNearMessagesOfSearchMessage(id: messageId) {[weak self] error in
+                                guard let self else { return }
+                                isSearchResultsLoading = false
+                                guard error == nil else { return }
+                                if position == nil {
+                                    if scrollToMessageIdIfSearching == messageId,
+                                        let (index, indexPath) = cachePosition(messageId: messageId) {
+                                        scrollToMessageIdIfSearching = 0
+                                        scroll(to: indexPath, messageId: messageId)
+                                    } else {
+                                        scrollToMessageIdIfSearching = messageId
+                                    }
+                                    searchResult.prev()
+                                }
+                                searchResult.setLoadedNearMessages(messageId: messageId)
+                            }
                         }
-                    }
-                }
-            }
+                    })
         }
     }
     
@@ -1724,40 +1850,84 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             logger.verbose("find next searched message - message id not find")
             return
         }
-        if let (index, indexPath) = cachePosition(messageId: messageId) {
+        debugPrint("[EVENT] [findNextSearchedMessage] messageId: [\(messageId)]")
+        var foundIndex: Int?
+        let position = cachePosition(messageId: messageId)
+        if let (index, indexPath) = position {
             searchResult.next()
+            debugPrint("[EVENT] [scrollToMessageId] messageId: [\(messageId)] indexPath: [\(indexPath)]")
             scroll(to: indexPath, messageId: messageId)
             updateLastNavigatedIndexPath(indexPath: indexPath)
-            if index < 5 {
-                loadPrevMessages(before: messageId)
+            if index < 15 {
+                foundIndex = index
             }
-        } else {
-            let sectionsCount = numberOfSections
-            scrollToMessageIdIfSearching = messageId
+        }
+        
+        if position == nil || foundIndex != nil {
             searchDirection = .next
             isSearchResultsLoading = true
-            messageObserver.restartToNear(at: messageId) {[weak self] isDone in
-                guard let self else { return }
-                self.isSearchResultsLoading = false
-                if isDone {
-                    self.searchResult.next()
-                    self.loadNearMessages(messageId: messageId)
-                } else {
-                    if !searchResult.isLoadedNearMessages(for: messageId),
-                                SceytChatUIKit.shared.chatClient.connectionState == .connected {
-                        scrollToMessageIdIfSearching = messageId
-                        searchDirection = .next
-                        isSearchResultsLoading = true
-                        loadNearMessagesOfSearchMessage(id: messageId) {[weak self] error in
-                            self?.isSearchResultsLoading = false
-                            if let self, error == nil {
-                                self.searchResult.setLoadedNearMessages(messageId: messageId)
-                                self.searchResult.next()
+            let firstMessageId = messageObserver.firstItem?.id
+            let loadNearMessageId = min(
+                firstMessageId ?? MessageId.max,
+                messageId
+            )
+            debugPrint("[EVENT] [fetchNear] messageId: [\(messageId)] firstItem: [\(loadNearMessageId)]")
+            messageObserver
+                .fetchNear(
+                    at: loadNearMessageId,
+                    loadLimit: 15,
+                    done: {[weak self] result in
+                        guard let self else { return }
+                        var isDone: Bool {
+                            result.count == 15
+                        }
+                        
+                        self.isSearchResultsLoading = false
+                        debugPrint("[EVENT] [DEL]", result)
+                        if let (index, indexPath) = cachePosition(messageId: messageId), result.count / 2 >= 15, index >= 15 {
+                            
+                            let item = messageObserver.item(at: indexPath)
+                            debugPrint("[EVENT] [DEL]", item?.body, item?.id, indexPath)
+                            
+                            if position == nil {
+                                searchResult.next()
+                                self.scroll(to: indexPath, messageId: messageId)
+                            }
+                            
+                            if let firstMessage = result.firstMessage,
+                               let indexPath = indexPathOf(messageId: firstMessage.id) {
+                                debugPrint("[EVENT] [DEL] CACHE", firstMessage.id, firstMessage.indexPath)
+                                messageObserver.deleteCache(before: indexPath)
+                            }
+                            if let lastMessage = result.lastMessage,
+                               let indexPath = indexPathOf(messageId: lastMessage.id) {
+                                debugPrint("[EVENT] [DEL] CACHE", lastMessage.id, lastMessage.indexPath)
+                                messageObserver.deleteCache(after: indexPath)
+                            }
+                            
+                        } else {
+                            debugPrint("[EVENT] [NOT FOUND]", messageId)
+                            searchDirection = .next
+                            isSearchResultsLoading = true
+                            scrollToMessageIdIfSearching = messageId
+                            loadNearMessagesOfSearchMessage(id: messageId) {[weak self] error in
+                                guard let self else { return }
+                                isSearchResultsLoading = false
+                                guard error == nil else { return }
+                                if position == nil {
+                                    if scrollToMessageIdIfSearching == messageId,
+                                        let (index, indexPath) = cachePosition(messageId: messageId) {
+                                        scrollToMessageIdIfSearching = 0
+                                        scroll(to: indexPath, messageId: messageId)
+                                    } else {
+                                        scrollToMessageIdIfSearching = messageId
+                                    }
+                                    searchResult.next()
+                                }
+                                searchResult.setLoadedNearMessages(messageId: messageId)
                             }
                         }
-                    }
-                }
-            }
+                    })
         }
         
         if !isSearchResultsLoading,
@@ -1965,7 +2135,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     open var isBlocked: Bool {
         guard channel.channelType == .direct,
-                let members = channel.members,
+              let members = channel.members,
               !members.isEmpty,
               !channel.isSelfChannel
         else { return false }
@@ -2018,7 +2188,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         
         return appearance.subtitleFormatter.format(channel)
     }
-        
+    
     open var draftMessage: NSAttributedString? {
         channel.draftMessage
     }
@@ -2178,7 +2348,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             self.channelObserver.stopObserver()
             self.messageObserver = createMessageObserver()
             isRestartingMessageObserver = .reload
-
+            
             updateChannelObserver()
             startDatabaseObserver {[weak self] in
                 self?.isRestartingMessageObserver = .none
@@ -2188,7 +2358,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             }
         }
     }
-
+    
     private func updateChannelObserver(){
         channelObserver = DatabaseObserver<ChannelDTO, ChatChannel>(
             request: ChannelDTO.fetchRequest()
@@ -2197,7 +2367,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             context: SceytChatUIKit.shared.database.viewContext
         ) { $0.convert() }
     }
-
+    
     private func messagesCount(after id: MessageId) -> Int {
         let afterPredicate = messageObserver.fetchPredicate
             .and(predicate: .init(format: "id > %lld", lastDisplayedMessageId))
@@ -2207,7 +2377,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     private func findPrevIndexPath(
         current indexPath: IndexPath,
-        cache: LazyDatabaseObserver<MessageDTO, ChatMessage>.Cache) -> IndexPath? {
+        cache: LazyDatabaseObserver<MessageDTO, ChatMessage>.CacheData) -> IndexPath? {
             guard cache.indices.contains(indexPath.section)
             else { return nil }
             if indexPath.item > 0 {
@@ -2339,7 +2509,11 @@ public extension ChannelViewModel {
         case reload(IndexPath)
         case reloadData
         case reloadDataAndScrollToBottom
-        case reloadDataAndScroll(indexPath: IndexPath, animated: Bool, pos: CollectionView.ScrollPosition)
+        case reloadDataAndScroll(
+            indexPath: IndexPath,
+            animated: Bool,
+            pos: ChannelViewController.MessagesCollectionView.MessageScrollPosition
+        )
         case reloadDataAndSelect(indexPath: IndexPath, messageId: MessageId)
         case scrollAndSelect(indexPath: IndexPath, messageId: MessageId)
         case didSetUnreadIndexPath(indexPath: IndexPath)
@@ -2390,9 +2564,9 @@ public extension ChannelViewModel {
             }
         }
     }
-
+    
     // MARK: - Unread Mentions Navigation
-
+    
     /// Navigates to the next unread mention message
     public func navigateToNextUnreadMention() async {
         guard let messageId = await unreadMentionsManager.getNextUnreadMentionId() else {
@@ -2402,12 +2576,12 @@ public extension ChannelViewModel {
             }
             return
         }
-
+        
         await MainActor.run { [weak self] in
             self?.navigateToMessage(messageId: messageId, isUnreadMention: true)
         }
     }
-
+    
     /// Navigates to a specific message, handling loading if needed
     private func navigateToMessage(messageId: MessageId, isUnreadMention: Bool = false) {
         if let indexPath = indexPathOf(messageId: messageId) {
@@ -2425,7 +2599,7 @@ public extension ChannelViewModel {
             }
         }
     }
-
+    
     /// Handles when a mention has been navigated to by the user
     private func handleMentionNavigated(messageId: MessageId) {
         // Mark this mention as navigated
@@ -2443,8 +2617,8 @@ public extension ChannelViewModel {
         let navigatedCount = unreadMentionsManager.navigatedMentionsCount
         
         // If user has navigated through several mentions or all cached mentions
-        let shouldMarkAsRead = navigatedCount >= 3 || 
-                              unreadMentionsManager.hasNavigatedAllCachedMentions
+        let shouldMarkAsRead = navigatedCount >= 3 ||
+        unreadMentionsManager.hasNavigatedAllCachedMentions
         
         if shouldMarkAsRead && navigatedCount > 0 {
             await MainActor.run { [weak self] in
@@ -2468,12 +2642,12 @@ public extension ChannelViewModel {
         }
     }
     
-        /// Shows a message when no unread mentions are available
+    /// Shows a message when no unread mentions are available
     private func showNoUnreadMentionsMessage() {
         // Send an event to notify UI that there are no unread mentions
         // The ViewController can listen to this and show an alert
         logger.debug("No unread mentions available")
-
+        
         // Also check if we have any navigated mentions that should be marked as read
         let navigatedCount = unreadMentionsManager.navigatedMentionsCount
         if navigatedCount > 0 {
@@ -2500,7 +2674,7 @@ public extension ChannelViewModel {
         guard message.incoming,
               message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
         else { return }
-
+        
         // Add to unread mentions cache
         unreadMentionsManager.addNewMention(message.id)
         
@@ -2510,7 +2684,7 @@ public extension ChannelViewModel {
             logger.debug("Added new real-time mention: \(message.id), new count: \(self?.newMentionCount ?? 0)")
         }
     }
-
+    
     /// Handles when a message mentioning the current user is deleted
     /// Note: This should only be called when we already know the message had mentions
     public func handleDeletedMentionMessage(_ message: ChatMessage) {
@@ -2526,13 +2700,13 @@ public extension ChannelViewModel {
             logger.debug("Removed deleted mention: \(message.id), new count: \(self.newMentionCount)")
         }
     }
-
+    
     /// Handles when a message mentioning the current user is edited
     public func handleEditedMentionMessage(_ message: ChatMessage, hadMentionBefore: Bool) {
         let hasMentionNow = message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
-
+        
         logger.debug("ChannelViewModel handling edited mention: \(message.id), hadBefore: \(hadMentionBefore), hasNow: \(hasMentionNow)")
-
+        
         if !hadMentionBefore && hasMentionNow {
             // Mention was added in edit
             unreadMentionsManager.addNewMention(message.id)
@@ -2550,9 +2724,9 @@ public extension ChannelViewModel {
             }
         }
     }
-
+    
     // MARK: - UnreadMentionsManagerDelegate
-
+    
     public func unreadMentionsManager(_ manager: UnreadMentionsManager, didReceiveNewMention message: Message) {
         handleNewMentionMessage(.init(message: message, channelId: message.channelId))
     }

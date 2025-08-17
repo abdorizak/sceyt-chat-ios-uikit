@@ -128,6 +128,7 @@ class ProfileViewController: ViewController {
     }
     
     private func deleteAndLogout() {
+        RecentSignedUsers.deleteUser(id: SceytChatUIKit.shared.chatClient.user.id)
         RequestManager.deleteUser(userId: SceytChatUIKit.shared.chatClient.user.id) { [weak self] success in
             if success {
                 self?.logOut()

@@ -503,3 +503,94 @@ fileprivate extension LazyMessagesObserver {
         return max(0, totalCount)
     }
 }
+
+extension LazyMessagesObserver {
+    public struct FetchNearResult {
+        public let firstMessage: (id: MessageId, indexPath: IndexPath)?
+        public let lastMessage: (id: MessageId, indexPath: IndexPath)?
+        public let count: Int
+        public let range: ChatLoadRange?
+        
+        public init(
+            firstMessage: (id: MessageId, indexPath: IndexPath)? = nil,
+            lastMessage: (id: MessageId, indexPath: IndexPath)? = nil,
+            count: Int = 0,
+            range: ChatLoadRange? = nil
+        ) {
+            self.firstMessage = firstMessage
+            self.lastMessage = lastMessage
+            self.count = count
+            self.range = range
+        }
+        
+        fileprivate init(firstItem: ChangeItem?, lastItem: ChangeItem?, count: Int, range: ChatLoadRange) {
+            if let firstItem = firstItem , let message = firstItem.item {
+                firstMessage = (id: message.id, indexPath: firstItem.indexPath)
+            } else {
+                firstMessage = nil
+            }
+            
+            if let lastItem = lastItem , let message = lastItem.item {
+                lastMessage = (id: message.id, indexPath: lastItem.indexPath)
+            } else {
+                lastMessage = nil
+            }
+            self.count = count
+            self.range = range
+        }
+        
+    }
+    public func fetchNear(at messageId: MessageId, loadLimit: Int = 15, done: ((FetchNearResult) -> Void)? = nil) {
+        logger.debug("[Message Observer] fetch near for channelId: \(channelId), at messageId: \(messageId)")
+        guard isObserverStarted else {
+            done?(.init())
+            return
+        }
+        loadRangeProvider.fetchPreviousRange(
+            channelId: channelId,
+            lastMessageId: messageId
+        ) { [weak self] range in
+            guard let self else { return }
+            if let range, range.contains(messageId) {
+                
+                let builder = makeFetchBuilder()
+                let beforeRequest = builder.makeRequest()
+                if let fetchRequest = beforeRequest.fetchRequest {
+                    beforeRequest.reversed = true
+                    fetchRequest.predicate = NSPredicate(format: "id < %lld AND id >= %lld", messageId, range.startMessageId)
+                    fetchRequest.fetchLimit = loadLimit
+                    fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \MessageDTO.createdAt, ascending: false),
+                                                    NSSortDescriptor(keyPath: \MessageDTO.id, ascending: false)]
+                }
+                let afterRequest = builder.makeRequest()
+                if let fetchRequest = afterRequest.fetchRequest {
+                    fetchRequest.predicate = NSPredicate(format: "id >= %lld AND id <= %lld",messageId, range.endMessageId)
+                    fetchRequest.fetchLimit = loadLimit
+                    fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \MessageDTO.createdAt,ascending: true),
+                                                    NSSortDescriptor(keyPath: \MessageDTO.id, ascending: true)]
+                }
+                
+                builder.fetchAndUpdate { paths in
+                    paths.changeItems.forEach({
+                        switch $0 {
+                        case let .insert(_, m):
+                            debugPrint("[EVENT] FETCH MESSAGES", m.body, m.id)
+                        default:
+                            break
+                        }
+                    })
+                    
+                    let result = FetchNearResult(
+                        firstItem: paths.changeItems.min(),
+                        lastItem: paths.changeItems.max(),
+                        count: paths.inserts.count,
+                        range: range
+                    )
+                    done?(result)
+                }
+            } else {
+                done?(.init())
+            }
+        }
+    }
+}

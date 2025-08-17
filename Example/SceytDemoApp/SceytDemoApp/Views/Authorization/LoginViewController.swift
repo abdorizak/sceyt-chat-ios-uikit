@@ -252,6 +252,7 @@ class LoginViewController: ViewController {
                 return
             }
             loader.isLoading = true
+            RecentSignedUsers.addUser(id: username)
             self.updateProfile {
                 loader.isLoading = false
                 AppCoordinator.shared.showMainFlow()
