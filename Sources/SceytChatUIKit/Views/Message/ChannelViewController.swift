@@ -1998,10 +1998,10 @@ open class ChannelViewController: ViewController,
             }
             updateUnreadViewVisibility()
             showEmptyViewIfNeeded()
-        case .reload(let indexPath):
+        case .reload(let indexPaths):
             UIView.performWithoutAnimation {
                 collectionView.performUpdates {
-                    collectionView.reloadItems(at: [indexPath])
+                    collectionView.reloadItems(at: indexPaths)
                 }
             }
             showEmptyViewIfNeeded()
