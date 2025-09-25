@@ -10,6 +10,8 @@ import Foundation
 import CoreData
 import SceytChat
 
+public typealias ChannelCreated = Bool
+
 @objc(ChannelDTO)
 public class ChannelDTO: NSManagedObject {
 
@@ -129,14 +131,14 @@ public class ChannelDTO: NSManagedObject {
         return fetch(request: request, context: context).first
     }
 
-    public static func fetchOrCreate(id: ChannelId, context: NSManagedObjectContext) -> ChannelDTO {
+    public static func fetchOrCreate(id: ChannelId, context: NSManagedObjectContext) -> (ChannelDTO, ChannelCreated) {
         if let mo = fetch(id: id, context: context) {
-            return mo
+            return (mo, false)
         }
         
         let mo = insertNewObject(into: context)
         mo.id = Int64(id)
-        return mo
+        return (mo, true)
     }
 
     public func map(_ map: Channel) -> ChannelDTO {

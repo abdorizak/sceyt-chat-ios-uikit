@@ -579,15 +579,19 @@ extension ChannelMessageProvider {
 }
 
 private extension ChannelMessageProvider {
-    
+
     func sendReceivedMarker(messages: [Message]) {
-        DispatchQueue
-            .global(qos: .background)
-            .async {
-                let ids: [MessageId] = messages.compactMap {
-                    ($0.incoming || $0.userMarkers?.contains(where: { $0.name == "received"}) == true) ? nil : $0.id
+        DispatchQueue.global(qos: .background).async {
+            let ids: [MessageId] = messages.compactMap { message in
+                let alreadyReceived = message.userMarkers?.contains { $0.name == DefaultMarker.received.rawValue } ?? false
+                if message.incoming && !alreadyReceived {
+                    return message.id
                 }
-                self.markMessagesAsReceived(ids: ids)
+                return nil
+            }
+
+            guard !ids.isEmpty else { return }
+            self.markMessagesAsReceived(ids: ids)
         }
     }
 }
