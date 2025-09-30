@@ -28,7 +28,7 @@ public class ChatMessage {
     public let repliedInThread: Bool
     public let replyCount: Int
     public let displayCount: Int
-    public let disableMentionsCount: Bool
+    public var disableMentionsCount: Bool
     
     public let attachments: [Attachment]?
     public let userReactions: [Reaction]?
