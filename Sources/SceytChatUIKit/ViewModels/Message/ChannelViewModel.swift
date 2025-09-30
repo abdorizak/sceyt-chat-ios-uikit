@@ -575,7 +575,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             var needToScroll = true
             defer {
                 if needToScroll {
-                    scrollToItemIfNeeded(items: items) 
+                    scrollToItemIfNeeded(items: items)
                 }
             }
 
@@ -1171,6 +1171,53 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     //MARK: Send message
+    /// Creates a base `Message.Builder` configured from the given `UserSendMessage`.
+    /// Override or call this to customize message creation logic (e.g., hardcode flags for certain actions).
+    /// - Important: This method only sets base properties; attachment/body handling stays in `createAndSendUserMessage`.
+    open func makeBaseMessageBuilder(for userMessage: UserSendMessage) -> Message.Builder {
+        let builder = Message.Builder()
+            .type(userMessage.type)
+
+        switch userMessage.action {
+        case let .edit(message):
+            // Preserve ids for edit flow
+            builder.id(message.id)
+            builder.tid(Int(message.tid))
+            // Keep the original mention behavior during edit
+            builder.disableMentionsCount(message.disableMentionsCount)
+        case let .reply(message):
+            // Configure reply linkage
+            builder.parentMessageId(message.id)
+            builder.disableMentionsCount(message.disableMentionsCount)
+        case let .forward(message):
+            // Hardcode mention disabling for forwarded messages as requested
+            builder.disableMentionsCount(message.disableMentionsCount)
+        case .send:
+            break
+        }
+
+        // Thread context
+        if isThread, let threadMessage {
+            builder.parentMessageId(threadMessage.id)
+            builder.replyInThread(true)
+        }
+
+        // Common metadata/mentions
+        if let metadata = userMessage.metadata {
+            builder.metadata(metadata)
+        }
+        if let mentionUsers = userMessage.mentionUsers {
+            builder.mentionUserIds(mentionUsers.map { $0.id })
+        }
+
+        // Body attributes are part of the base builder since they are agnostic to attachments
+        if let bodyAttributes = userMessage.bodyAttributes {
+            builder.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
+        }
+
+        return builder
+    }
+
     open func createAndSendUserMessage(_ userMessage: UserSendMessage) {
         if isTyping {
             isTyping = false
@@ -1197,9 +1244,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 return
             }
         }
-        let builder = Message
-            .Builder()
-            .type(userMessage.type)
+        let builder = makeBaseMessageBuilder(for: userMessage)
         var editAttachments = [Attachment]()
         switch userMessage.action {
         case let .edit(message):
@@ -1209,9 +1254,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             if let attachments = message.attachments?.filter({ $0.type != "link" }) {
                 editAttachments += attachments.map { $0.builder.build() }
             }
-            
+            // builder.disableMentionsCount(message.disableMentionsCount) // now handled in makeBaseMessageBuilder
         case let .reply(message):
-            builder.parentMessageId(message.id)
+            // builder.parentMessageId(message.id)
+            // builder.disableMentionsCount(message.disableMentionsCount)
+            break
+        case let .forward(message):
+            // builder.disableMentionsCount(message.disableMentionsCount)
+            break
         default:
             break
         }
@@ -1595,7 +1645,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         isSearchResultsLoading = true
         
         searchResult = .init(
-            channelId: channel.id, 
+            channelId: channel.id,
             searchFields: [
                 .init(
                     key: .body,
@@ -1628,7 +1678,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func findPreviousSearchedMessage() {
-        guard let messageId = searchResult.prevItem() 
+        guard let messageId = searchResult.prevItem()
         else {
             logger.verbose("find prev searched message - message id not find")
             return

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23231" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788.4" systemVersion="24G84" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="AttachmentDTO" representedClassName="AttachmentDTO" syncable="YES">
         <attribute name="channelId" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
@@ -121,6 +121,7 @@
         <attribute name="channelId" attributeType="Integer 64" minValueString="0" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="createdAt" attributeType="Date" defaultDateTimeInterval="-978321600" usesScalarValueType="NO"/>
         <attribute name="deliveryStatus" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="disableMentionsCount" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="displayCount" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="forwardChannelId" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="forwardHops" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
