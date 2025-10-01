@@ -78,7 +78,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
             dto.lastReaction = nil
         }
 
-        if created {
+//        if created {
             if let message = channel.lastMessage {
                 createOrUpdate(message: message, channelId: channel.id)
             }
@@ -90,7 +90,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
             if let members = channel.members {
                 createOrUpdate(members: members, channelId: channel.id)
             }
-        }
+//        }
 
         if let role = channel.userRole {
             dto.userRole = RoleDTO.fetchOrCreate(name: role, context: self)
