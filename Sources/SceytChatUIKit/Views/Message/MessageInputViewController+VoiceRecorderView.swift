@@ -260,6 +260,8 @@ extension MessageInputViewController {
                         self.slidingView.stopAnimating()
                         self.slidingView.duration = 0
                         self.onEvent(.didStopRecording)
+                    case .maxDurationReached:
+                        self.stopAndPreview()
                     }
                 }
                 recorder?.startRecording()
