@@ -81,6 +81,12 @@ public extension Appearance {
                                          .init(image: Assets.addMember1.image,
                                                renderingMode: .template(.accent)))!
         }()
+        public static var inviteLink: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.circleBackground40.image,
+                                                     renderingMode: .template(.surface1)),
+                                         .init(image: Assets.link2.image,
+                                               renderingMode: .template(.accent)))!
+        }()
         public static var radio: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.radioCircle1.image,
                                                      renderingMode: .template(.iconInactive)))!
@@ -569,6 +575,11 @@ public extension Appearance {
                                                      renderingMode: .template(.accent)))!
         }()
         
+        public static var refreshIcon: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.refresh.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        
         public init() { }
         
     }
@@ -593,6 +604,7 @@ extension UIImage {
     public static var deletedUser: UIImage { Images.deletedUser }
     public static var attachment: UIImage { Images.attachment }
     public static var addMember: UIImage { Images.addMember }
+    public static var inviteLink: UIImage { Images.inviteLink }
     public static var radio: UIImage { Images.radio }
     public static var radioGray: UIImage { Images.radioGray }
     public static var radioSelected: UIImage { Images.radioSelected }
@@ -704,4 +716,6 @@ extension UIImage {
     public static var replyPlay: UIImage { Images.replyPlay }
     public static var closeIcon: UIImage { Images.closeIcon }
     public static var messageFile: UIImage { Images.messageFile }
+    
+    public static var refreshIcon: UIImage { Images.refreshIcon }
 }

@@ -26,6 +26,10 @@ open class ChannelMemberListViewModel: NSObject {
             return  L10n.Channel.Add.Members.title
         }
     }
+
+    public var inviteLinkTitle: String {
+        return "Invite Link"
+    }
     
     public var addRole: String {
         if filterMembersByRole == SceytChatUIKit.shared.config.memberRolesConfig.admin {
@@ -85,6 +89,11 @@ open class ChannelMemberListViewModel: NSObject {
         }
     }
 
+    open var canShowInviteLink: Bool {
+        // TODO: check the conditions
+        return canAddMembers
+    }
+
     open func startDatabaseObserver() {
         memberObserver.onDidChange = {[weak self] in
             self?.onDidChangeEvent(items: $0)
@@ -106,7 +115,7 @@ open class ChannelMemberListViewModel: NSObject {
             event = .reload
             return
         }
-        event = .change(.init(changes: items, section: canAddMembers ? 1 : 0))
+        event = .change(.init(changes: items, section: hasActionRows ? 1 : 0))
     }
 
     open func member(at indexPath: IndexPath) -> ChatChannelMember? {
@@ -114,13 +123,24 @@ open class ChannelMemberListViewModel: NSObject {
     }
     
     open var numberOfSections: Int {
-        canAddMembers ? 2 : 1
+        hasActionRows ? 2 : 1
+    }
+
+    open var hasActionRows: Bool {
+        canAddMembers || canShowInviteLink
+    }
+
+    open var numberOfActionRows: Int {
+        var count = 0
+        if canAddMembers { count += 1 }
+        if canShowInviteLink { count += 1 }
+        return count
     }
 
     open func numberOfItems(section: Int) -> Int {
-        switch (section, canAddMembers) {
+        switch (section, hasActionRows) {
         case (0, true):
-            return 1
+            return numberOfActionRows
         case (1, true), (0, false):
             return memberObserver.numberOfItems(in: 0)
         default:

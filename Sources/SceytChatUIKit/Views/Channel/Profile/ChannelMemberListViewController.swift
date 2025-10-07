@@ -124,14 +124,29 @@ open class ChannelMemberListViewController: ViewController,
         if indexPath.item > memberListViewModel.numberOfMembers - 10 {
             memberListViewModel.loadMembers()
         }
-        
-        if indexPath.section == 0, memberListViewModel.canAddMembers {
+
+        if indexPath.section == 0, memberListViewModel.hasActionRows {
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: Components.channelAddMemberCell.self)
             cell.parentAppearance = appearance.addCellAppearance
-            cell.titleLabel.text = memberListViewModel.addTitle
+
+            // Determine which action cell to show
+            if indexPath.row == 0 {
+                if memberListViewModel.canAddMembers {
+                    cell.titleLabel.text = memberListViewModel.addTitle
+                    cell.iconView.image = .addMember
+                } else if memberListViewModel.canShowInviteLink {
+                    cell.titleLabel.text = memberListViewModel.inviteLinkTitle
+                    cell.iconView.image = .inviteLink
+                }
+            } else if indexPath.row == 1 {
+                // Row 1 only exists if both canAddMembers and canShowInviteLink are true
+                cell.titleLabel.text = memberListViewModel.inviteLinkTitle
+                cell.iconView.image = .inviteLink
+            }
+
             return cell
         }
-        
+
         let item = memberListViewModel.member(at: indexPath)
         let cell = tableView.dequeueReusableCell(for: indexPath, cellType: Components.channelMemberCell.self)
         cell.parentAppearance = appearance.cellAppearance
@@ -142,10 +157,17 @@ open class ChannelMemberListViewController: ViewController,
     
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
+
         if indexPath.section == 0 {
-            if memberListViewModel.canAddMembers {
-                router.showAddMembers()
+            // Handle action rows
+            if indexPath.row == 0 {
+                if memberListViewModel.canAddMembers {
+                    router.showAddMembers()
+                } else if memberListViewModel.canShowInviteLink {
+                    router.showInviteLink()
+                }
+            } else if indexPath.row == 1 {
+                router.showInviteLink()
             }
         } else {
             memberListViewModel.createChannel(userAt: indexPath) { [weak self] channel, error in
