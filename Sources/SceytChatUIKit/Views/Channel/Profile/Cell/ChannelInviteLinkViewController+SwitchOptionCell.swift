@@ -17,9 +17,6 @@ extension ChannelInviteLinkViewController {
         open lazy var switchControl = UISwitch()
             .withoutAutoresizingMask
 
-        open lazy var separatorView = UIView()
-            .withoutAutoresizingMask
-
         open var onSwitchChanged: ((Bool) -> Void)?
 
         open override func setup() {
@@ -33,15 +30,11 @@ extension ChannelInviteLinkViewController {
 
             contentView.addSubview(titleLabel)
             contentView.addSubview(switchControl)
-            contentView.addSubview(separatorView)
 
             titleLabel.pin(to: contentView, anchors: [.leading, .top(12), .bottom(-12)])
             titleLabel.trailingAnchor.pin(to: switchControl.leadingAnchor, constant: -8)
 
             switchControl.pin(to: contentView, anchors: [.trailing, .centerY])
-
-            separatorView.pin(to: contentView, anchors: [.leading, .trailing, .bottom])
-            separatorView.heightAnchor.pin(constant: 1)
 
             contentView.heightAnchor.pin(greaterThanOrEqualToConstant: 56)
         }
@@ -58,7 +51,6 @@ extension ChannelInviteLinkViewController {
             titleLabel.textColor = appearance.titleLabelAppearance.foregroundColor
             titleLabel.font = appearance.titleLabelAppearance.font
             switchControl.onTintColor = appearance.switchTintColor
-            separatorView.backgroundColor = appearance.separatorColor
         }
 
         @objc open func switchValueChanged() {

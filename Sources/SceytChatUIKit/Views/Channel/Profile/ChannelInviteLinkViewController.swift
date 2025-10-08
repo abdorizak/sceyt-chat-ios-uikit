@@ -20,6 +20,22 @@ open class ChannelInviteLinkViewController: ViewController,
     open lazy var tableView = UITableView(frame: .zero, style: .grouped)
         .withoutAutoresizingMask
         .rowAutomaticDimension
+    
+    private lazy var linkDescriptionLabel: UILabel = {
+        $0.font = .systemFont(ofSize: 13, weight: .regular)
+        $0.textColor = .secondaryText
+        $0.text = "You can invite anyone to the chat using this link"
+        $0.numberOfLines = 0
+        return $0.withoutAutoresizingMask
+    }(UILabel())
+    
+    private lazy var messagesDescriptionLabel: UILabel = {
+        $0.font = .systemFont(ofSize: 13, weight: .regular)
+        $0.textColor = .secondaryText
+        $0.text = "Message history is visible to new members"
+        $0.numberOfLines = 0
+        return $0.withoutAutoresizingMask
+    }(UILabel())
 
     open override func setup() {
         super.setup()
@@ -69,6 +85,16 @@ open class ChannelInviteLinkViewController: ViewController,
     
     open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
+
+        // Only reload if something that actually affects row layout/appearance changed.
+        let layoutAffectingChange =
+            previousTraitCollection?.horizontalSizeClass != traitCollection.horizontalSizeClass ||
+            previousTraitCollection?.verticalSizeClass != traitCollection.verticalSizeClass ||
+            (previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) ?? false) ||
+            previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory
+
+        guard layoutAffectingChange else { return }
+
         tableView.reloadData()
     }
 
@@ -155,7 +181,12 @@ open class ChannelInviteLinkViewController: ViewController,
     }
 
     open func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        return .leastNormalMagnitude
+        switch section {
+        case 0, 1: // Link field and Show Previous Messages sections
+            return UITableView.automaticDimension
+        default:
+            return .leastNormalMagnitude
+        }
     }
 
     open func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
@@ -163,7 +194,21 @@ open class ChannelInviteLinkViewController: ViewController,
     }
 
     open func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        return UIView()
+        let padding = ChannelInviteLinkViewController.Layouts.cellHorizontalPadding + 16
+        switch section {
+        case 0: // Link field section
+            let container = UIView()
+            container.addSubview(linkDescriptionLabel)
+            linkDescriptionLabel.pin(to: container, anchors: [.leading(padding), .trailing(-padding), .top(8), .bottom(0)])
+            return container
+        case 1: // Show Previous Messages section
+            let container = UIView()
+            container.addSubview(messagesDescriptionLabel)
+            messagesDescriptionLabel.pin(to: container, anchors: [.leading(padding), .trailing(-padding), .top(8), .bottom(0)])
+            return container
+        default:
+            return UIView()
+        }
     }
 
     open func tableView(
@@ -256,7 +301,7 @@ open class ChannelInviteLinkViewController: ViewController,
 public extension ChannelInviteLinkViewController {
     enum Layouts {
         public static var cellCornerRadius: CGFloat = 10
-        public static var cellHorizontalPadding: CGFloat = 16
+        public static var cellHorizontalPadding: CGFloat = 12
         public static var cellSeparatorWidth: CGFloat = 1
     }
 }
