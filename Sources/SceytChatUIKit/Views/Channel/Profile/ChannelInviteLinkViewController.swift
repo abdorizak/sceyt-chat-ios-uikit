@@ -47,7 +47,8 @@ open class ChannelInviteLinkViewController: ViewController,
         super.setupLayout()
 
         view.addSubview(tableView)
-        tableView.pin(to: view)
+        tableView.pin(to: view.safeAreaLayoutGuide, anchors: [.leading, .trailing])
+        tableView.pin(to: view, anchors: [.top, .bottom])
     }
 
     open override func setupAppearance() {
@@ -55,6 +56,20 @@ open class ChannelInviteLinkViewController: ViewController,
 
         view.backgroundColor = appearance.backgroundColor
         tableView.backgroundColor = .clear
+    }
+    
+    override open func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        coordinator.animate { [weak self] _ in
+            guard let self else { return }
+            self.tableView.reloadData()
+        }
+    }
+    
+    open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        tableView.reloadData()
     }
 
     // MARK: UITableViewDataSource
@@ -126,7 +141,7 @@ open class ChannelInviteLinkViewController: ViewController,
             case 0:
                 shareLink()
             case 1:
-                router.showRecentLinks()
+                showResetLinkAlert()
             case 2:
                 router.showQRCode()
             default:
@@ -206,6 +221,35 @@ open class ChannelInviteLinkViewController: ViewController,
 
     @objc open func showPreviousMessagesChanged(_ sender: UISwitch) {
         inviteLinkViewModel.showPreviousMessages = sender.isOn
+    }
+    
+    @objc open func showResetLinkAlert() {
+        let actions: [SheetAction] = [
+            .init(
+                title: "Cancel",
+                style: .cancel
+            ),
+            .init(
+                title: "Reset",
+                style: .destructive,
+                handler: { [weak self] in
+                    self?.resetLink()
+                }
+            )
+        ]
+        
+        showAlert(
+            title: "Reset Link",
+            message: "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.",
+            actions: actions,
+            preferredActionIndex: 1
+        )
+    }
+    
+    @objc open func resetLink() {
+        // TODO: Implement actual reset link functionality
+        // This should call the appropriate method on inviteLinkViewModel
+        print("Reset link functionality to be implemented")
     }
 }
 
