@@ -90,6 +90,20 @@
 
 "channel.profile.qrCodeTitle" = "QR Code for Invites";
 "channel.profile.qrCodeShare" = "Share QR Code";
+"channel.profile.qrCodeDescription" = "Show or send this to anyone who wants to join this channel";
+
+"channel.inviteLink.title" = "Invite Link";
+"channel.inviteLink.description" = "You can invite anyone to the chat using this link";
+"channel.inviteLink.messagesDescription" = "Message history is visible to new members";
+"channel.inviteLink.showPreviousMessages" = "Show Previous Messages";
+"channel.inviteLink.share" = "Share";
+"channel.inviteLink.resetLink" = "Reset Link";
+"channel.inviteLink.openQRCode" = "Open QR Code";
+"channel.inviteLink.linkCopied" = "Link copied to clipboard";
+"channel.inviteLink.cancel" = "Cancel";
+"channel.inviteLink.reset" = "Reset";
+"channel.inviteLink.resetAlertTitle" = "Reset Link";
+"channel.inviteLink.resetAlertMessage" = "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.";
 
 "channel.info.mute.one-hour" = "For 1 hour";
 "channel.info.mute.hours" = "For %d hours";

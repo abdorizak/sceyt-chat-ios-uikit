@@ -45,7 +45,7 @@ open class QRCodeViewController: ViewController {
 
         title = appearance.titleText
         titleLabel.text = appearance.titleText
-        linkLabel.text = "Show or send this to anyone who wants to join this channel"
+        linkLabel.text = appearance.linkLabelText
         shareButton.setTitle(appearance.shareButtonTitle, for: .normal)
 
         // Generate QR code

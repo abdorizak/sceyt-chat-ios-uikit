@@ -24,7 +24,6 @@ open class ChannelInviteLinkViewController: ViewController,
     private lazy var linkDescriptionLabel: UILabel = {
         $0.font = .systemFont(ofSize: 13, weight: .regular)
         $0.textColor = .secondaryText
-        $0.text = "You can invite anyone to the chat using this link"
         $0.numberOfLines = 0
         return $0.withoutAutoresizingMask
     }(UILabel())
@@ -32,7 +31,6 @@ open class ChannelInviteLinkViewController: ViewController,
     private lazy var messagesDescriptionLabel: UILabel = {
         $0.font = .systemFont(ofSize: 13, weight: .regular)
         $0.textColor = .secondaryText
-        $0.text = "Message history is visible to new members"
         $0.numberOfLines = 0
         return $0.withoutAutoresizingMask
     }(UILabel())
@@ -40,7 +38,9 @@ open class ChannelInviteLinkViewController: ViewController,
     open override func setup() {
         super.setup()
 
-        title = "Invite Link"
+        title = appearance.titleText
+        linkDescriptionLabel.text = appearance.linkDescriptionText
+        messagesDescriptionLabel.text = appearance.messagesDescriptionText
 
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0
@@ -127,7 +127,7 @@ open class ChannelInviteLinkViewController: ViewController,
         case 1:
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: SwitchOptionCell.self)
             cell.parentAppearance = appearance.switchOptionCellAppearance
-            cell.titleLabel.text = "Show Previous Messages"
+            cell.titleLabel.text = appearance.showPreviousMessagesText
             cell.switchControl.isOn = inviteLinkViewModel.showPreviousMessages
             cell.onSwitchChanged = { [weak self] isOn in
                 self?.inviteLinkViewModel.showPreviousMessages = isOn
@@ -141,13 +141,13 @@ open class ChannelInviteLinkViewController: ViewController,
             switch indexPath.row {
             case 0:
                 cell.iconView.image = .chatShare
-                cell.titleLabel.text = "Share"
+                cell.titleLabel.text = appearance.shareText
             case 1:
                 cell.iconView.image = .refreshIcon
-                cell.titleLabel.text = "Reset Link"
+                cell.titleLabel.text = appearance.resetLinkText
             case 2:
                 cell.iconView.image = .channelProfileQR
-                cell.titleLabel.text = "Open QR Code"
+                cell.titleLabel.text = appearance.openQRCodeText
             default:
                 break
             }
@@ -255,7 +255,7 @@ open class ChannelInviteLinkViewController: ViewController,
 
     @objc open func copyLink() {
         UIPasteboard.general.string = inviteLinkViewModel.inviteLink
-        showAlert(message: "Link copied to clipboard")
+        showAlert(message: appearance.linkCopiedText)
     }
 
     @objc open func shareLink() {
@@ -271,11 +271,11 @@ open class ChannelInviteLinkViewController: ViewController,
     @objc open func showResetLinkAlert() {
         let actions: [SheetAction] = [
             .init(
-                title: "Cancel",
+                title: appearance.cancelText,
                 style: .cancel
             ),
             .init(
-                title: "Reset",
+                title: appearance.resetText,
                 style: .destructive,
                 handler: { [weak self] in
                     self?.resetLink()
@@ -284,8 +284,8 @@ open class ChannelInviteLinkViewController: ViewController,
         ]
         
         showAlert(
-            title: "Reset Link",
-            message: "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.",
+            title: appearance.resetAlertTitleText,
+            message: appearance.resetAlertMessageText,
             actions: actions,
             preferredActionIndex: 1
         )

@@ -36,7 +36,8 @@ extension QRCodeViewController: AppearanceProviding {
             cornerCurve: .continuous
         ),
         titleText: L10n.Channel.Profile.qrCodeTitle,
-        shareButtonTitle: L10n.Channel.Profile.qrCodeShare
+        shareButtonTitle: L10n.Channel.Profile.qrCodeShare,
+        linkLabelText: L10n.Channel.Profile.qrCodeDescription
     )
 
     public struct Appearance {
@@ -68,6 +69,9 @@ extension QRCodeViewController: AppearanceProviding {
         @Trackable<Appearance, String>
         public var shareButtonTitle: String
 
+        @Trackable<Appearance, String>
+        public var linkLabelText: String
+
         public init(
             backgroundColor: UIColor,
             qrCodeBackgroundColor: UIColor,
@@ -77,7 +81,8 @@ extension QRCodeViewController: AppearanceProviding {
             linkLabelAppearance: LabelAppearance,
             shareButtonAppearance: ButtonAppearance,
             titleText: String,
-            shareButtonTitle: String
+            shareButtonTitle: String,
+            linkLabelText: String
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._qrCodeBackgroundColor = Trackable(value: qrCodeBackgroundColor)
@@ -88,6 +93,7 @@ extension QRCodeViewController: AppearanceProviding {
             self._shareButtonAppearance = Trackable(value: shareButtonAppearance)
             self._titleText = Trackable(value: titleText)
             self._shareButtonTitle = Trackable(value: shareButtonTitle)
+            self._linkLabelText = Trackable(value: linkLabelText)
         }
 
         public init(
@@ -100,7 +106,8 @@ extension QRCodeViewController: AppearanceProviding {
             linkLabelAppearance: LabelAppearance? = nil,
             shareButtonAppearance: ButtonAppearance? = nil,
             titleText: String? = nil,
-            shareButtonTitle: String? = nil
+            shareButtonTitle: String? = nil,
+            linkLabelText: String? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._qrCodeBackgroundColor = Trackable(reference: reference, referencePath: \.qrCodeBackgroundColor)
@@ -111,6 +118,7 @@ extension QRCodeViewController: AppearanceProviding {
             self._shareButtonAppearance = Trackable(reference: reference, referencePath: \.shareButtonAppearance)
             self._titleText = Trackable(reference: reference, referencePath: \.titleText)
             self._shareButtonTitle = Trackable(reference: reference, referencePath: \.shareButtonTitle)
+            self._linkLabelText = Trackable(reference: reference, referencePath: \.linkLabelText)
 
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let qrCodeBackgroundColor { self.qrCodeBackgroundColor = qrCodeBackgroundColor }
@@ -121,6 +129,7 @@ extension QRCodeViewController: AppearanceProviding {
             if let shareButtonAppearance { self.shareButtonAppearance = shareButtonAppearance }
             if let titleText { self.titleText = titleText }
             if let shareButtonTitle { self.shareButtonTitle = shareButtonTitle }
+            if let linkLabelText { self.linkLabelText = linkLabelText }
         }
     }
 }
