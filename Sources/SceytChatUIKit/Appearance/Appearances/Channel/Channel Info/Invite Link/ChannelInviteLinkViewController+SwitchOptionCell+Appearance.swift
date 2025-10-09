@@ -10,7 +10,7 @@ import UIKit
 
 extension ChannelInviteLinkViewController.SwitchOptionCell: AppearanceProviding {
     public static var appearance = Appearance(
-        backgroundColor: .background,
+        backgroundColor: .backgroundSections,
         titleLabelAppearance: .init(
             foregroundColor: .primaryText,
             font: Fonts.regular.withSize(16)

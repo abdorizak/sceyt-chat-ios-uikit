@@ -11,7 +11,7 @@ import UIKit
 extension QRCodeViewController: AppearanceProviding {
     public static var appearance = Appearance(
         backgroundColor: .background,
-        qrCodeBackgroundColor: .white,
+        qrCodeBackgroundColor: .clear,
         qrCodeSize: CGSize(width: 250, height: 250),
         qrCodePadding: UIEdgeInsets(top: 40, left: 40, bottom: 40, right: 40),
         titleLabelAppearance: .init(
@@ -37,7 +37,15 @@ extension QRCodeViewController: AppearanceProviding {
         ),
         titleText: L10n.Channel.Profile.qrCodeTitle,
         shareButtonTitle: L10n.Channel.Profile.qrCodeShare,
-        linkLabelText: L10n.Channel.Profile.qrCodeDescription
+        linkLabelText: L10n.Channel.Profile.qrCodeDescription,
+        logoImage: nil,
+        logoSize: CGSize(width: 40, height: 40),
+        logoBackgroundColor: .white,
+        logoCornerRadius: 8,
+        showCloseButton: true,
+        closeButtonImage: UIImage.closeIcon,
+        closeButtonTintColor: .closeButtonTint,
+        closeButtonBackgroundColor: .closeButtonBackground
     )
 
     public struct Appearance {
@@ -72,6 +80,30 @@ extension QRCodeViewController: AppearanceProviding {
         @Trackable<Appearance, String>
         public var linkLabelText: String
 
+        @Trackable<Appearance, UIImage?>
+        public var logoImage: UIImage?
+
+        @Trackable<Appearance, CGSize>
+        public var logoSize: CGSize
+
+        @Trackable<Appearance, UIColor>
+        public var logoBackgroundColor: UIColor
+
+        @Trackable<Appearance, CGFloat>
+        public var logoCornerRadius: CGFloat
+
+        @Trackable<Appearance, Bool>
+        public var showCloseButton: Bool
+
+        @Trackable<Appearance, UIImage>
+        public var closeButtonImage: UIImage
+
+        @Trackable<Appearance, UIColor>
+        public var closeButtonTintColor: UIColor
+
+        @Trackable<Appearance, UIColor>
+        public var closeButtonBackgroundColor: UIColor
+
         public init(
             backgroundColor: UIColor,
             qrCodeBackgroundColor: UIColor,
@@ -82,7 +114,15 @@ extension QRCodeViewController: AppearanceProviding {
             shareButtonAppearance: ButtonAppearance,
             titleText: String,
             shareButtonTitle: String,
-            linkLabelText: String
+            linkLabelText: String,
+            logoImage: UIImage?,
+            logoSize: CGSize,
+            logoBackgroundColor: UIColor,
+            logoCornerRadius: CGFloat,
+            showCloseButton: Bool,
+            closeButtonImage: UIImage,
+            closeButtonTintColor: UIColor,
+            closeButtonBackgroundColor: UIColor
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._qrCodeBackgroundColor = Trackable(value: qrCodeBackgroundColor)
@@ -94,6 +134,14 @@ extension QRCodeViewController: AppearanceProviding {
             self._titleText = Trackable(value: titleText)
             self._shareButtonTitle = Trackable(value: shareButtonTitle)
             self._linkLabelText = Trackable(value: linkLabelText)
+            self._logoImage = Trackable(value: logoImage)
+            self._logoSize = Trackable(value: logoSize)
+            self._logoBackgroundColor = Trackable(value: logoBackgroundColor)
+            self._logoCornerRadius = Trackable(value: logoCornerRadius)
+            self._showCloseButton = Trackable(value: showCloseButton)
+            self._closeButtonImage = Trackable(value: closeButtonImage)
+            self._closeButtonTintColor = Trackable(value: closeButtonTintColor)
+            self._closeButtonBackgroundColor = Trackable(value: closeButtonBackgroundColor)
         }
 
         public init(
@@ -107,7 +155,15 @@ extension QRCodeViewController: AppearanceProviding {
             shareButtonAppearance: ButtonAppearance? = nil,
             titleText: String? = nil,
             shareButtonTitle: String? = nil,
-            linkLabelText: String? = nil
+            linkLabelText: String? = nil,
+            logoImage: UIImage? = nil,
+            logoSize: CGSize? = nil,
+            logoBackgroundColor: UIColor? = nil,
+            logoCornerRadius: CGFloat? = nil,
+            showCloseButton: Bool? = nil,
+            closeButtonImage: UIImage? = nil,
+            closeButtonTintColor: UIColor? = nil,
+            closeButtonBackgroundColor: UIColor? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._qrCodeBackgroundColor = Trackable(reference: reference, referencePath: \.qrCodeBackgroundColor)
@@ -119,6 +175,14 @@ extension QRCodeViewController: AppearanceProviding {
             self._titleText = Trackable(reference: reference, referencePath: \.titleText)
             self._shareButtonTitle = Trackable(reference: reference, referencePath: \.shareButtonTitle)
             self._linkLabelText = Trackable(reference: reference, referencePath: \.linkLabelText)
+            self._logoImage = Trackable(reference: reference, referencePath: \.logoImage)
+            self._logoSize = Trackable(reference: reference, referencePath: \.logoSize)
+            self._logoBackgroundColor = Trackable(reference: reference, referencePath: \.logoBackgroundColor)
+            self._logoCornerRadius = Trackable(reference: reference, referencePath: \.logoCornerRadius)
+            self._showCloseButton = Trackable(reference: reference, referencePath: \.showCloseButton)
+            self._closeButtonImage = Trackable(reference: reference, referencePath: \.closeButtonImage)
+            self._closeButtonTintColor = Trackable(reference: reference, referencePath: \.closeButtonTintColor)
+            self._closeButtonBackgroundColor = Trackable(reference: reference, referencePath: \.closeButtonBackgroundColor)
 
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let qrCodeBackgroundColor { self.qrCodeBackgroundColor = qrCodeBackgroundColor }
@@ -130,6 +194,14 @@ extension QRCodeViewController: AppearanceProviding {
             if let titleText { self.titleText = titleText }
             if let shareButtonTitle { self.shareButtonTitle = shareButtonTitle }
             if let linkLabelText { self.linkLabelText = linkLabelText }
+            if let logoImage { self.logoImage = logoImage }
+            if let logoSize { self.logoSize = logoSize }
+            if let logoBackgroundColor { self.logoBackgroundColor = logoBackgroundColor }
+            if let logoCornerRadius { self.logoCornerRadius = logoCornerRadius }
+            if let showCloseButton { self.showCloseButton = showCloseButton }
+            if let closeButtonImage { self.closeButtonImage = closeButtonImage }
+            if let closeButtonTintColor { self.closeButtonTintColor = closeButtonTintColor }
+            if let closeButtonBackgroundColor { self.closeButtonBackgroundColor = closeButtonBackgroundColor }
         }
     }
 }

@@ -10,8 +10,8 @@ import UIKit
 
 extension ChannelInviteLinkViewController.LinkFieldCell: AppearanceProviding {
     public static var appearance = Appearance(
-        backgroundColor: .background,
-        containerBackgroundColor: .background,
+        backgroundColor: .backgroundSections,
+        containerBackgroundColor: .backgroundSections,
         cornerRadius: 8,
         borderWidth: 1,
         borderColor: .clear,

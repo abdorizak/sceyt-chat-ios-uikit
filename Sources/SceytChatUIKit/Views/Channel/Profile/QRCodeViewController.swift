@@ -40,6 +40,17 @@ open class QRCodeViewController: ViewController {
         return $0.withoutAutoresizingMask
     }(UIButton(type: .system))
 
+    open lazy var logoImageView: UIImageView = {
+        $0.contentMode = .scaleAspectFit
+        $0.layer.masksToBounds = true
+        return $0.withoutAutoresizingMask
+    }(UIImageView())
+
+    open lazy var closeButton: UIButton = {
+        $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+        return $0.withoutAutoresizingMask
+    }(UIButton(type: .system))
+
     open override func setup() {
         super.setup()
 
@@ -55,6 +66,14 @@ open class QRCodeViewController: ViewController {
         ) {
             qrCodeImageView.image = qrCodeImage
         }
+
+        // Configure logo
+        logoImageView.image = appearance.logoImage
+        logoImageView.isHidden = appearance.logoImage == nil
+
+        // Configure close button
+        closeButton.setImage(appearance.closeButtonImage, for: .normal)
+        closeButton.isHidden = !appearance.showCloseButton
     }
 
     open override func setupLayout() {
@@ -63,8 +82,10 @@ open class QRCodeViewController: ViewController {
         view.addSubview(titleLabel)
         stackView.addArrangedSubview(qrCodeImageView)
         view.addSubview(stackView)
+        view.addSubview(logoImageView)
         view.addSubview(linkLabel)
         view.addSubview(shareButton)
+        view.addSubview(closeButton)
 
         let padding = appearance.qrCodePadding
         let horizontalPadding: CGFloat = 16.0
@@ -102,6 +123,17 @@ open class QRCodeViewController: ViewController {
         // Ensure QR code doesn't become too large
         let maxSize = min(view.bounds.width - padding.left - padding.right, 200)
         qrCodeImageView.widthAnchor.constraint(lessThanOrEqualToConstant: maxSize).isActive = true
+
+        // Logo overlay positioned in center of QR code
+        logoImageView.centerXAnchor.constraint(equalTo: qrCodeImageView.centerXAnchor).isActive = true
+        logoImageView.centerYAnchor.constraint(equalTo: qrCodeImageView.centerYAnchor).isActive = true
+        logoImageView.widthAnchor.constraint(equalToConstant: appearance.logoSize.width).isActive = true
+        logoImageView.heightAnchor.constraint(equalToConstant: appearance.logoSize.height).isActive = true
+
+        // Close button positioned in top right corner
+        closeButton.pin(to: view.safeAreaLayoutGuide, anchors: [.top(12), .trailing(-12)])
+        closeButton.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: 28).isActive = true
     }
 
     open override func setupAppearance() {
@@ -132,6 +164,15 @@ open class QRCodeViewController: ViewController {
         shareButton.layer.cornerCurve = buttonAppearance.cornerCurve
         shareButton.titleLabel?.font = buttonAppearance.labelAppearance.font
         shareButton.tintColor = buttonAppearance.tintColor
+
+        // Apply logo appearance
+        logoImageView.backgroundColor = appearance.logoBackgroundColor
+        logoImageView.layer.cornerRadius = appearance.logoCornerRadius
+
+        // Apply close button appearance
+        closeButton.tintColor = appearance.closeButtonTintColor
+        closeButton.backgroundColor = appearance.closeButtonBackgroundColor
+        closeButton.layer.cornerRadius = 16 // Half of 32x32 size for circular button
     }
 
     @objc open func shareButtonTapped() {
@@ -147,5 +188,9 @@ open class QRCodeViewController: ViewController {
         }
 
         present(activityViewController, animated: true)
+    }
+
+    @objc open func closeButtonTapped() {
+        dismiss(animated: true)
     }
 }

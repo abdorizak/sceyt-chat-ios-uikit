@@ -23,8 +23,8 @@ open class ChannelInviteLinkRouter: Router<ChannelInviteLinkViewController> {
 
         if #available(iOS 15.0, *) {
             if let sheet = qrCodeViewController.sheetPresentationController {
-                sheet.detents = [.medium(), .large()]
-                sheet.prefersGrabberVisible = true
+                sheet.detents = [.medium()]
+                sheet.prefersGrabberVisible = false
                 sheet.preferredCornerRadius = 10
             }
         }
