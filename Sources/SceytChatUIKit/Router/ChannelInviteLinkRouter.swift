@@ -15,6 +15,20 @@ open class ChannelInviteLinkRouter: Router<ChannelInviteLinkViewController> {
     }
 
     open func showQRCode() {
-        // TODO: Implement QR code view
+        guard let inviteLink = rootViewController.inviteLinkViewModel?.inviteLink else { return }
+        let qrCodeViewController = Components.qrCodeViewController.init()
+        qrCodeViewController.inviteLink = inviteLink
+
+        qrCodeViewController.modalPresentationStyle = .pageSheet
+
+        if #available(iOS 15.0, *) {
+            if let sheet = qrCodeViewController.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 10
+            }
+        }
+
+        rootViewController.present(qrCodeViewController, animated: true)
     }
 }

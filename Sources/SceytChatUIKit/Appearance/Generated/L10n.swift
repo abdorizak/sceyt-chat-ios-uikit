@@ -399,6 +399,12 @@ public enum L10n {
       /// Members
       public static let sectionTitle = L10n.tr("Localizable", "channel.private.sectionTitle", fallback: "Members")
     }
+    public enum Profile {
+      /// Share
+      public static let qrCodeShare = L10n.tr("Localizable", "channel.profile.qrCodeShare", fallback: "Share")
+      /// QR Code for Invites
+      public static let qrCodeTitle = L10n.tr("Localizable", "channel.profile.qrCodeTitle", fallback: "QR Code for Invites")
+    }
     public enum ReadOnly {
       /// Read Only.
       public static let message = L10n.tr("Localizable", "channel.readOnly.message", fallback: "Read Only.")

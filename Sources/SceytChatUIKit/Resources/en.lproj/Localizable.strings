@@ -88,6 +88,9 @@
 "channel.info.segment.links.noItems" = "No link items yet";
 "channel.info.segment.voice.noItems" = "No voice items yet";
 
+"channel.profile.qrCodeTitle" = "QR Code for Invites";
+"channel.profile.qrCodeShare" = "Share QR Code";
+
 "channel.info.mute.one-hour" = "For 1 hour";
 "channel.info.mute.hours" = "For %d hours";
 "channel.info.mute.one-day" = "For 1 day";

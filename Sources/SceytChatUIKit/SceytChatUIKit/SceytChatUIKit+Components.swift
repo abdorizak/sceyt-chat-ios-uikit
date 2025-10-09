@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 
 typealias Components = SceytChatUIKit.Components
 
@@ -65,6 +66,7 @@ extension SceytChatUIKit {
         public static var messageInfoViewController: MessageInfoViewController.Type = MessageInfoViewController.self
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self
         public static var navigationController: NavigationController.Type = NavigationController.self
+        public static var qrCodeViewController: QRCodeViewController.Type = QRCodeViewController.self
         public static var reactionPickerViewController: ReactionPickerViewController.Type = ReactionPickerViewController.self
         public static var reactedUserListViewController: ReactedUserListViewController.Type = ReactedUserListViewController.self
         public static var reactionsInfoViewController: ReactionsInfoViewController.Type = ReactionsInfoViewController.self
