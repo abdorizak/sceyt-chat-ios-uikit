@@ -317,6 +317,32 @@ public enum L10n {
       /// New Channel
       public static let title = L10n.tr("Localizable", "channel.intro.title", fallback: "New Channel")
     }
+    public enum InviteLink {
+      /// Cancel
+      public static let cancel = L10n.tr("Localizable", "channel.inviteLink.cancel", fallback: "Cancel")
+      /// You can invite anyone to the chat using this link
+      public static let description = L10n.tr("Localizable", "channel.inviteLink.description", fallback: "You can invite anyone to the chat using this link")
+      /// Link copied to clipboard
+      public static let linkCopied = L10n.tr("Localizable", "channel.inviteLink.linkCopied", fallback: "Link copied to clipboard")
+      /// Message history is visible to new members
+      public static let messagesDescription = L10n.tr("Localizable", "channel.inviteLink.messagesDescription", fallback: "Message history is visible to new members")
+      /// Open QR Code
+      public static let openQRCode = L10n.tr("Localizable", "channel.inviteLink.openQRCode", fallback: "Open QR Code")
+      /// Reset
+      public static let reset = L10n.tr("Localizable", "channel.inviteLink.reset", fallback: "Reset")
+      /// Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.
+      public static let resetAlertMessage = L10n.tr("Localizable", "channel.inviteLink.resetAlertMessage", fallback: "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.")
+      /// Reset Link
+      public static let resetAlertTitle = L10n.tr("Localizable", "channel.inviteLink.resetAlertTitle", fallback: "Reset Link")
+      /// Reset Link
+      public static let resetLink = L10n.tr("Localizable", "channel.inviteLink.resetLink", fallback: "Reset Link")
+      /// Share
+      public static let share = L10n.tr("Localizable", "channel.inviteLink.share", fallback: "Share")
+      /// Show Previous Messages
+      public static let showPreviousMessages = L10n.tr("Localizable", "channel.inviteLink.showPreviousMessages", fallback: "Show Previous Messages")
+      /// Invite Link
+      public static let title = L10n.tr("Localizable", "channel.inviteLink.title", fallback: "Invite Link")
+    }
     public enum List {
       /// Search for channels
       public static let search = L10n.tr("Localizable", "channel.list.search", fallback: "Search for channels")
@@ -402,36 +428,10 @@ public enum L10n {
     public enum Profile {
       /// Show or send this to anyone who wants to join this channel
       public static let qrCodeDescription = L10n.tr("Localizable", "channel.profile.qrCodeDescription", fallback: "Show or send this to anyone who wants to join this channel")
-      /// Share
-      public static let qrCodeShare = L10n.tr("Localizable", "channel.profile.qrCodeShare", fallback: "Share")
+      /// Share QR Code
+      public static let qrCodeShare = L10n.tr("Localizable", "channel.profile.qrCodeShare", fallback: "Share QR Code")
       /// QR Code for Invites
       public static let qrCodeTitle = L10n.tr("Localizable", "channel.profile.qrCodeTitle", fallback: "QR Code for Invites")
-    }
-    public enum InviteLink {
-      /// Cancel
-      public static let cancel = L10n.tr("Localizable", "channel.inviteLink.cancel", fallback: "Cancel")
-      /// You can invite anyone to the chat using this link
-      public static let description = L10n.tr("Localizable", "channel.inviteLink.description", fallback: "You can invite anyone to the chat using this link")
-      /// Link copied to clipboard
-      public static let linkCopied = L10n.tr("Localizable", "channel.inviteLink.linkCopied", fallback: "Link copied to clipboard")
-      /// Message history is visible to new members
-      public static let messagesDescription = L10n.tr("Localizable", "channel.inviteLink.messagesDescription", fallback: "Message history is visible to new members")
-      /// Open QR Code
-      public static let openQRCode = L10n.tr("Localizable", "channel.inviteLink.openQRCode", fallback: "Open QR Code")
-      /// Reset
-      public static let reset = L10n.tr("Localizable", "channel.inviteLink.reset", fallback: "Reset")
-      /// Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.
-      public static let resetAlertMessage = L10n.tr("Localizable", "channel.inviteLink.resetAlertMessage", fallback: "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.")
-      /// Reset Link
-      public static let resetAlertTitle = L10n.tr("Localizable", "channel.inviteLink.resetAlertTitle", fallback: "Reset Link")
-      /// Reset Link
-      public static let resetLink = L10n.tr("Localizable", "channel.inviteLink.resetLink", fallback: "Reset Link")
-      /// Share
-      public static let share = L10n.tr("Localizable", "channel.inviteLink.share", fallback: "Share")
-      /// Show Previous Messages
-      public static let showPreviousMessages = L10n.tr("Localizable", "channel.inviteLink.showPreviousMessages", fallback: "Show Previous Messages")
-      /// Invite Link
-      public static let title = L10n.tr("Localizable", "channel.inviteLink.title", fallback: "Invite Link")
     }
     public enum ReadOnly {
       /// Read Only.
@@ -559,6 +559,14 @@ public enum L10n {
     public static let edit = L10n.tr("Localizable", "input.edit", fallback: "Edit message")
     /// Reply
     public static let reply = L10n.tr("Localizable", "input.reply", fallback: "Reply")
+  }
+  public enum JoinGroup {
+    public enum Button {
+      /// Join Group
+      public static let join = L10n.tr("Localizable", "joinGroup.button.join", fallback: "Join Group")
+      /// Joining...
+      public static let joining = L10n.tr("Localizable", "joinGroup.button.joining", fallback: "Joining...")
+    }
   }
   public enum Link {
     /// Copy link

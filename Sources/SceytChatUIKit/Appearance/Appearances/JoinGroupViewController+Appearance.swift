@@ -38,8 +38,8 @@ extension JoinGroupViewController: AppearanceProviding {
         closeButtonBackgroundColor: .closeButtonBackground,
         avatarAppearance: AvatarAppearance.standard,
         avatarRenderer: SceytChatUIKit.shared.avatarRenderers.channelAvatarRenderer,
-        joinButtonTitle: "Join Group",
-        joiningButtonTitle: "Joining..."
+        joinButtonTitle: L10n.JoinGroup.Button.join,
+        joiningButtonTitle: L10n.JoinGroup.Button.joining
     )
 
     public struct Appearance {

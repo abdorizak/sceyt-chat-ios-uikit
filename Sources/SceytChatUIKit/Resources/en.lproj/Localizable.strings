@@ -275,6 +275,9 @@
 "recorder.slideToCancel" = "< Slide to cancel";
 "recorder.cancel" = "Cancel";
 
+"joinGroup.button.join" = "Join Group";
+"joinGroup.button.joining" = "Joining...";
+
 "attachment.file" = "File";
 "attachment.image" = "Photo";
 "attachment.video" = "Video";
