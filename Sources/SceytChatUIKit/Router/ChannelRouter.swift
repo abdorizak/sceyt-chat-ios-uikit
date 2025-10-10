@@ -187,4 +187,21 @@ open class ChannelRouter: Router<ChannelViewController> {
         nav.viewControllers = [viewController]
         rootViewController.present(nav, animated: true)
     }
+    
+    open func showJoinGroup(inviteLink: String) {
+        let viewController = Components.joinGroupViewController.init()
+        viewController.joinGroupViewModel = Components.joinGroupViewModel.init(inviteLink: inviteLink)
+        
+        viewController.modalPresentationStyle = .pageSheet
+        
+        if #available(iOS 15.0, *) {
+            if let sheet = viewController.sheetPresentationController {
+                sheet.detents = [.medium()]
+                sheet.prefersGrabberVisible = false
+                sheet.preferredCornerRadius = 10
+            }
+        }
+        
+        rootViewController.present(viewController, animated: true)
+    }
 }

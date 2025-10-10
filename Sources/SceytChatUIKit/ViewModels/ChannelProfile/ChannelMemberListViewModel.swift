@@ -28,7 +28,7 @@ open class ChannelMemberListViewModel: NSObject {
     }
 
     public var inviteLinkTitle: String {
-        return "Invite Link"
+        return L10n.Channel.InviteLink.title
     }
     
     public var addRole: String {
@@ -90,8 +90,8 @@ open class ChannelMemberListViewModel: NSObject {
     }
 
     open var canShowInviteLink: Bool {
-        // TODO: check the conditions
-        return canAddMembers
+        // Only show invite link if config is set and user can add members
+        return canAddMembers && SceytChatUIKit.shared.config.channelInviteDeepLinkConfig != nil
     }
 
     open func startDatabaseObserver() {

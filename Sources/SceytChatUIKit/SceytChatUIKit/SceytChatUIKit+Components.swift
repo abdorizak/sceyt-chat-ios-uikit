@@ -26,6 +26,7 @@ extension SceytChatUIKit {
         public static var channelMemberRolesViewModel: ChannelMemberRolesViewModel.Type = ChannelMemberRolesViewModel.self
         public static var channelInviteLinkViewModel: ChannelInviteLinkViewModel.Type = ChannelInviteLinkViewModel.self
         public static var channelProfileEditViewModel: ChannelProfileEditViewModel.Type = ChannelProfileEditViewModel.self
+        public static var joinGroupViewModel: JoinGroupViewModel.Type = JoinGroupViewModel.self
         public static var channelProfileViewModel: ChannelProfileViewModel.Type = ChannelProfileViewModel.self
         public static var channelViewModel: ChannelViewModel.Type = ChannelViewModel.self
         public static var createNewChannelViewModel: CreateNewChannelViewModel.Type = CreateNewChannelViewModel.self
@@ -46,6 +47,7 @@ extension SceytChatUIKit {
         public static var channelInfoViewController: ChannelInfoViewController.Type = ChannelInfoViewController.self
         public static var channelInviteLinkViewController: ChannelInviteLinkViewController.Type = ChannelInviteLinkViewController.self
         public static var channelListViewController: ChannelListViewController.Type = ChannelListViewController.self
+        public static var joinGroupViewController: JoinGroupViewController.Type = JoinGroupViewController.self
         public static var channelMemberListViewController: ChannelMemberListViewController.Type = ChannelMemberListViewController.self
         public static var channelSearchResultsBaseViewController: ChannelSearchResultsBaseViewController.Type = ChannelSearchResultsBaseViewController.self
         public static var channelSearchResultsViewController: ChannelSearchResultsViewController.Type = ChannelSearchResultsViewController.self
@@ -83,6 +85,7 @@ extension SceytChatUIKit {
         public static var channelMemberListRouter: ChannelMemberListRouter.Type = ChannelMemberListRouter.self
         public static var channelInviteLinkRouter: ChannelInviteLinkRouter.Type = ChannelInviteLinkRouter.self
         public static var channelProfileRouter: ChannelProfileRouter.Type = ChannelProfileRouter.self
+        public static var joinGroupRouter: JoinGroupRouter.Type = JoinGroupRouter.self
         public static var inputRouter: InputRouter.Type = InputRouter.self
         public static var previewerRouter: PreviewerRouter.Type = PreviewerRouter.self
         

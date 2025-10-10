@@ -7,12 +7,14 @@
 //
 
 import UIKit
+import Combine
 
 open class ChannelInviteLinkViewController: ViewController,
                                             UITableViewDelegate,
                                             UITableViewDataSource {
 
     open var inviteLinkViewModel: ChannelInviteLinkViewModel!
+    private var subscriptions = Set<AnyCancellable>()
 
     open lazy var router = Components.channelInviteLinkRouter
         .init(rootViewController: self)
@@ -57,6 +59,49 @@ open class ChannelInviteLinkViewController: ViewController,
         let footer = UIView()
         footer.frame.size.height = .leastNormalMagnitude
         tableView.tableFooterView = footer
+        
+        setupBindings()
+        
+        // Fetch the current invite link data
+        inviteLinkViewModel.loadInviteLinkData()
+    }
+    
+    private func setupBindings() {
+        // Handle loading state
+        inviteLinkViewModel.$isLoading
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isLoading in
+                loader.isLoading = isLoading
+            }
+            .store(in: &subscriptions)
+        
+        // Handle errors
+        inviteLinkViewModel.$error
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                self?.showAlert(error: error)
+            }
+            .store(in: &subscriptions)
+        
+        // Handle showPreviousMessages changes
+        inviteLinkViewModel.$showPreviousMessages
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                // Reload the switch cell to update the switch state
+                let switchIndexPath = IndexPath(row: 0, section: 1)
+                self?.tableView.reloadRows(at: [switchIndexPath], with: .none)
+            }
+            .store(in: &subscriptions)
+        
+        // Handle view model events
+        inviteLinkViewModel.$event
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.onEvent(event)
+            }
+            .store(in: &subscriptions)
     }
 
     open override func setupLayout() {
@@ -130,7 +175,7 @@ open class ChannelInviteLinkViewController: ViewController,
             cell.titleLabel.text = appearance.showPreviousMessagesText
             cell.switchControl.isOn = inviteLinkViewModel.showPreviousMessages
             cell.onSwitchChanged = { [weak self] isOn in
-                self?.inviteLinkViewModel.showPreviousMessages = isOn
+                self?.inviteLinkViewModel.updateShowPreviousMessages(isOn)
             }
             return cell
 
@@ -271,10 +316,6 @@ open class ChannelInviteLinkViewController: ViewController,
         let activityViewController = UIActivityViewController(activityItems: [link], applicationActivities: nil)
         present(activityViewController, animated: true)
     }
-
-    @objc open func showPreviousMessagesChanged(_ sender: UISwitch) {
-        inviteLinkViewModel.showPreviousMessages = sender.isOn
-    }
     
     @objc open func showResetLinkAlert() {
         let actions: [SheetAction] = [
@@ -300,9 +341,16 @@ open class ChannelInviteLinkViewController: ViewController,
     }
     
     @objc open func resetLink() {
-        // TODO: Implement actual reset link functionality
-        // This should call the appropriate method on inviteLinkViewModel
-        print("Reset link functionality to be implemented")
+        inviteLinkViewModel.resetLink()
+    }
+    
+    // MARK: - ViewModel Events
+    
+    open func onEvent(_ event: ChannelInviteLinkViewModel.Event) {
+        switch event {
+        case .reloadData:
+            tableView.reloadData()
+        }
     }
 }
 
