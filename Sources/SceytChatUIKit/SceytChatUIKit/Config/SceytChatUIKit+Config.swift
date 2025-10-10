@@ -51,6 +51,8 @@ extension SceytChatUIKit {
                                                                          maxLength: 50,
                                                                          regex: "^[a-zA-Z0-9_]*$")
         
+        public var channelInviteDeepLinkConfig: ChannelInviteDeepLinkConfig?
+        
         public var syncChannelsAfterConnect: Bool = true
         
         public var channelListOrder: ChannelListOrder = .lastMessage

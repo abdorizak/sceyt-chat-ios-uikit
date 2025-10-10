@@ -14,8 +14,10 @@ open class ChannelInviteLinkViewModel: NSObject {
     public let channel: ChatChannel
 
     public var inviteLink: String? {
-        // TODO: Implement actual invite link generation
-        return "https://sceyt.app/invite/\(channel.id)"
+        guard let config = SceytChatUIKit.shared.config.channelInviteDeepLinkConfig else {
+            return nil
+        }
+        return config.constructInviteLink(for: channel.uri)
     }
 
     public var showPreviousMessages: Bool = false {
