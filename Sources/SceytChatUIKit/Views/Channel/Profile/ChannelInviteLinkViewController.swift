@@ -108,7 +108,7 @@ open class ChannelInviteLinkViewController: ViewController,
         switch section {
         case 0: return 1 // Link field
         case 1: return 1 // Show Previous Messages switch
-        case 2: return 3 // Share, Recent Links, Open QR Code
+        case 2: return inviteLinkViewModel.isPublicChannel ? 2 : 3 // Share, Reset Links (if private), Open QR Code
         default: return 0
         }
     }
@@ -137,14 +137,18 @@ open class ChannelInviteLinkViewController: ViewController,
         case 2:
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: ActionCell.self)
             cell.parentAppearance = appearance.actionCellAppearance
-
             switch indexPath.row {
             case 0:
                 cell.iconView.image = .chatShare
                 cell.titleLabel.text = appearance.shareText
             case 1:
-                cell.iconView.image = .refreshIcon
-                cell.titleLabel.text = appearance.resetLinkText
+                if !inviteLinkViewModel.isPublicChannel {
+                    cell.iconView.image = .refreshIcon
+                    cell.titleLabel.text = appearance.resetLinkText
+                } else {
+                    cell.iconView.image = .channelProfileQR
+                    cell.titleLabel.text = appearance.openQRCodeText
+                }
             case 2:
                 cell.iconView.image = .channelProfileQR
                 cell.titleLabel.text = appearance.openQRCodeText
@@ -167,7 +171,11 @@ open class ChannelInviteLinkViewController: ViewController,
             case 0:
                 shareLink()
             case 1:
-                showResetLinkAlert()
+                if !inviteLinkViewModel.isPublicChannel {
+                    showResetLinkAlert()
+                } else {
+                    router.showQRCode()
+                }
             case 2:
                 router.showQRCode()
             default:

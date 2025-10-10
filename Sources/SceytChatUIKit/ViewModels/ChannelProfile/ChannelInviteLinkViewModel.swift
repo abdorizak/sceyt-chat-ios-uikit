@@ -23,6 +23,10 @@ open class ChannelInviteLinkViewModel: NSObject {
             // TODO: Update backend setting
         }
     }
+    
+    public var isPublicChannel: Bool {
+        return channel.channelType == .broadcast
+    }
 
     public required init(channel: ChatChannel) {
         self.channel = channel
