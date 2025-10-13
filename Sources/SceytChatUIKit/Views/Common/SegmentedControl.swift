@@ -153,9 +153,10 @@ open class SegmentedControl: UIControl, SegmentedController, Configurable {
     override open func layoutSubviews() {
         super.layoutSubviews()
 
-        line.frame = .init(x: CGFloat(currentPosition) * width - line.width / 2, 
+        let calculatedLineWidth = lineWidth
+        line.frame = .init(x: CGFloat(currentPosition) * width - calculatedLineWidth / 2,
                            y: height - Layouts.selectedIndicatorHeight,
-                           width: lineWidth,
+                           width: calculatedLineWidth,
                            height: Layouts.selectedIndicatorHeight)
         line.layer.cornerRadius = Layouts.selectedIndicatorHeight / 2
     }

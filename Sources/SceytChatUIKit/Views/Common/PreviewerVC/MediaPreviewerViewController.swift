@@ -54,7 +54,11 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     open lazy var durationLabel = UILabel()
         .contentHuggingPriorityH(.required)
 
-    open lazy var slider: UISlider = PreviewerSlider()
+    open lazy var slider: UISlider = {
+        let slider = PreviewerSlider()
+        slider.thumbPadding = appearance.thumbPadding
+        return slider
+    }()
     
     public private(set) var isSliderDragging = false {
         didSet {
@@ -115,10 +119,10 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         currentTimeLabel.text = "0:00"
         
         slider.setThumbImage(Images.videoPlayerThumb.imageWithInsets(insets: .init(
-            top: PreviewerSlider.thumbPadding,
-            left: PreviewerSlider.thumbPadding,
-            bottom: PreviewerSlider.thumbPadding,
-            right: PreviewerSlider.thumbPadding)), for: [])
+            top: appearance.thumbPadding,
+            left: appearance.thumbPadding,
+            bottom: appearance.thumbPadding,
+            right: appearance.thumbPadding)), for: [])
         slider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
         
         durationLabel.text = "0:00"
@@ -531,12 +535,18 @@ private class PreviewerSlider: UISlider {
         bounds = bounds.insetBy(dx: -44, dy: -14)
         return bounds.contains(point)
     }
-    
-    static let thumbPadding: CGFloat = 20
-    
+
+    var thumbPadding: CGFloat = {
+        if #available(iOS 26, *) {
+            return 6
+        } else {
+            return 20
+        }
+    }()
+
     override func thumbRect(forBounds bounds: CGRect, trackRect rect: CGRect, value: Float) -> CGRect {
-        let startingOffset = 0 - Float(Self.thumbPadding)
-        let endingOffset = 2 * Float(Self.thumbPadding)
+        let startingOffset = 0 - Float(thumbPadding)
+        let endingOffset = 2 * Float(thumbPadding)
         let xTranslation = startingOffset + (minimumValue + endingOffset) / maximumValue * value
         return super.thumbRect(forBounds: bounds,
                                trackRect: rect.applying(CGAffineTransform(translationX: CGFloat(xTranslation), y: 0)),
