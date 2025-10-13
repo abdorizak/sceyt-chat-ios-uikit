@@ -82,14 +82,14 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
             if let message = channel.lastMessage {
                 createOrUpdate(message: message, channelId: channel.id)
             }
+        }
 
-            if let messages = channel.messages {
-                createOrUpdate(messages: messages, channelId: channel.id)
-            }
+        if let messages = channel.messages {
+            createOrUpdate(messages: messages, channelId: channel.id)
+        }
 
-            if let members = channel.members {
-                createOrUpdate(members: members, channelId: channel.id)
-            }
+        if let members = channel.members {
+            createOrUpdate(members: members, channelId: channel.id)
         }
 
         if let role = channel.userRole {
