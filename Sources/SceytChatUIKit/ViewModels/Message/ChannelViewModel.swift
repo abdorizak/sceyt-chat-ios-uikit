@@ -1254,14 +1254,6 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             if let attachments = message.attachments?.filter({ $0.type != "link" }) {
                 editAttachments += attachments.map { $0.builder.build() }
             }
-            // builder.disableMentionsCount(message.disableMentionsCount) // now handled in makeBaseMessageBuilder
-        case let .reply(message):
-            // builder.parentMessageId(message.id)
-            // builder.disableMentionsCount(message.disableMentionsCount)
-            break
-        case let .forward(message):
-            // builder.disableMentionsCount(message.disableMentionsCount)
-            break
         default:
             break
         }
