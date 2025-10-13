@@ -277,6 +277,7 @@
 
 "joinGroup.button.join" = "Join Group";
 "joinGroup.button.joining" = "Joining...";
+"joinGroup.description.default" = "Group Chat Invite";
 
 "attachment.file" = "File";
 "attachment.image" = "Photo";

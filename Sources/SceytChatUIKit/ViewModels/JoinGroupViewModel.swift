@@ -13,12 +13,18 @@ import Combine
 open class JoinGroupViewModel: NSObject {
     
     public let inviteLink: String
-    public var channel: ChatChannel?
+    @Published public var channel: ChatChannel?
     
     @Published public var event: Event?
     @Published public var isLoading = false
     @Published public var error: Error?
     @Published public var isJoining = false
+    
+    /// Indicates whether the controller should be dismissed when an error occurs
+    /// This is true when channel info loading fails (channel is nil)
+    public var shouldDismissOnError: Bool {
+        return channel == nil
+    }
     
     public required init(inviteLink: String) {
         self.inviteLink = inviteLink

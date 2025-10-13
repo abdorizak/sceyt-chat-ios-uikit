@@ -81,13 +81,16 @@ open class JoinGroupViewController: ViewController {
     }
     
     private func setupBindings() {
-        // Handle loading state
-        joinGroupViewModel.$isLoading
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isLoading in
-                self?.joinButton.isHidden = isLoading
-            }
-            .store(in: &subscriptions)
+        // Handle loading state and channel availability
+        Publishers.CombineLatest(
+            joinGroupViewModel.$isLoading,
+            joinGroupViewModel.$event.map { $0 != nil }
+        )
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] isLoading, hasChannel in
+            self?.joinButton.isHidden = isLoading || !hasChannel
+        }
+        .store(in: &subscriptions)
         
         // Handle joining state
         joinGroupViewModel.$isJoining
@@ -97,12 +100,11 @@ open class JoinGroupViewController: ViewController {
             }
             .store(in: &subscriptions)
         
-        // Handle errors
         joinGroupViewModel.$error
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
-                self?.showAlert(error: error)
+                self?.handleError(error)
             }
             .store(in: &subscriptions)
         
@@ -209,7 +211,7 @@ open class JoinGroupViewController: ViewController {
         closeButton.setImage(.closeIcon, for: .normal)
         closeButton.tintColor = appearance.closeButtonTintColor
         closeButton.backgroundColor = appearance.closeButtonBackgroundColor
-        closeButton.layer.cornerRadius = 16 // Half of 32x32 size for circular button
+        closeButton.layer.cornerRadius = 14
     }
     
     private func updateJoinButtonState(isJoining: Bool) {
@@ -230,12 +232,13 @@ open class JoinGroupViewController: ViewController {
         // Set channel name
         channelNameLabel.text = channel.subject
         
-        // Set channel description if available
+        // Set channel description if available, otherwise use default
         if let description = channel.metadata, !description.isEmpty {
             channelDescriptionLabel.text = description
             channelDescriptionLabel.isHidden = false
         } else {
-            channelDescriptionLabel.isHidden = true
+            channelDescriptionLabel.text = appearance.defaultChannelDescription
+            channelDescriptionLabel.isHidden = false
         }
         
         // Load and set channel avatar
@@ -262,6 +265,17 @@ open class JoinGroupViewController: ViewController {
         dismiss(animated: true)
     }
     
+    // MARK: Error Handling
+    
+    private func handleError(_ error: Error) {
+        let cancelAction = SheetAction.init(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
+            if self?.joinGroupViewModel.shouldDismissOnError == true {
+                self?.dismiss(animated: true)
+            }
+        }
+        showAlert(title: L10n.Alert.Error.title, message: error.localizedDescription, actions: [cancelAction], preferredActionIndex: 0, completion: nil)
+    }
+
     // MARK: ViewModel Events
     
     open func onEvent(_ event: JoinGroupViewModel.Event) {

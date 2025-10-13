@@ -39,7 +39,8 @@ extension JoinGroupViewController: AppearanceProviding {
         avatarAppearance: AvatarAppearance.standard,
         avatarRenderer: SceytChatUIKit.shared.avatarRenderers.channelAvatarRenderer,
         joinButtonTitle: L10n.JoinGroup.Button.join,
-        joiningButtonTitle: L10n.JoinGroup.Button.joining
+        joiningButtonTitle: L10n.JoinGroup.Button.joining,
+        defaultChannelDescription: L10n.JoinGroup.Description.default
     )
 
     public struct Appearance {
@@ -79,6 +80,9 @@ extension JoinGroupViewController: AppearanceProviding {
         @Trackable<Appearance, String>
         public var joiningButtonTitle: String
 
+        @Trackable<Appearance, String>
+        public var defaultChannelDescription: String
+
         public init(
             backgroundColor: UIColor,
             avatarBorderWidth: CGFloat,
@@ -91,7 +95,8 @@ extension JoinGroupViewController: AppearanceProviding {
             avatarAppearance: AvatarAppearance,
             avatarRenderer: any ChannelAvatarRendering,
             joinButtonTitle: String,
-            joiningButtonTitle: String
+            joiningButtonTitle: String,
+            defaultChannelDescription: String
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._avatarBorderWidth = Trackable(value: avatarBorderWidth)
@@ -105,6 +110,7 @@ extension JoinGroupViewController: AppearanceProviding {
             self._avatarRenderer = Trackable(value: avatarRenderer)
             self._joinButtonTitle = Trackable(value: joinButtonTitle)
             self._joiningButtonTitle = Trackable(value: joiningButtonTitle)
+            self._defaultChannelDescription = Trackable(value: defaultChannelDescription)
         }
 
         public init(
@@ -120,7 +126,8 @@ extension JoinGroupViewController: AppearanceProviding {
             avatarAppearance: AvatarAppearance? = nil,
             avatarRenderer: (any ChannelAvatarRendering)? = nil,
             joinButtonTitle: String? = nil,
-            joiningButtonTitle: String? = nil
+            joiningButtonTitle: String? = nil,
+            defaultChannelDescription: String? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._avatarBorderWidth = Trackable(reference: reference, referencePath: \.avatarBorderWidth)
@@ -134,6 +141,7 @@ extension JoinGroupViewController: AppearanceProviding {
             self._avatarRenderer = Trackable(reference: reference, referencePath: \.avatarRenderer)
             self._joinButtonTitle = Trackable(reference: reference, referencePath: \.joinButtonTitle)
             self._joiningButtonTitle = Trackable(reference: reference, referencePath: \.joiningButtonTitle)
+            self._defaultChannelDescription = Trackable(reference: reference, referencePath: \.defaultChannelDescription)
 
             if let backgroundColor {
                 self.backgroundColor = backgroundColor
@@ -170,6 +178,9 @@ extension JoinGroupViewController: AppearanceProviding {
             }
             if let joiningButtonTitle {
                 self.joiningButtonTitle = joiningButtonTitle
+            }
+            if let defaultChannelDescription {
+                self.defaultChannelDescription = defaultChannelDescription
             }
         }
     }

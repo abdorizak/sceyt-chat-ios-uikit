@@ -567,6 +567,10 @@ public enum L10n {
       /// Joining...
       public static let joining = L10n.tr("Localizable", "joinGroup.button.joining", fallback: "Joining...")
     }
+    public enum Description {
+      /// Group Chat Invite
+      public static let `default` = L10n.tr("Localizable", "joinGroup.description.default", fallback: "Group Chat Invite")
+    }
   }
   public enum Link {
     /// Copy link
