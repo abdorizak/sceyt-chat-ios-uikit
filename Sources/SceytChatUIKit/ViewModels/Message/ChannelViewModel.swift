@@ -2246,7 +2246,7 @@ public extension ChannelViewModel {
     enum Event {
         case update(paths: CollectionUpdateIndexPaths)
         case updateDeliveryStatus(model: MessageLayoutModel, indexPath: IndexPath)
-        case reload(IndexPath)
+        case reload([IndexPath])
         case reloadData
         case reloadDataAndScrollToBottom
         case reloadDataAndScroll(indexPath: IndexPath, animated: Bool, pos: CollectionView.ScrollPosition)
