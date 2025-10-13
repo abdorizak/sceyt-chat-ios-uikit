@@ -28,6 +28,7 @@ public class ChatMessage {
     public let repliedInThread: Bool
     public let replyCount: Int
     public let displayCount: Int
+    public let disableMentionsCount: Bool
     
     public let attachments: [Attachment]?
     public let userReactions: [Reaction]?
@@ -65,6 +66,7 @@ public class ChatMessage {
                 repliedInThread: Bool = false,
                 replyCount: Int = 0,
                 displayCount: Int = 0,
+                disableMentionsCount: Bool = false,
                 attachments: [ChatMessage.Attachment]? = nil,
                 userReactions: [ChatMessage.Reaction]? = nil,
                 userPendingReactions: [ChatMessage.Reaction]? = nil,
@@ -94,6 +96,7 @@ public class ChatMessage {
         self.repliedInThread = repliedInThread
         self.replyCount = replyCount
         self.displayCount = displayCount
+        self.disableMentionsCount = disableMentionsCount
         self.attachments = attachments
         self.userReactions = userReactions
         self.userPendingReactions = userPendingReactions
@@ -134,6 +137,7 @@ public class ChatMessage {
         repliedInThread = dto.repliedInThread
         replyCount = Int(dto.replyCount)
         displayCount = Int(dto.displayCount)
+        disableMentionsCount = dto.disableMentionsCount
         markerCount = dto.markerTotal
         if let user = dto.user {
             self.user = user.convert()
@@ -257,6 +261,7 @@ public class ChatMessage {
             repliedInThread: message.repliedInThread,
             replyCount: message.replyCount,
             displayCount: message.displayCount,
+            disableMentionsCount: message.disableMentionsCount,
             attachments: message.attachments?.map { ChatMessage.Attachment(attachment: $0)},
             userReactions: message.userReactions?.map { ChatMessage.Reaction(reaction: $0)},
             reactionTotals: message.reactionTotals?.map { .init(reaction: $0)},
