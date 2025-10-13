@@ -47,15 +47,28 @@ open class AudioWaveformView: View {
         
         let samples = data.chunked(into: Int(ceil(Float(data.count) / Float(targetCount)))).map { $0.reduce(0, +) / Float($0.count) }
         let max = max(abs(samples.min() ?? 0), abs(samples.max() ?? 0))
-        guard max > 0
-        else { return }
-
         let middleY = rect.height / 2
         
         context.setAlpha(1.0)
         context.setLineWidth(lineWidth)
         context.setLineCap(.round)
-        
+        if max == 0 {
+            // Draw flat line when all samples are zero
+            let widthNormalizationFactor = rect.width / CGFloat(samples.count)
+            for index in 0 ..< samples.count {
+                let x = lineWidth / 2 + CGFloat(index) * widthNormalizationFactor
+                context.move(to: CGPoint(x: x, y: middleY))
+                context.addLine(to: CGPoint(x: x, y: middleY))
+                if Double(index) / Double(samples.count) < progress {
+                    context.setStrokeColor(appearance.progressColor.cgColor)
+                } else {
+                    context.setStrokeColor(appearance.trackColor.cgColor)
+                }
+                context.strokePath()
+            }
+            return
+        }
+
         let heightNormalizationFactor = rect.height / CGFloat(max) / 2
         let widthNormalizationFactor = rect.width / CGFloat(samples.count)
         for index in 0 ..< samples.count {
