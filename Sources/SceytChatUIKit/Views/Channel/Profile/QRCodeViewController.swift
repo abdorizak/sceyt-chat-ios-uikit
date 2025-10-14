@@ -176,8 +176,15 @@ open class QRCodeViewController: ViewController {
     }
 
     @objc open func shareButtonTapped() {
+        var activityItems: [Any] = [inviteLink]
+        
+        // Add composite QR code image if available
+        if let compositeImage = createCompositeQRCodeImage() {
+            activityItems.append(compositeImage)
+        }
+        
         let activityViewController = UIActivityViewController(
-            activityItems: [inviteLink],
+            activityItems: activityItems,
             applicationActivities: nil
         )
 
@@ -192,5 +199,40 @@ open class QRCodeViewController: ViewController {
 
     @objc open func closeButtonTapped() {
         dismiss(animated: true)
+    }
+    
+    // MARK: - Private Methods
+    
+    private func createCompositeQRCodeImage() -> UIImage? {
+        guard let qrCodeImage = qrCodeImageView.image else { return nil }
+        
+        let size = qrCodeImage.size
+        let renderer = UIGraphicsImageRenderer(size: size)
+        
+        return renderer.image { context in
+            // Draw QR code as background
+            qrCodeImage.draw(in: CGRect(origin: .zero, size: size))
+            
+            // Draw logo overlay if available
+            if let logoImage = logoImageView.image, !logoImageView.isHidden {
+                let logoSize = appearance.logoSize
+                let logoRect = CGRect(
+                    x: (size.width - logoSize.width) / 2,
+                    y: (size.height - logoSize.height) / 2,
+                    width: logoSize.width,
+                    height: logoSize.height
+                )
+                
+                // Draw logo background if configured
+                let logoBackgroundColor = appearance.logoBackgroundColor
+                logoBackgroundColor.setFill()
+                let backgroundRect = logoRect.insetBy(dx: -2, dy: -2)
+                let path = UIBezierPath(roundedRect: backgroundRect, cornerRadius: appearance.logoCornerRadius)
+                path.fill()
+                
+                // Draw logo image
+                logoImage.draw(in: logoRect)
+            }
+        }
     }
 }
