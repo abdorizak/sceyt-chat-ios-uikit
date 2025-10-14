@@ -12,7 +12,7 @@ import Combine
 
 open class ChannelInviteLinkViewModel: NSObject {
 
-    public let channel: ChatChannel
+    public var channel: ChatChannel
     public var channelInviteKey: SCTChannelInviteKey?
     
     @Published public var event: Event?
@@ -107,19 +107,34 @@ open class ChannelInviteLinkViewModel: NSObject {
                 if let error = error {
                     self.error = error
                 } else if let newKey = newKey {
-                    // Create a new channel instance with the updated URI
+                    // Update channel URI in database using best practice pattern
                     SceytChatUIKit.shared.database.write { [weak self] in
                         guard let self = self else { return }
-                        ChannelDTO.fetchOrCreate(id: channel.id, context: $0)
-                            .0.uri = newKey.key
-                    } completion: { [weak self] _ in
+                        if channelInviteKey?.isPrimary == false {
+                            let (dto, _) = ChannelDTO.fetchOrCreate(id: channel.id, context: $0)
+                            dto.uri = newKey.key
+                        }
+                    } completion: { [weak self] error in
                         DispatchQueue.main.async {
-                            self?.event = .reloadData
+                            if let error = error {
+                                self?.error = error
+                            } else {
+                                // Update the local channelInviteKey with the new key
+                                self?.channelInviteKey = newKey
+                                self?.refreshChannelFromDB()
+                                self?.event = .reloadData
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    
+    public func refreshChannelFromDB() {
+        self.channel = (try? SceytChatUIKit.shared.database.read { context in
+            ChannelDTO.fetch(id: self.channel.id, context: context)?.convert()
+        }.get()) ?? channel
     }
 }
 

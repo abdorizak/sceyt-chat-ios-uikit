@@ -10,7 +10,7 @@ import Foundation
 import SceytChat
 import Combine
 
-open class JoinGroupViewModel: NSObject {
+open class JoinGroupViewModel: DataProvider {
     
     public let inviteLink: String
     @Published public var channel: ChatChannel?
@@ -38,7 +38,7 @@ open class JoinGroupViewModel: NSObject {
         error = nil
         
         // Extract channel URI from invite link
-        guard let channelUri = extractChannelUri(from: inviteLink) else {
+        guard let key = extractChannelUri(from: inviteLink) else {
             DispatchQueue.main.async { [weak self] in
                 self?.isLoading = false
                 self?.error = JoinGroupError.invalidLink
@@ -46,15 +46,15 @@ open class JoinGroupViewModel: NSObject {
             return
         }
         
-        ChannelProvider.getChannelByURI(channelUri) { [weak self] channel, error in
+        ChatClient.shared.getChannel(inviteKey: key) { [weak self] channel, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
-
-                if let error = error {
-                    self?.error = error
-                } else if let channel = channel {
-                    self?.channel = channel
-                    self?.event = .channelLoaded(channel)
+                if let channel = channel {
+                    let ch = ChatChannel(channel: channel)
+                    self?.channel = ch
+                    self?.event = .channelLoaded(ch)
+                } else {
+                    self?.error = error ?? JoinGroupError.invalidLink
                 }
             }
         }
@@ -62,17 +62,28 @@ open class JoinGroupViewModel: NSObject {
     
     public func joinChannel() {
         guard let channel = channel, !isJoining else { return }
+        guard let key = extractChannelUri(from: inviteLink) else { return }
         
         isJoining = true
         error = nil
         
-        ChannelProvider(channelId: channel.id).join { [weak self] err in
+        ChatClient.shared.joinChannel(inviteKey: key) { [weak self] channel, error in
             guard let self = self else { return }
             self.isJoining = false
             if let error = error {
                 self.error = error
             } else {
-                self.event = .joinedChannel(channel)
+                if let channel = channel {
+                    let ch = ChatChannel(channel: channel)
+                    // Write channel to database
+                    self.database.write {
+                        $0.createOrUpdate(channel: channel)
+                    } completion: { error in
+                        logger.errorIfNotNil(error, "Store joined channel in db")
+                    }
+                    
+                    self.event = .joinedChannel(ch)
+                }
             }
         }
     }

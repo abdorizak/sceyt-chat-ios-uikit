@@ -64,6 +64,7 @@ open class ChannelInviteLinkViewController: ViewController,
         
         // Fetch the current invite link data
         inviteLinkViewModel.loadInviteLinkData()
+        inviteLinkViewModel.refreshChannelFromDB()
     }
     
     private func setupBindings() {

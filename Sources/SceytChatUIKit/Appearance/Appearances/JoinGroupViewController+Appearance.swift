@@ -10,7 +10,7 @@ import UIKit
 
 extension JoinGroupViewController: AppearanceProviding {
     public static var appearance = Appearance(
-        backgroundColor: .backgroundSecondary,
+        backgroundColor: .background,
         avatarBorderWidth: 0,
         avatarBorderColor: .clear,
         channelNameLabelAppearance: LabelAppearance(

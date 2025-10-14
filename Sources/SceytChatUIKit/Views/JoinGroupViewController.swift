@@ -232,14 +232,9 @@ open class JoinGroupViewController: ViewController {
         // Set channel name
         channelNameLabel.text = channel.subject
         
-        // Set channel description if available, otherwise use default
-        if let description = channel.metadata, !description.isEmpty {
-            channelDescriptionLabel.text = description
-            channelDescriptionLabel.isHidden = false
-        } else {
-            channelDescriptionLabel.text = appearance.defaultChannelDescription
-            channelDescriptionLabel.isHidden = false
-        }
+        // Set default channel description
+        channelDescriptionLabel.text = appearance.defaultChannelDescription
+        channelDescriptionLabel.isHidden = false
         
         // Load and set channel avatar
         loadChannelAvatar(channel: channel)
