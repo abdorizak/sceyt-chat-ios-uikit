@@ -82,11 +82,14 @@ open class JoinGroupViewModel: DataProvider {
                         logger.errorIfNotNil(error, "Store joined channel in db")
                     }
                     
+                    self.joinedChannelHandler()
                     self.event = .joinedChannel(ch)
                 }
             }
         }
     }
+    
+    open func joinedChannelHandler() {}
     
     private func extractChannelUri(from link: String) -> String? {
         guard let config = SceytChatUIKit.shared.config.channelInviteDeepLinkConfig,
