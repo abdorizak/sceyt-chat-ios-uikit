@@ -278,6 +278,10 @@
 "joinGroup.button.join" = "Join Group";
 "joinGroup.button.joining" = "Joining...";
 "joinGroup.description.default" = "Group Chat Invite";
+"joinGroup.error.invalidLink" = "Invalid invite link";
+"joinGroup.members.one-other" = "1 other";
+"joinGroup.members.others" = "%d others";
+"joinGroup.members.format" = "%@ and %@";
 
 "attachment.file" = "File";
 "attachment.image" = "Photo";

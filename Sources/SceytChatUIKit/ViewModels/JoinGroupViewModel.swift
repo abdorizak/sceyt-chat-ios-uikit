@@ -14,7 +14,8 @@ open class JoinGroupViewModel: DataProvider {
     
     public let inviteLink: String
     @Published public var channel: ChatChannel?
-    
+    @Published public var members: [ChatChannelMember] = []
+
     @Published public var event: Event?
     @Published public var isLoading = false
     @Published public var error: Error?
@@ -46,12 +47,17 @@ open class JoinGroupViewModel: DataProvider {
             return
         }
         
-        ChatClient.shared.getChannel(inviteKey: key) { [weak self] channel, error in
+        var param = ChannelQueryParam()
+        param.includeLastMessage = false
+        param.memberCount = 3
+
+        ChatClient.shared.getChannel(inviteKey: key, param: param) { [weak self] channel, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let channel = channel {
                     let ch = ChatChannel(channel: channel)
                     self?.channel = ch
+                    self?.members = channel.members?.map { ChatChannelMember(member: $0) } ?? []
                     self?.event = .channelLoaded(ch)
                 } else {
                     self?.error = error ?? JoinGroupError.invalidLink
@@ -123,11 +129,11 @@ public extension JoinGroupViewModel {
     
     enum JoinGroupError: LocalizedError {
         case invalidLink
-        
+
         public var errorDescription: String? {
             switch self {
             case .invalidLink:
-                return "Invalid invite link"
+                return L10n.JoinGroup.Error.invalidLink
             }
         }
     }

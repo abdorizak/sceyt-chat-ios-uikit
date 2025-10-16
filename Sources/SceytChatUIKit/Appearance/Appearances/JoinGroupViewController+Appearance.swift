@@ -23,6 +23,22 @@ extension JoinGroupViewController: AppearanceProviding {
             font: .systemFont(ofSize: 14, weight: .regular),
             backgroundColor: .clear
         ),
+        memberNamesLabelAppearance: LabelAppearance(
+            foregroundColor: .secondaryLabel,
+            font: .systemFont(ofSize: 14, weight: .regular),
+            backgroundColor: .clear
+        ),
+        memberAvatarSize: 40,
+        memberAvatarBorderWidth: 2,
+        memberAvatarBorderColor: .background,
+        memberAvatarAppearance: AvatarAppearance.standard,
+        memberAvatarRenderer: SceytChatUIKit.shared.avatarRenderers.userAvatarRenderer,
+        moreLabelAppearance: LabelAppearance(
+            foregroundColor: .primaryText,
+            font: .systemFont(ofSize: 13, weight: .semibold),
+            backgroundColor: .clear
+        ),
+        moreLabelBackgroundColor: .backgroundSecondary,
         joinButtonAppearance: .init(
             labelAppearance: .init(
                 foregroundColor: .onPrimary,
@@ -59,6 +75,30 @@ extension JoinGroupViewController: AppearanceProviding {
         @Trackable<Appearance, LabelAppearance>
         public var channelDescriptionLabelAppearance: LabelAppearance
 
+        @Trackable<Appearance, LabelAppearance>
+        public var memberNamesLabelAppearance: LabelAppearance
+
+        @Trackable<Appearance, CGFloat>
+        public var memberAvatarSize: CGFloat
+
+        @Trackable<Appearance, CGFloat>
+        public var memberAvatarBorderWidth: CGFloat
+
+        @Trackable<Appearance, UIColor>
+        public var memberAvatarBorderColor: UIColor
+
+        @Trackable<Appearance, AvatarAppearance>
+        public var memberAvatarAppearance: AvatarAppearance
+
+        @Trackable<Appearance, any UserAvatarRendering>
+        public var memberAvatarRenderer: any UserAvatarRendering
+
+        @Trackable<Appearance, LabelAppearance>
+        public var moreLabelAppearance: LabelAppearance
+
+        @Trackable<Appearance, UIColor>
+        public var moreLabelBackgroundColor: UIColor
+
         @Trackable<Appearance, ButtonAppearance>
         public var joinButtonAppearance: ButtonAppearance
 
@@ -89,6 +129,14 @@ extension JoinGroupViewController: AppearanceProviding {
             avatarBorderColor: UIColor?,
             channelNameLabelAppearance: LabelAppearance,
             channelDescriptionLabelAppearance: LabelAppearance,
+            memberNamesLabelAppearance: LabelAppearance,
+            memberAvatarSize: CGFloat,
+            memberAvatarBorderWidth: CGFloat,
+            memberAvatarBorderColor: UIColor,
+            memberAvatarAppearance: AvatarAppearance,
+            memberAvatarRenderer: any UserAvatarRendering,
+            moreLabelAppearance: LabelAppearance,
+            moreLabelBackgroundColor: UIColor,
             joinButtonAppearance: ButtonAppearance,
             closeButtonTintColor: UIColor,
             closeButtonBackgroundColor: UIColor,
@@ -103,6 +151,14 @@ extension JoinGroupViewController: AppearanceProviding {
             self._avatarBorderColor = Trackable(value: avatarBorderColor)
             self._channelNameLabelAppearance = Trackable(value: channelNameLabelAppearance)
             self._channelDescriptionLabelAppearance = Trackable(value: channelDescriptionLabelAppearance)
+            self._memberNamesLabelAppearance = Trackable(value: memberNamesLabelAppearance)
+            self._memberAvatarSize = Trackable(value: memberAvatarSize)
+            self._memberAvatarBorderWidth = Trackable(value: memberAvatarBorderWidth)
+            self._memberAvatarBorderColor = Trackable(value: memberAvatarBorderColor)
+            self._memberAvatarAppearance = Trackable(value: memberAvatarAppearance)
+            self._memberAvatarRenderer = Trackable(value: memberAvatarRenderer)
+            self._moreLabelAppearance = Trackable(value: moreLabelAppearance)
+            self._moreLabelBackgroundColor = Trackable(value: moreLabelBackgroundColor)
             self._joinButtonAppearance = Trackable(value: joinButtonAppearance)
             self._closeButtonTintColor = Trackable(value: closeButtonTintColor)
             self._closeButtonBackgroundColor = Trackable(value: closeButtonBackgroundColor)
@@ -120,6 +176,14 @@ extension JoinGroupViewController: AppearanceProviding {
             avatarBorderColor: UIColor? = nil,
             channelNameLabelAppearance: LabelAppearance? = nil,
             channelDescriptionLabelAppearance: LabelAppearance? = nil,
+            memberNamesLabelAppearance: LabelAppearance? = nil,
+            memberAvatarSize: CGFloat? = nil,
+            memberAvatarBorderWidth: CGFloat? = nil,
+            memberAvatarBorderColor: UIColor? = nil,
+            memberAvatarAppearance: AvatarAppearance? = nil,
+            memberAvatarRenderer: (any UserAvatarRendering)? = nil,
+            moreLabelAppearance: LabelAppearance? = nil,
+            moreLabelBackgroundColor: UIColor? = nil,
             joinButtonAppearance: ButtonAppearance? = nil,
             closeButtonTintColor: UIColor? = nil,
             closeButtonBackgroundColor: UIColor? = nil,
@@ -134,6 +198,14 @@ extension JoinGroupViewController: AppearanceProviding {
             self._avatarBorderColor = Trackable(reference: reference, referencePath: \.avatarBorderColor)
             self._channelNameLabelAppearance = Trackable(reference: reference, referencePath: \.channelNameLabelAppearance)
             self._channelDescriptionLabelAppearance = Trackable(reference: reference, referencePath: \.channelDescriptionLabelAppearance)
+            self._memberNamesLabelAppearance = Trackable(reference: reference, referencePath: \.memberNamesLabelAppearance)
+            self._memberAvatarSize = Trackable(reference: reference, referencePath: \.memberAvatarSize)
+            self._memberAvatarBorderWidth = Trackable(reference: reference, referencePath: \.memberAvatarBorderWidth)
+            self._memberAvatarBorderColor = Trackable(reference: reference, referencePath: \.memberAvatarBorderColor)
+            self._memberAvatarAppearance = Trackable(reference: reference, referencePath: \.memberAvatarAppearance)
+            self._memberAvatarRenderer = Trackable(reference: reference, referencePath: \.memberAvatarRenderer)
+            self._moreLabelAppearance = Trackable(reference: reference, referencePath: \.moreLabelAppearance)
+            self._moreLabelBackgroundColor = Trackable(reference: reference, referencePath: \.moreLabelBackgroundColor)
             self._joinButtonAppearance = Trackable(reference: reference, referencePath: \.joinButtonAppearance)
             self._closeButtonTintColor = Trackable(reference: reference, referencePath: \.closeButtonTintColor)
             self._closeButtonBackgroundColor = Trackable(reference: reference, referencePath: \.closeButtonBackgroundColor)
@@ -157,6 +229,30 @@ extension JoinGroupViewController: AppearanceProviding {
             }
             if let channelDescriptionLabelAppearance {
                 self.channelDescriptionLabelAppearance = channelDescriptionLabelAppearance
+            }
+            if let memberNamesLabelAppearance {
+                self.memberNamesLabelAppearance = memberNamesLabelAppearance
+            }
+            if let memberAvatarSize {
+                self.memberAvatarSize = memberAvatarSize
+            }
+            if let memberAvatarBorderWidth {
+                self.memberAvatarBorderWidth = memberAvatarBorderWidth
+            }
+            if let memberAvatarBorderColor {
+                self.memberAvatarBorderColor = memberAvatarBorderColor
+            }
+            if let memberAvatarAppearance {
+                self.memberAvatarAppearance = memberAvatarAppearance
+            }
+            if let memberAvatarRenderer {
+                self.memberAvatarRenderer = memberAvatarRenderer
+            }
+            if let moreLabelAppearance {
+                self.moreLabelAppearance = moreLabelAppearance
+            }
+            if let moreLabelBackgroundColor {
+                self.moreLabelBackgroundColor = moreLabelBackgroundColor
             }
             if let joinButtonAppearance {
                 self.joinButtonAppearance = joinButtonAppearance

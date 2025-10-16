@@ -571,6 +571,22 @@ public enum L10n {
       /// Group Chat Invite
       public static let `default` = L10n.tr("Localizable", "joinGroup.description.default", fallback: "Group Chat Invite")
     }
+    public enum Error {
+      /// Invalid invite link
+      public static let invalidLink = L10n.tr("Localizable", "joinGroup.error.invalidLink", fallback: "Invalid invite link")
+    }
+    public enum Members {
+      /// %@ and %@
+      public static func format(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "joinGroup.members.format", String(describing: p1), String(describing: p2), fallback: "%@ and %@")
+      }
+      /// 1 other
+      public static let oneOther = L10n.tr("Localizable", "joinGroup.members.one-other", fallback: "1 other")
+      /// %d others
+      public static func others(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "joinGroup.members.others", p1, fallback: "%d others")
+      }
+    }
   }
   public enum Link {
     /// Copy link
