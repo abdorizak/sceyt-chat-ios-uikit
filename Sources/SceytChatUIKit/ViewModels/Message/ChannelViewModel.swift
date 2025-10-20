@@ -908,7 +908,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     ) {
         guard let message = message(at: indexPath)
         else { return }
-        logger.info("ChannelViewModel loadLastMessages (next) channel id: \(channel.id), \(indexPath) lastDisplayedMessageId \(message.id) \(message.body)")
+        logger.info("ChannelViewModel loadLastMessages (next) channel id: \(channel.id), \(indexPath) lastDisplayedMessageId \(message.id)")
         if message.id == 0 {
             loadPrevMessages(before: MessageId(Int64.max))
         } else {
@@ -1319,7 +1319,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     ) {
         
         @Sendable func send(storeBeforeSend: Bool = false) {
-            logger.verbose("[MESSAGE SEND] sendUserMessage messageSender \(message.body)")
+            logger.verbose("[MESSAGE SEND] sendUserMessage messageSender")
             switch action {
             case .send, .reply, .forward:
                 logger.verbose("[MESSAGE SEND] sendUserMessage messageSender send reply forward")

@@ -407,7 +407,7 @@ extension ChannelViewController {
             if model.isLastDisplayedMessage {
                 bubbleSize.height += Components.messageCellUnreadMessagesSeparatorView.measure(model: model, appearance: appearance).height
             }
-            logger.debug("OutgoingMessageCell: measure messageId: \(model.message.id), measure: \(bubbleSize) body: \(model.message.body)")
+            logger.debug("OutgoingMessageCell: measure messageId: \(model.message.id), measure: \(bubbleSize)")
             return bubbleSize
         }
     }

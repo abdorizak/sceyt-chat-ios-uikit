@@ -635,7 +635,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     //    let links = ["http://www.sceyt.com", "http://www.google.com", "http://www.test.com", "http://www.example.com"]
     @objc
     open func sendButtonAction(_ sender: UIButton) {
-        logger.verbose("[MESSAGE SEND] sendButtonAction \(inputTextView.text)")
+        logger.verbose("[MESSAGE SEND] sendButtonAction")
         if case .reply(let model) = currentState,
             lastDetectedLinkMetadata === model.linkPreviews?.first?.metadata {
             lastDetectedLinkMetadata = nil
