@@ -309,12 +309,27 @@ open class ChannelInviteLinkViewController: ViewController,
 
     @objc open func copyLink() {
         UIPasteboard.general.string = inviteLinkViewModel.inviteLink
-        showAlert(message: appearance.linkCopiedText)
+        showAlert(message: appearance.linkCopiedText, actions: [.init(title: L10n.Nav.Bar.close, style: .cancel)])
     }
 
     @objc open func shareLink() {
         guard let link = inviteLinkViewModel.inviteLink else { return }
         let activityViewController = UIActivityViewController(activityItems: [link], applicationActivities: nil)
+
+        // Configure popover for iPad
+        if let popover = activityViewController.popoverPresentationController {
+            let shareIndexPath = IndexPath(row: 0, section: 2)
+            if let cell = tableView.cellForRow(at: shareIndexPath) {
+                popover.sourceView = cell
+                popover.sourceRect = cell.bounds
+            } else {
+                // Fallback to table view if cell is not visible
+                popover.sourceView = tableView
+                popover.sourceRect = tableView.bounds
+                popover.permittedArrowDirections = []
+            }
+        }
+
         present(activityViewController, animated: true)
     }
     
