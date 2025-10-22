@@ -147,6 +147,7 @@ internal enum Assets {
   internal static let plusRounded = ImageAsset(name: "plus_rounded")
   internal static let radioCircle1 = ImageAsset(name: "radio_circle_1")
   internal static let radioSelected = ImageAsset(name: "radio_selected")
+  internal static let refresh = ImageAsset(name: "refresh")
   internal static let replyPlay = ImageAsset(name: "reply_play")
   internal static let roundedRectangle40 = ImageAsset(name: "rounded_rectangle_40")
   internal static let searchFill1 = ImageAsset(name: "search_fill_1")

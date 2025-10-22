@@ -30,6 +30,13 @@ open class ChannelMemberListRouter: Router<ChannelMemberListViewController> {
         nav.viewControllers = [viewController]
         rootViewController.present(nav, animated: true)
     }
+
+    open func showInviteLink() {
+        let viewController = Components.channelInviteLinkViewController.init()
+        let viewModel = rootViewController.memberListViewModel!
+        viewController.inviteLinkViewModel = Components.channelInviteLinkViewModel.init(channel: viewModel.channel)
+        rootViewController.show(viewController, sender: self)
+    }
     
     open func showChannelInfoViewController(channel: ChatChannel) {
         let viewController = Components.channelInfoViewController.init()
