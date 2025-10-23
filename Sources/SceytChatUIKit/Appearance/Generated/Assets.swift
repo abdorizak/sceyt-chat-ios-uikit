@@ -89,6 +89,7 @@ internal enum Assets {
   internal static let chatActionFile = ImageAsset(name: "chat_action_file")
   internal static let chatActionGallery = ImageAsset(name: "chat_action_gallery")
   internal static let chatActionLocation = ImageAsset(name: "chat_action_location")
+  internal static let chatActionPoll = ImageAsset(name: "chat_action_poll")
   internal static let chatBlock = ImageAsset(name: "chat_block")
   internal static let chatClear = ImageAsset(name: "chat_clear")
   internal static let chatDelete = ImageAsset(name: "chat_delete")
