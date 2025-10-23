@@ -11,7 +11,8 @@ import Combine
 
 open class CreatePollViewController: ViewController,
                                       UITableViewDelegate,
-                                      UITableViewDataSource {
+                                      UITableViewDataSource,
+                                      UIAdaptivePresentationControllerDelegate {
 
     open var viewModel: CreatePollViewModel!
     private var subscriptions = Set<AnyCancellable>()
@@ -68,6 +69,8 @@ open class CreatePollViewController: ViewController,
         footer.frame.size.height = .leastNormalMagnitude
         tableView.tableFooterView = footer
 
+        navigationController?.presentationController?.delegate = self
+        
         setupNavigationBarItems()
         setupBindings()
     }
@@ -387,7 +390,7 @@ open class CreatePollViewController: ViewController,
     // MARK: Actions
 
     @objc open func cancelTapped() {
-        dismiss(animated: true)
+        dismissWithDiscardCheckIfNeeded()
     }
 
     @objc open func createTapped() {
@@ -466,6 +469,70 @@ open class CreatePollViewController: ViewController,
             cell.textView.becomeFirstResponder()
             cell.textView.selectedRange = selectedRange
         }
+    }
+
+    // MARK: - Content Validation
+
+    open func hasUnsavedContent() -> Bool {
+        // Check if question is not empty
+        if !viewModel.poll.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return true
+        }
+
+        // Check if any option is not empty
+        return viewModel.poll.options.contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
+    open func dismissWithDiscardCheckIfNeeded() {
+        if hasUnsavedContent() {
+            showDiscardAlert { [weak self] shouldDiscard in
+                if shouldDiscard {
+                    self?.dismiss(animated: true)
+                }
+            }
+        } else {
+            dismiss(animated: true)
+        }
+    }
+
+    open func showDiscardAlert(completion: @escaping (Bool) -> Void) {
+        let alert = UIAlertController(
+            title: appearance.discardAlertTitle,
+            message: appearance.discardAlertMessage,
+            preferredStyle: .actionSheet
+        )
+
+        alert.addAction(UIAlertAction(title: appearance.discardAlertCancelText, style: .cancel) { _ in
+            completion(false)
+        })
+
+        alert.addAction(UIAlertAction(title: appearance.discardAlertDiscardText, style: .destructive) { _ in
+            completion(true)
+        })
+
+        self.navigationController?.present(alert, animated: true)
+    }
+
+    // MARK: - UIAdaptivePresentationControllerDelegate
+
+    open func presentationControllerDidAttemptToDismiss(_ presentationController: UIPresentationController) {
+        // User tried to swipe down to dismiss
+        dismissWithDiscardCheckIfNeeded()
+    }
+
+    open func presentationControllerShouldDismiss(_ presentationController: UIPresentationController) -> Bool {
+        // Allow dismiss only if there's no unsaved content
+        let unsavedContent = hasUnsavedContent()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            if unsavedContent {
+                self.showDiscardAlert { [weak self] shouldDiscard in
+                    if shouldDiscard {
+                        self?.dismiss(animated: true)
+                    }
+                }
+            }
+        }
+        return !unsavedContent
     }
 
     // MARK: - ViewModel Events

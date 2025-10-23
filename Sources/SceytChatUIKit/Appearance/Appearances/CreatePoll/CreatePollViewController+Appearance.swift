@@ -21,13 +21,17 @@ extension CreatePollViewController: AppearanceProviding {
         optionsHeaderText: "OPTIONS",
         parametersHeaderText: "PARAMETERS",
         questionPlaceholderText: "Add question",
-        optionPlaceholderText: { index in "Option \(index)" },
+        optionPlaceholderText: { _ in "Add" },
         addOptionText: "Add",
         allowMultipleAnswersText: "Multiple votes",
         showVoterNamesText: "Anonymous poll",
         allowAddingOptionsText: "Can't retract votes",
         cancelText: "Cancel",
-        createText: "Send"
+        createText: "Send",
+        discardAlertTitle: nil,
+        discardAlertMessage: "Are you sure you want to discard your poll?",
+        discardAlertCancelText: "Keep Editing",
+        discardAlertDiscardText: "Discard Poll"
     )
 
     public struct Appearance {
@@ -84,6 +88,18 @@ extension CreatePollViewController: AppearanceProviding {
         @Trackable<Appearance, String>
         public var createText: String
 
+        @Trackable<Appearance, String?>
+        public var discardAlertTitle: String?
+
+        @Trackable<Appearance, String>
+        public var discardAlertMessage: String
+
+        @Trackable<Appearance, String>
+        public var discardAlertCancelText: String
+
+        @Trackable<Appearance, String>
+        public var discardAlertDiscardText: String
+
         public init(
             backgroundColor: UIColor,
             separatorColor: UIColor,
@@ -102,7 +118,11 @@ extension CreatePollViewController: AppearanceProviding {
             showVoterNamesText: String,
             allowAddingOptionsText: String,
             cancelText: String,
-            createText: String
+            createText: String,
+            discardAlertTitle: String?,
+            discardAlertMessage: String,
+            discardAlertCancelText: String,
+            discardAlertDiscardText: String
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._separatorColor = Trackable(value: separatorColor)
@@ -122,6 +142,10 @@ extension CreatePollViewController: AppearanceProviding {
             self._allowAddingOptionsText = Trackable(value: allowAddingOptionsText)
             self._cancelText = Trackable(value: cancelText)
             self._createText = Trackable(value: createText)
+            self._discardAlertTitle = Trackable(value: discardAlertTitle)
+            self._discardAlertMessage = Trackable(value: discardAlertMessage)
+            self._discardAlertCancelText = Trackable(value: discardAlertCancelText)
+            self._discardAlertDiscardText = Trackable(value: discardAlertDiscardText)
         }
 
         public init(
@@ -143,7 +167,11 @@ extension CreatePollViewController: AppearanceProviding {
             showVoterNamesText: String? = nil,
             allowAddingOptionsText: String? = nil,
             cancelText: String? = nil,
-            createText: String? = nil
+            createText: String? = nil,
+            discardAlertTitle: String?? = nil,
+            discardAlertMessage: String? = nil,
+            discardAlertCancelText: String? = nil,
+            discardAlertDiscardText: String? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._separatorColor = Trackable(reference: reference, referencePath: \.separatorColor)
@@ -163,6 +191,10 @@ extension CreatePollViewController: AppearanceProviding {
             self._allowAddingOptionsText = Trackable(reference: reference, referencePath: \.allowAddingOptionsText)
             self._cancelText = Trackable(reference: reference, referencePath: \.cancelText)
             self._createText = Trackable(reference: reference, referencePath: \.createText)
+            self._discardAlertTitle = Trackable(reference: reference, referencePath: \.discardAlertTitle)
+            self._discardAlertMessage = Trackable(reference: reference, referencePath: \.discardAlertMessage)
+            self._discardAlertCancelText = Trackable(reference: reference, referencePath: \.discardAlertCancelText)
+            self._discardAlertDiscardText = Trackable(reference: reference, referencePath: \.discardAlertDiscardText)
 
             if let backgroundColor {
                 self.backgroundColor = backgroundColor
@@ -214,6 +246,18 @@ extension CreatePollViewController: AppearanceProviding {
             }
             if let createText {
                 self.createText = createText
+            }
+            if discardAlertTitle != nil {
+                self.discardAlertTitle = discardAlertTitle!
+            }
+            if let discardAlertMessage {
+                self.discardAlertMessage = discardAlertMessage
+            }
+            if let discardAlertCancelText {
+                self.discardAlertCancelText = discardAlertCancelText
+            }
+            if let discardAlertDiscardText {
+                self.discardAlertDiscardText = discardAlertDiscardText
             }
         }
     }
