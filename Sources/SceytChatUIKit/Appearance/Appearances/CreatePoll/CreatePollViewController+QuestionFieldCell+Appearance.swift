@@ -19,7 +19,8 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             foregroundColor: .primaryText,
             font: Fonts.regular.withSize(16)
         ),
-        placeholderColor: .secondaryText
+        placeholderColor: .secondaryText,
+        validationPattern: "^(?!\\s)[\\s\\S]{1,200}$"
     )
 
     public struct Appearance {
@@ -44,6 +45,9 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
         @Trackable<Appearance, UIColor>
         public var placeholderColor: UIColor
 
+        @Trackable<Appearance, String?>
+        public var validationPattern: String?
+
         public init(
             backgroundColor: UIColor,
             containerBackgroundColor: UIColor,
@@ -51,7 +55,8 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             borderWidth: CGFloat,
             borderColor: UIColor,
             textViewAppearance: LabelAppearance,
-            placeholderColor: UIColor
+            placeholderColor: UIColor,
+            validationPattern: String? = nil
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._containerBackgroundColor = Trackable(value: containerBackgroundColor)
@@ -60,6 +65,7 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             self._borderColor = Trackable(value: borderColor)
             self._textViewAppearance = Trackable(value: textViewAppearance)
             self._placeholderColor = Trackable(value: placeholderColor)
+            self._validationPattern = Trackable(value: validationPattern)
         }
 
         public init(
@@ -70,7 +76,8 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             borderWidth: CGFloat? = nil,
             borderColor: UIColor? = nil,
             textViewAppearance: LabelAppearance? = nil,
-            placeholderColor: UIColor? = nil
+            placeholderColor: UIColor? = nil,
+            validationPattern: String?? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._containerBackgroundColor = Trackable(reference: reference, referencePath: \.containerBackgroundColor)
@@ -79,6 +86,7 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             self._borderColor = Trackable(reference: reference, referencePath: \.borderColor)
             self._textViewAppearance = Trackable(reference: reference, referencePath: \.textViewAppearance)
             self._placeholderColor = Trackable(reference: reference, referencePath: \.placeholderColor)
+            self._validationPattern = Trackable(reference: reference, referencePath: \.validationPattern)
 
             if let backgroundColor {
                 self.backgroundColor = backgroundColor
@@ -100,6 +108,9 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             }
             if let placeholderColor {
                 self.placeholderColor = placeholderColor
+            }
+            if let validationPattern {
+                self.validationPattern = validationPattern
             }
         }
     }

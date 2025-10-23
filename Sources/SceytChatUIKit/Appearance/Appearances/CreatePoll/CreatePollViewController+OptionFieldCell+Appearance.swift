@@ -21,7 +21,8 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
         ),
         placeholderColor: .footnoteText,
         reorderImage: UIImage(systemName: "line.3.horizontal"),
-        reorderIconTintColor: .iconInactive
+        reorderIconTintColor: .iconInactive,
+        validationPattern: "^(?!\\s)[\\s\\S]{1,200}$"
     )
 
     public struct Appearance {
@@ -52,6 +53,9 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
         @Trackable<Appearance, UIColor>
         public var reorderIconTintColor: UIColor
 
+        @Trackable<Appearance, String?>
+        public var validationPattern: String?
+
         public init(
             backgroundColor: UIColor,
             containerBackgroundColor: UIColor,
@@ -61,7 +65,8 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
             textFieldAppearance: LabelAppearance,
             placeholderColor: UIColor,
             reorderImage: UIImage?,
-            reorderIconTintColor: UIColor
+            reorderIconTintColor: UIColor,
+            validationPattern: String? = nil
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._containerBackgroundColor = Trackable(value: containerBackgroundColor)
@@ -72,6 +77,7 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
             self._placeholderColor = Trackable(value: placeholderColor)
             self._reorderImage = Trackable(value: reorderImage)
             self._reorderIconTintColor = Trackable(value: reorderIconTintColor)
+            self._validationPattern = Trackable(value: validationPattern)
         }
 
         public init(
@@ -84,7 +90,8 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
             textFieldAppearance: LabelAppearance? = nil,
             placeholderColor: UIColor? = nil,
             reorderImage: UIImage?? = nil,
-            reorderIconTintColor: UIColor? = nil
+            reorderIconTintColor: UIColor? = nil,
+            validationPattern: String?? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._containerBackgroundColor = Trackable(reference: reference, referencePath: \.containerBackgroundColor)
@@ -95,6 +102,7 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
             self._placeholderColor = Trackable(reference: reference, referencePath: \.placeholderColor)
             self._reorderImage = Trackable(reference: reference, referencePath: \.reorderImage)
             self._reorderIconTintColor = Trackable(reference: reference, referencePath: \.reorderIconTintColor)
+            self._validationPattern = Trackable(reference: reference, referencePath: \.validationPattern)
 
             if let backgroundColor {
                 self.backgroundColor = backgroundColor
@@ -122,6 +130,9 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
             }
             if let reorderIconTintColor {
                 self.reorderIconTintColor = reorderIconTintColor
+            }
+            if let validationPattern {
+                self.validationPattern = validationPattern
             }
         }
     }

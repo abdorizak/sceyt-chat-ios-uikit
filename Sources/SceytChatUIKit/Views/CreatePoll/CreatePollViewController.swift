@@ -368,13 +368,6 @@ open class CreatePollViewController: ViewController,
         viewModel.moveOption(from: sourceIndexPath.row, to: finalDestination)
         
         self.tableView.reloadData()
-//        if let cell = tableView.cellForRow(at: sourceIndexPath) {
-//            self.tableView(tableView, willDisplay: cell, forRowAt: sourceIndexPath)
-//        }
-//        
-//        if let cell = tableView.cellForRow(at: destinationIndexPath) {
-//            self.tableView(tableView, willDisplay: cell, forRowAt: destinationIndexPath)
-//        }
     }
 
     open func tableView(_ tableView: UITableView, targetIndexPathForMoveFromRowAt sourceIndexPath: IndexPath, toProposedIndexPath proposedDestinationIndexPath: IndexPath) -> IndexPath {

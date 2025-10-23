@@ -71,6 +71,32 @@ extension CreatePollViewController {
 }
 
 extension CreatePollViewController.QuestionFieldCell: UITextViewDelegate {
+    public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        guard let validationPattern = appearance.validationPattern else {
+            return true
+        }
+
+        // Calculate the resulting text after the change
+        let currentText = textView.text ?? ""
+        guard let stringRange = Range(range, in: currentText) else {
+            return false
+        }
+        let updatedText = currentText.replacingCharacters(in: stringRange, with: text)
+
+        // Allow empty text (user can delete everything)
+        if updatedText.isEmpty {
+            return true
+        }
+
+        // Validate against the pattern
+        guard let regex = try? NSRegularExpression(pattern: validationPattern, options: []) else {
+            return true
+        }
+
+        let matches = regex.matches(in: updatedText, options: [], range: NSRange(location: 0, length: updatedText.utf16.count))
+        return !matches.isEmpty
+    }
+
     public func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
         onTextChanged?(textView.text)
