@@ -17,10 +17,19 @@ extension CreatePollViewController {
         open lazy var titleLabel = UILabel()
             .withoutAutoresizingMask
 
+        open var onTapped: (() -> Void)?
+
         open override func setup() {
             super.setup()
 
             iconView.contentMode = .scaleAspectFit
+            
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+            contentView.addGestureRecognizer(tapGesture)
+        }
+
+        @objc private func handleTap() {
+            onTapped?()
         }
 
         open override func setupLayout() {

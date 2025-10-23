@@ -15,6 +15,8 @@ open class CreatePollViewModel: NSObject {
     @Published public var event: Event?
     @Published public var isLoading = false
     @Published public var error: Error?
+    
+    public var maxOptionsCount: Int = 12
 
     public required init(poll: CreatePollModel = CreatePollModel()) {
         self.poll = poll
@@ -35,8 +37,13 @@ open class CreatePollViewModel: NSObject {
     }
 
     public func addOption() {
+        guard poll.options.count < maxOptionsCount else { return }
         poll.options.append("")
         event = .reloadData
+    }
+    
+    public var canAddMoreOptions: Bool {
+        poll.options.count < maxOptionsCount
     }
 
     public func removeOption(at index: Int) {

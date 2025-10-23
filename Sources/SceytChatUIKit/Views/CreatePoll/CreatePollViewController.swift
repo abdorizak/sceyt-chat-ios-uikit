@@ -16,6 +16,10 @@ open class CreatePollViewController: ViewController,
 
     open var viewModel: CreatePollViewModel!
     private var subscriptions = Set<AnyCancellable>()
+    
+    private var shouldShowAddOptionCell: Bool {
+        viewModel.canAddMoreOptions
+    }
 
     open lazy var tableView = UITableView(frame: .zero, style: .grouped)
         .withoutAutoresizingMask
@@ -44,6 +48,8 @@ open class CreatePollViewController: ViewController,
 
     open override func setup() {
         super.setup()
+        
+        viewModel.maxOptionsCount = appearance.maxOptionsCount
 
         title = appearance.titleText
         questionHeaderLabel.text = appearance.questionDescriptionText
@@ -176,7 +182,7 @@ open class CreatePollViewController: ViewController,
     open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
         case 0: return 1 // Question field
-        case 1: return viewModel.poll.options.count + 1 // Options
+        case 1: return viewModel.poll.options.count + (shouldShowAddOptionCell ? 1 : 0) // Options + Add button
         case 2: return 3 // 3 switch cells for parameters
         default: return 0
         }
@@ -218,7 +224,9 @@ open class CreatePollViewController: ViewController,
                 cell.parentAppearance = appearance.addOptionCellAppearance
                 cell.iconView.image = .messageActionMoreReactions
                 cell.titleLabel.text = appearance.addOptionText
-                
+                cell.onTapped = { [weak self] in
+                    self?.addOption()
+                }
                 return cell
             }
 
@@ -256,10 +264,6 @@ open class CreatePollViewController: ViewController,
 
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-
-        if indexPath.section == 1 && indexPath.row == viewModel.poll.options.count {
-            addOption()
-        }
     }
 
     open func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {

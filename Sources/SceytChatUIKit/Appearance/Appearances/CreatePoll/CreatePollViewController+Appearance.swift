@@ -31,7 +31,8 @@ extension CreatePollViewController: AppearanceProviding {
         discardAlertTitle: nil,
         discardAlertMessage: "Are you sure you want to discard your poll?",
         discardAlertCancelText: "Keep Editing",
-        discardAlertDiscardText: "Discard Poll"
+        discardAlertDiscardText: "Discard Poll",
+        maxOptionsCount: 12
     )
 
     public struct Appearance {
@@ -100,6 +101,9 @@ extension CreatePollViewController: AppearanceProviding {
         @Trackable<Appearance, String>
         public var discardAlertDiscardText: String
 
+        @Trackable<Appearance, Int>
+        public var maxOptionsCount: Int
+
         public init(
             backgroundColor: UIColor,
             separatorColor: UIColor,
@@ -122,7 +126,8 @@ extension CreatePollViewController: AppearanceProviding {
             discardAlertTitle: String?,
             discardAlertMessage: String,
             discardAlertCancelText: String,
-            discardAlertDiscardText: String
+            discardAlertDiscardText: String,
+            maxOptionsCount: Int
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._separatorColor = Trackable(value: separatorColor)
@@ -146,6 +151,7 @@ extension CreatePollViewController: AppearanceProviding {
             self._discardAlertMessage = Trackable(value: discardAlertMessage)
             self._discardAlertCancelText = Trackable(value: discardAlertCancelText)
             self._discardAlertDiscardText = Trackable(value: discardAlertDiscardText)
+            self._maxOptionsCount = Trackable(value: maxOptionsCount)
         }
 
         public init(
@@ -171,7 +177,8 @@ extension CreatePollViewController: AppearanceProviding {
             discardAlertTitle: String?? = nil,
             discardAlertMessage: String? = nil,
             discardAlertCancelText: String? = nil,
-            discardAlertDiscardText: String? = nil
+            discardAlertDiscardText: String? = nil,
+            maxOptionsCount: Int? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._separatorColor = Trackable(reference: reference, referencePath: \.separatorColor)
@@ -195,6 +202,7 @@ extension CreatePollViewController: AppearanceProviding {
             self._discardAlertMessage = Trackable(reference: reference, referencePath: \.discardAlertMessage)
             self._discardAlertCancelText = Trackable(reference: reference, referencePath: \.discardAlertCancelText)
             self._discardAlertDiscardText = Trackable(reference: reference, referencePath: \.discardAlertDiscardText)
+            self._maxOptionsCount = Trackable(reference: reference, referencePath: \.maxOptionsCount)
 
             if let backgroundColor {
                 self.backgroundColor = backgroundColor
@@ -258,6 +266,9 @@ extension CreatePollViewController: AppearanceProviding {
             }
             if let discardAlertDiscardText {
                 self.discardAlertDiscardText = discardAlertDiscardText
+            }
+            if let maxOptionsCount {
+                self.maxOptionsCount = maxOptionsCount
             }
         }
     }
