@@ -85,7 +85,6 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
     
     open func channel(_ channel: Channel, didJoin member: Member) {
         database.write {
-            $0.createOrUpdate(channel: channel)
             $0.add(members: [member], channelId: channel.id)
         } completion: { error in
             logger.debug(error?.localizedDescription ?? "")
