@@ -11,7 +11,7 @@ import UIKit
 extension CreatePollViewController: AppearanceProviding {
     public static var appearance = Appearance(
         backgroundColor: .backgroundSecondary,
-        separatorColor: .clear,
+        separatorColor: .border,
         questionFieldCellAppearance: QuestionFieldCell.appearance,
         optionFieldCellAppearance: OptionFieldCell.appearance,
         switchOptionCellAppearance: SwitchOptionCell.appearance,

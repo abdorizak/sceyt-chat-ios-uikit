@@ -334,7 +334,16 @@ open class CreatePollViewController: ViewController,
             }
             layer.borderColor = appearance.separatorColor.cgColor
             layer.borderWidth = Layouts.cellSeparatorWidth
-            layer.frame = CGRect(x: 0, y: cell.height - layer.borderWidth, width: cell.width, height: layer.borderWidth)
+            
+            // Calculate separator inset
+            let separatorWidthInset: CGFloat = Layouts.cellHorizontalPadding + 16
+            
+            layer.frame = CGRect(
+                x: separatorWidthInset,
+                y: cell.height - layer.borderWidth,
+                width: cell.width - separatorWidthInset * 2,
+                height: layer.borderWidth
+            )
         }
 
         let maskLayer = CAShapeLayer()
