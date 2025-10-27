@@ -211,11 +211,22 @@ open class CreatePollViewController: ViewController,
                 cell.textView.text = viewModel.poll.options[indexPath.row]
                 cell.placeholderLabel.text = appearance.optionPlaceholderText(indexPath.row + 1)
                 cell.updatePlaceholderVisibility()
+
+                // Configure return key type
+                let isLastOption = indexPath.row == viewModel.poll.options.count - 1
+                cell.textView.returnKeyType = isLastOption ? .done : .next
+
                 cell.onTextChanged = { [weak self] text in
                     self?.viewModel.updateOption(at: indexPath.row, value: text)
                 }
                 cell.onHeightChanged = { [weak self] in
                     self?.updateOptionCellHeight(at: indexPath)
+                }
+                cell.onReturnKeyPressed = { [weak self] in
+                    self?.handleReturnKeyPressed(at: indexPath)
+                }
+                cell.onDeleteWhenEmpty = { [weak self] in
+                    self?.handleDeleteOption(at: indexPath)
                 }
                 cell.backgroundColor = CreatePollViewController.OptionFieldCell.appearance.containerBackgroundColor
                 return cell
@@ -484,6 +495,45 @@ open class CreatePollViewController: ViewController,
         }
     }
 
+    open func handleReturnKeyPressed(at indexPath: IndexPath) {
+        guard indexPath.section == 1 else { return }
+
+        let isLastOption = indexPath.row == viewModel.poll.options.count - 1
+
+        if isLastOption {
+            // Last option - dismiss keyboard
+            view.endEditing(true)
+        } else {
+            // Move to next option
+            let nextIndexPath = IndexPath(row: indexPath.row + 1, section: 1)
+            if let nextCell = tableView.cellForRow(at: nextIndexPath) as? OptionFieldCell {
+                nextCell.textView.becomeFirstResponder()
+            }
+        }
+    }
+
+    open func handleDeleteOption(at indexPath: IndexPath) {
+        guard indexPath.section == 1 else { return }
+
+        // Only allow deletion if we have more than 2 options
+        guard viewModel.poll.options.count > 2 else { return }
+
+        // Determine which option to focus on
+        // If deleting the last option, focus on the second-to-last (which will become last)
+        // Otherwise, focus on the current last option (which will remain last)
+        let isLastOption = indexPath.row == viewModel.poll.options.count - 1
+        let targetOptionIndex = viewModel.poll.options.count - 2
+        let targetIndexPath = IndexPath(row: targetOptionIndex, section: 1)
+
+        // Focus on the target cell before deletion
+        if let targetCell = tableView.cellForRow(at: targetIndexPath) as? OptionFieldCell {
+            targetCell.textView.becomeFirstResponder()
+        }
+
+        // Remove the option (this will trigger the .removeOption event which handles animation)
+        viewModel.removeOption(at: indexPath.row)
+    }
+
     // MARK: - Content Validation
 
     open func hasUnsavedContent() -> Bool {
@@ -556,6 +606,67 @@ open class CreatePollViewController: ViewController,
             tableView.reloadData()
         case .pollCreated:
             break
+        case .removeOption(let index):
+            let indexPath = IndexPath(row: index, section: 1)
+
+            // Check if we need to show the "Add Option" cell (when going below max)
+            // If we now have maxOptionsCount - 1, we just went below the max and AddOption should appear
+            let shouldShowAddOptionCell = viewModel.poll.options.count == viewModel.maxOptionsCount - 1
+
+            if shouldShowAddOptionCell {
+                // We need to insert the AddOption cell after deleting the option
+                let addOptionIndexPath = IndexPath(row: viewModel.poll.options.count, section: 1)
+                tableView.beginUpdates()
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+                tableView.insertRows(at: [addOptionIndexPath], with: .automatic)
+                tableView.endUpdates()
+            } else {
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+            }
+
+            // Update the return key type of the last cell (it might have changed from .next to .done)
+            let lastOptionIndex = viewModel.poll.options.count - 1
+            let lastIndexPath = IndexPath(row: lastOptionIndex, section: 1)
+            if let lastCell = tableView.cellForRow(at: lastIndexPath) as? OptionFieldCell {
+                lastCell.textView.returnKeyType = .done
+                lastCell.textView.reloadInputViews()
+            }
+        case .addOption(let index):
+            let indexPath = IndexPath(row: index, section: 1)
+
+            // Update the return key type of the previous last cell (it changes from .done to .next)
+            if index > 0 {
+                let previousLastIndexPath = IndexPath(row: index - 1, section: 1)
+                if let previousLastCell = tableView.cellForRow(at: previousLastIndexPath) as? OptionFieldCell {
+                    previousLastCell.textView.returnKeyType = .next
+                    previousLastCell.textView.reloadInputViews()
+                }
+            }
+
+            // Check if we just reached the max and need to remove the "Add Option" cell
+            // If we have exactly maxOptionsCount now, the AddOption cell was visible before and should disappear
+            let shouldRemoveAddOptionCell = viewModel.poll.options.count == viewModel.maxOptionsCount
+
+            // Insert the new row with animation
+            if shouldRemoveAddOptionCell {
+                // The AddOption cell was at index, after insertion it would be at index + 1
+                // We need to delete it since we've reached the max
+                let addOptionIndexPath = IndexPath(row: index + 1, section: 1)
+                tableView.beginUpdates()
+                tableView.insertRows(at: [indexPath], with: .automatic)
+                tableView.deleteRows(at: [addOptionIndexPath], with: .automatic)
+                tableView.endUpdates()
+            } else {
+                tableView.insertRows(at: [indexPath], with: .automatic)
+            }
+
+            // Focus on the newly added cell
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if let newCell = self.tableView.cellForRow(at: indexPath) as? OptionFieldCell {
+                    newCell.textView.becomeFirstResponder()
+                }
+            }
         }
     }
 }

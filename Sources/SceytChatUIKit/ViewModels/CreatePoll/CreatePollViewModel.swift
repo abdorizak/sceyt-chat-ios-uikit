@@ -39,7 +39,8 @@ open class CreatePollViewModel: NSObject {
     public func addOption() {
         guard poll.options.count < maxOptionsCount else { return }
         poll.options.append("")
-        event = .reloadData
+        let index = poll.options.count - 1
+        event = .addOption(at: index)
     }
     
     public var canAddMoreOptions: Bool {
@@ -49,7 +50,7 @@ open class CreatePollViewModel: NSObject {
     public func removeOption(at index: Int) {
         guard poll.options.count > 2, index < poll.options.count else { return }
         poll.options.remove(at: index)
-        event = .reloadData
+        event = .removeOption(at: index)
     }
 
     public func moveOption(from sourceIndex: Int, to destinationIndex: Int) {
@@ -86,5 +87,7 @@ public extension CreatePollViewModel {
     enum Event {
         case reloadData
         case pollCreated(CreatePollModel)
+        case removeOption(at: Int)
+        case addOption(at: Int)
     }
 }

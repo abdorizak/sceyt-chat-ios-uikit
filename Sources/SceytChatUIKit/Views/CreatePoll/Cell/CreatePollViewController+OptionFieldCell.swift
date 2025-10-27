@@ -22,6 +22,8 @@ extension CreatePollViewController {
 
         open var onTextChanged: ((String) -> Void)?
         open var onHeightChanged: (() -> Void)?
+        open var onReturnKeyPressed: (() -> Void)?
+        open var onDeleteWhenEmpty: (() -> Void)?
 
         open override func setup() {
             super.setup()
@@ -30,6 +32,18 @@ extension CreatePollViewController {
             textView.isScrollEnabled = false
             textView.textContainer.lineFragmentPadding = 0
             textView.textContainerInset = .zero
+        }
+        
+        open override func layoutSubviews() {
+            super.layoutSubviews()
+            
+            for subview in subviews {
+                if String(describing: type(of: subview)).contains("Reorder") {
+                    var frame = subview.frame
+                    frame.origin.x = self.bounds.width - frame.size.width - 28
+                    subview.frame = frame
+                }
+            }
         }
 
         open override func setupLayout() {
@@ -42,7 +56,7 @@ extension CreatePollViewController {
             containerView.pin(to: contentView, anchors: [.leading, .trailing, .top(0), .bottom(0)])
             containerView.heightAnchor.pin(greaterThanOrEqualToConstant: 44)
 
-            textView.pin(to: containerView, anchors: [.leading(28), .trailing(-28), .top(12), .bottom(-12)])
+            textView.pin(to: containerView, anchors: [.leading(28), .trailing(-28), .top(14), .bottom(-14)])
             placeholderLabel.pin(to: containerView, anchors: [.leading(28), .trailing(-28), .top(12)])
         }
 
@@ -71,12 +85,24 @@ extension CreatePollViewController {
 
 extension CreatePollViewController.OptionFieldCell: UITextViewDelegate {
     public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Handle return key press
+        if text == "\n" {
+            onReturnKeyPressed?()
+            return false
+        }
+
+        // Handle backspace on empty text view
+        let currentText = textView.text ?? ""
+        if text.isEmpty && currentText.isEmpty && range.location == 0 && range.length == 0 {
+            onDeleteWhenEmpty?()
+            return false
+        }
+
         guard let validationPattern = appearance.validationPattern else {
             return true
         }
 
         // Calculate the resulting text after the change
-        let currentText = textView.text ?? ""
         guard let stringRange = Range(range, in: currentText) else {
             return false
         }
