@@ -40,11 +40,10 @@ extension CreatePollViewController {
             containerView.addSubview(placeholderLabel)
 
             containerView.pin(to: contentView, anchors: [.leading, .trailing, .top, .bottom])
-            containerView.heightAnchor.pin(greaterThanOrEqualToConstant: 48.0)
 
             let space: CGFloat = 28.0
-            textView.pin(to: containerView, anchors: [.leading(space), .trailing(-space), .top(12), .bottom(-12)])
-            placeholderLabel.pin(to: containerView, anchors: [.leading(space), .trailing(-space), .top(12)])
+            textView.pin(to: containerView, anchors: [.leading(space), .trailing(-space), .top(14), .bottom(-14)])
+            placeholderLabel.pin(to: containerView, anchors: [.leading(space), .trailing(-space), .top(14)])
         }
 
         open override func setupAppearance() {

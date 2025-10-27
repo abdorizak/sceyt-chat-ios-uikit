@@ -18,9 +18,9 @@ public struct CreatePollModel {
     public init(
         question: String = "",
         options: [String] = ["", ""],
-        allowMultipleAnswers: Bool = false,
+        allowMultipleAnswers: Bool = true,
         showVoterNames: Bool = false,
-        allowAddingOptions: Bool = false
+        allowAddingOptions: Bool = true
     ) {
         self.question = question
         self.options = options

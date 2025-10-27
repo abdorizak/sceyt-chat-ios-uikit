@@ -223,10 +223,14 @@ open class CreatePollViewController: ViewController,
                     self?.updateOptionCellHeight(at: indexPath)
                 }
                 cell.onReturnKeyPressed = { [weak self] in
-                    self?.handleReturnKeyPressed(at: indexPath)
+                    guard let self = self,
+                          let currentIndexPath = self.tableView.indexPath(for: cell) else { return }
+                    self.handleReturnKeyPressed(at: currentIndexPath)
                 }
                 cell.onDeleteWhenEmpty = { [weak self] in
-                    self?.handleDeleteOption(at: indexPath)
+                    guard let self = self,
+                          let currentIndexPath = self.tableView.indexPath(for: cell) else { return }
+                    self.handleDeleteOption(at: currentIndexPath)
                 }
                 cell.backgroundColor = CreatePollViewController.OptionFieldCell.appearance.containerBackgroundColor
                 return cell
@@ -246,16 +250,16 @@ open class CreatePollViewController: ViewController,
             cell.parentAppearance = appearance.switchOptionCellAppearance
             switch indexPath.row {
             case 0:
-                cell.titleLabel.text = appearance.allowMultipleAnswersText
-                cell.switchControl.isOn = viewModel.poll.allowMultipleAnswers
-                cell.onSwitchChanged = { [weak self] isOn in
-                    self?.viewModel.updateAllowMultipleAnswers(isOn)
-                }
-            case 1:
                 cell.titleLabel.text = appearance.showVoterNamesText
                 cell.switchControl.isOn = viewModel.poll.showVoterNames
                 cell.onSwitchChanged = { [weak self] isOn in
                     self?.viewModel.updateShowVoterNames(isOn)
+                }
+            case 1:
+                cell.titleLabel.text = appearance.allowMultipleAnswersText
+                cell.switchControl.isOn = viewModel.poll.allowMultipleAnswers
+                cell.onSwitchChanged = { [weak self] isOn in
+                    self?.viewModel.updateAllowMultipleAnswers(isOn)
                 }
             case 2:
                 cell.titleLabel.text = appearance.allowAddingOptionsText
@@ -518,11 +522,17 @@ open class CreatePollViewController: ViewController,
         // Only allow deletion if we have more than 2 options
         guard viewModel.poll.options.count > 2 else { return }
 
-        // Determine which option to focus on
-        // If deleting the last option, focus on the second-to-last (which will become last)
-        // Otherwise, focus on the current last option (which will remain last)
-        let isLastOption = indexPath.row == viewModel.poll.options.count - 1
-        let targetOptionIndex = viewModel.poll.options.count - 2
+        // Determine which option to focus on - focus on the nearest cell
+        // If not the first option, focus on the previous one
+        // Otherwise, focus on the next one (which will become first after deletion)
+        let targetOptionIndex: Int
+        if indexPath.row > 0 {
+            // Not the first option, focus on previous
+            targetOptionIndex = indexPath.row - 1
+        } else {
+            // First option, focus on next (will become first after deletion)
+            targetOptionIndex = indexPath.row + 1
+        }
         let targetIndexPath = IndexPath(row: targetOptionIndex, section: 1)
 
         // Focus on the target cell before deletion

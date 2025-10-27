@@ -19,7 +19,7 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             foregroundColor: .primaryText,
             font: Fonts.regular.withSize(16)
         ),
-        placeholderColor: .secondaryText,
+        placeholderColor: .footnoteText,
         validationPattern: "^[\\s\\S]{1,200}$"
     )
 
