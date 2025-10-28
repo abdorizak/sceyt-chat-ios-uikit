@@ -30,12 +30,14 @@ extension SceytChatUIKit {
         public static var channelProfileViewModel: ChannelProfileViewModel.Type = ChannelProfileViewModel.self
         public static var channelViewModel: ChannelViewModel.Type = ChannelViewModel.self
         public static var createNewChannelViewModel: CreateNewChannelViewModel.Type = CreateNewChannelViewModel.self
+        public static var createPollViewModel: CreatePollViewModel.Type = CreatePollViewModel.self
         public static var createPrivateChannelViewModel: CreatePrivateChannelViewModel.Type = CreatePrivateChannelViewModel.self
         public static var createPublicChannelViewModel: CreatePublicChannelViewModel.Type = CreatePublicChannelViewModel.self
         public static var emojiListViewModel: EmojiListViewModel.Type = EmojiListViewModel.self
         public static var imageCropperViewModel: ImageCropperViewModel.Type = ImageCropperViewModel.self
         public static var mentioningUserListViewModel: MentioningUserListViewModel.Type = MentioningUserListViewModel.self
         public static var messageInfoViewModel: MessageInfoViewModel.Type = MessageInfoViewModel.self
+        public static var pollResultsViewModel: PollResultsViewModel.Type = PollResultsViewModel.self
         public static var previewerViewModel: PreviewerViewModel.Type = PreviewerViewModel.self
         public static var reactionScoreViewModel: ReactionScoreViewModel.Type = ReactionScoreViewModel.self
         public static var selectChannelMembersViewModel: SelectChannelMembersViewModel.Type = SelectChannelMembersViewModel.self
@@ -55,6 +57,7 @@ extension SceytChatUIKit {
         public static var channelViewController: ChannelViewController.Type = ChannelViewController.self
         public static var createChannelViewController: CreateChannelViewController.Type = CreateChannelViewController.self
         public static var createGroupViewController: CreateGroupViewController.Type = CreateGroupViewController.self
+        public static var createPollViewController: CreatePollViewController.Type = CreatePollViewController.self
         public static var editChannelViewController: EditChannelViewController.Type = EditChannelViewController.self
         public static var emojiPickerViewController: EmojiPickerViewController.Type = EmojiPickerViewController.self
         public static var forwardViewController: ForwardViewController.Type = ForwardViewController.self
@@ -68,6 +71,7 @@ extension SceytChatUIKit {
         public static var messageInfoViewController: MessageInfoViewController.Type = MessageInfoViewController.self
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self
         public static var navigationController: NavigationController.Type = NavigationController.self
+        public static var pollResultsViewController: PollResultsViewController.Type = PollResultsViewController.self
         public static var qrCodeViewController: QRCodeViewController.Type = QRCodeViewController.self
         public static var reactionPickerViewController: ReactionPickerViewController.Type = ReactionPickerViewController.self
         public static var reactedUserListViewController: ReactedUserListViewController.Type = ReactedUserListViewController.self
