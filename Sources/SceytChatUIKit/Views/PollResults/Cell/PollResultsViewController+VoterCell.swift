@@ -17,9 +17,9 @@ extension PollResultsViewController {
             .withoutAutoresizingMask
 
         private lazy var textStackView = UIStackView(
-            column: [titleLabel, statusLabel],
-            spacing: 3,
-            alignment: .leading
+            row: [titleLabel, subTitleLabel],
+            spacing: 8,
+            alignment: .fill
         )
             .withoutAutoresizingMask
 
@@ -27,15 +27,20 @@ extension PollResultsViewController {
             .withoutAutoresizingMask
             .contentCompressionResistancePriorityH(.defaultLow)
 
-        open lazy var statusLabel = UILabel()
+        open lazy var subTitleLabel = UILabel()
             .withoutAutoresizingMask
-            .contentCompressionResistancePriorityH(.defaultLow)
+            .contentCompressionResistancePriorityH(.required)
 
         open lazy var separatorView = UIView()
             .withoutAutoresizingMask
+        
+        var imageTask: Cancellable?
 
         override open func setup() {
             super.setup()
+            titleLabel.lineBreakMode = .byTruncatingTail
+            titleLabel.numberOfLines = 1
+            subTitleLabel.numberOfLines = 1
         }
 
         open override var safeAreaInsets: UIEdgeInsets {
@@ -53,8 +58,9 @@ extension PollResultsViewController {
             titleLabel.textColor = appearance.titleLabelAppearance.foregroundColor
             titleLabel.font = appearance.titleLabelAppearance.font
 
-            statusLabel.textColor = appearance.subtitleLabelAppearance.foregroundColor
-            statusLabel.font = appearance.subtitleLabelAppearance.font
+            subTitleLabel.textColor = appearance.subtitleLabelAppearance.foregroundColor
+            subTitleLabel.font = appearance.subtitleLabelAppearance.font
+            subTitleLabel.textAlignment = .right
         }
 
         override open func setupLayout() {
@@ -64,37 +70,35 @@ extension PollResultsViewController {
             contentView.addSubview(separatorView)
 
             let avatarSize = appearance.avatarSize
-            avatarView.leadingAnchor.pin(to: contentView.leadingAnchor, constant: 16)
+            avatarView.leadingAnchor.pin(to: contentView.leadingAnchor, constant: 0)
             avatarView.pin(to: contentView, anchors: [.top(8, .greaterThanOrEqual), .centerY()])
             avatarView.resize(anchors: [.height(avatarSize.height), .width(avatarSize.width)])
             avatarView.layer.cornerRadius = avatarSize.height / 2
             avatarView.clipsToBounds = true
 
             textStackView.leadingAnchor.pin(to: avatarView.trailingAnchor, constant: 12)
-            textStackView.pin(to: contentView, anchors: [.top(8, .greaterThanOrEqual), .centerY])
-            textStackView.trailingAnchor.pin(to: contentView.trailingAnchor, constant: -16)
+            textStackView.centerYAnchor.pin(to: avatarView.centerYAnchor)
+            textStackView.trailingAnchor.pin(to: contentView.trailingAnchor, constant: 0)
 
-            separatorView.topAnchor.pin(greaterThanOrEqualTo: textStackView.bottomAnchor, constant: 8)
             separatorView.pin(to: contentView, anchors: [.bottom, .trailing(-16)])
             separatorView.leadingAnchor.pin(to: titleLabel.leadingAnchor)
             separatorView.heightAnchor.pin(constant: 1)
             contentView.heightAnchor.pin(greaterThanOrEqualToConstant: 56)
         }
 
-        var imageTask: Cancellable?
-
         open var data: ChatChannelMember! {
             didSet {
                 guard let data else { return }
 
                 titleLabel.text = data.displayName
-                statusLabel.text = ""
+                subTitleLabel.text = "22.10.25 22:05"
 
-//                imageTask = appearance.avatarRenderer.render(
-//                    data,
-//                    with: appearance.avatarAppearance,
-//                    into: avatarView
-//                )
+                imageTask?.cancel()
+                imageTask = appearance.avatarRenderer.render(
+                    data,
+                    with: appearance.avatarAppearance,
+                    into: avatarView
+                )
             }
         }
 

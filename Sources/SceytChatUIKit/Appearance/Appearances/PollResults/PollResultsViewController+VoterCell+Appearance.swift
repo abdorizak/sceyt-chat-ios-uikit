@@ -13,14 +13,16 @@ extension PollResultsViewController.VoterCell: AppearanceProviding {
         backgroundColor: .backgroundSections,
         titleLabelAppearance: .init(
             foregroundColor: .primaryText,
-            font: Fonts.regular.withSize(16)
+            font: Fonts.semiBold.withSize(16)
         ),
         subtitleLabelAppearance: .init(
             foregroundColor: .secondaryText,
-            font: Fonts.regular.withSize(13)
+            font: Fonts.regular.withSize(16)
         ),
         avatarSize: CGSize(width: 40, height: 40),
-        separatorColor: .border
+        separatorColor: .border,
+        avatarRenderer: AnyUserAvatarRendering(SceytChatUIKit.shared.avatarRenderers.userAvatarRenderer),
+        avatarAppearance: AvatarAppearance.standard
     )
 
     public struct Appearance {
@@ -39,18 +41,26 @@ extension PollResultsViewController.VoterCell: AppearanceProviding {
         @Trackable<Appearance, UIColor>
         public var separatorColor: UIColor
 
+        public var avatarRenderer: AnyUserAvatarRendering
+
+        public var avatarAppearance: AvatarAppearance
+
         public init(
             backgroundColor: UIColor,
             titleLabelAppearance: LabelAppearance,
             subtitleLabelAppearance: LabelAppearance,
             avatarSize: CGSize,
-            separatorColor: UIColor
+            separatorColor: UIColor,
+            avatarRenderer: AnyUserAvatarRendering,
+            avatarAppearance: AvatarAppearance
         ) {
             _backgroundColor = Trackable(value: backgroundColor)
             _titleLabelAppearance = Trackable(value: titleLabelAppearance)
             _subtitleLabelAppearance = Trackable(value: subtitleLabelAppearance)
             _avatarSize = Trackable(value: avatarSize)
             _separatorColor = Trackable(value: separatorColor)
+            self.avatarRenderer = avatarRenderer
+            self.avatarAppearance = avatarAppearance
         }
 
         public init(
@@ -59,13 +69,17 @@ extension PollResultsViewController.VoterCell: AppearanceProviding {
             titleLabelAppearance: LabelAppearance? = nil,
             subtitleLabelAppearance: LabelAppearance? = nil,
             avatarSize: CGSize? = nil,
-            separatorColor: UIColor? = nil
+            separatorColor: UIColor? = nil,
+            avatarRenderer: AnyUserAvatarRendering? = nil,
+            avatarAppearance: AvatarAppearance? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._titleLabelAppearance = Trackable(reference: reference, referencePath: \.titleLabelAppearance)
             self._subtitleLabelAppearance = Trackable(reference: reference, referencePath: \.subtitleLabelAppearance)
             self._avatarSize = Trackable(reference: reference, referencePath: \.avatarSize)
             self._separatorColor = Trackable(reference: reference, referencePath: \.separatorColor)
+            self.avatarRenderer = avatarRenderer ?? reference.avatarRenderer
+            self.avatarAppearance = avatarAppearance ?? reference.avatarAppearance
 
             if let backgroundColor {
                 self.backgroundColor = backgroundColor
