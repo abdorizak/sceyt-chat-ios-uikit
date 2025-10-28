@@ -86,16 +86,16 @@ extension PollResultsViewController {
             contentView.heightAnchor.pin(greaterThanOrEqualToConstant: 56)
         }
 
-        open var data: ChatChannelMember! {
+        open var data: PollOptionResult.Voter! {
             didSet {
                 guard let data else { return }
 
-                titleLabel.text = data.displayName
-                subTitleLabel.text = "22.10.25 22:05"
+                titleLabel.text = data.member.displayName
+                subTitleLabel.text = SceytChatUIKit.shared.formatters.voterDateFormatter.format(data.votedAt)
 
                 imageTask?.cancel()
                 imageTask = appearance.avatarRenderer.render(
-                    data,
+                    data.member,
                     with: appearance.avatarAppearance,
                     into: avatarView
                 )

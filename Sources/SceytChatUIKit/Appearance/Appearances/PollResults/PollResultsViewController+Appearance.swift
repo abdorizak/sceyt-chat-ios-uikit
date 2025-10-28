@@ -18,8 +18,6 @@ extension PollResultsViewController: AppearanceProviding {
         showMoreCellAppearance: ShowMoreCell.appearance,
         titleText: "Poll Results",
         closeText: "Close",
-        singleVoteText: "1 vote",
-        multipleVotesText: { count in "\(count) votes" },
         showMoreText: "Show More"
     )
 
@@ -49,11 +47,6 @@ extension PollResultsViewController: AppearanceProviding {
         public var closeText: String
 
         @Trackable<Appearance, String>
-        public var singleVoteText: String
-
-        public var multipleVotesText: (Int) -> String
-
-        @Trackable<Appearance, String>
         public var showMoreText: String
 
         public init(
@@ -65,8 +58,6 @@ extension PollResultsViewController: AppearanceProviding {
             showMoreCellAppearance: ShowMoreCell.Appearance,
             titleText: String,
             closeText: String,
-            singleVoteText: String,
-            multipleVotesText: @escaping (Int) -> String,
             showMoreText: String
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -77,8 +68,6 @@ extension PollResultsViewController: AppearanceProviding {
             self._showMoreCellAppearance = Trackable(value: showMoreCellAppearance)
             self._titleText = Trackable(value: titleText)
             self._closeText = Trackable(value: closeText)
-            self._singleVoteText = Trackable(value: singleVoteText)
-            self.multipleVotesText = multipleVotesText
             self._showMoreText = Trackable(value: showMoreText)
         }
 
@@ -92,8 +81,6 @@ extension PollResultsViewController: AppearanceProviding {
             showMoreCellAppearance: ShowMoreCell.Appearance? = nil,
             titleText: String? = nil,
             closeText: String? = nil,
-            singleVoteText: String? = nil,
-            multipleVotesText: ((Int) -> String)? = nil,
             showMoreText: String? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
@@ -104,8 +91,6 @@ extension PollResultsViewController: AppearanceProviding {
             self._showMoreCellAppearance = Trackable(reference: reference, referencePath: \.showMoreCellAppearance)
             self._titleText = Trackable(reference: reference, referencePath: \.titleText)
             self._closeText = Trackable(reference: reference, referencePath: \.closeText)
-            self._singleVoteText = Trackable(reference: reference, referencePath: \.singleVoteText)
-            self.multipleVotesText = multipleVotesText ?? reference.multipleVotesText
             self._showMoreText = Trackable(reference: reference, referencePath: \.showMoreText)
 
             if let backgroundColor {
@@ -131,9 +116,6 @@ extension PollResultsViewController: AppearanceProviding {
             }
             if let closeText {
                 self.closeText = closeText
-            }
-            if let singleVoteText {
-                self.singleVoteText = singleVoteText
             }
             if let showMoreText {
                 self.showMoreText = showMoreText

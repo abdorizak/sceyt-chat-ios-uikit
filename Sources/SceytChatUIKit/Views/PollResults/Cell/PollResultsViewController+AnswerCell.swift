@@ -67,9 +67,7 @@ extension PollResultsViewController {
 
         open func configure(answerText: String, voteCount: Int, totalVotes: Int) {
             answerLabel.text = answerText
-
-            let voteCountText = voteCount == 1 ? "1 vote" : "\(voteCount) votes"
-            voteCountLabel.text = "\(voteCountText)"
+            voteCountLabel.text = SceytChatUIKit.shared.formatters.voteCountFormatter.format(voteCount)
         }
     }
 }

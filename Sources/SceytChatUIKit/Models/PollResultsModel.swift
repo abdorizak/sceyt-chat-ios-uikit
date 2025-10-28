@@ -23,16 +23,29 @@ public struct PollResultsModel {
 
 public struct PollOptionResult {
     public var optionText: String
-    public var voters: [ChatChannelMember]
+    public var voters: [Voter]
     public var voteCount: Int = 0
 
     public init(
         optionText: String = "",
-        voters: [ChatChannelMember] = [],
+        voters: [Voter] = [],
         voteCount: Int = 0
     ) {
         self.optionText = optionText
         self.voters = voters
         self.voteCount = voteCount
+    }
+
+    public struct Voter {
+        public var member: ChatChannelMember
+        public var votedAt: Date
+
+        public init(
+            member: ChatChannelMember,
+            votedAt: Date
+        ) {
+            self.member = member
+            self.votedAt = votedAt
+        }
     }
 }
