@@ -44,12 +44,18 @@ open class PollResultsViewModel: NSObject {
 
     public func showMoreVoters(for optionIndex: Int) {
         guard let option = option(at: optionIndex) else { return }
-        
+        let totalVotes = pollResults.options.reduce(0) { $0 + $1.voteCount }
+        event = .showOptionDetail(
+            option: option,
+            questionText: pollResults.question,
+            totalVotes: totalVotes
+        )
     }
 }
 
 public extension PollResultsViewModel {
     enum Event {
         case reloadData
+        case showOptionDetail(option: PollOptionResult, questionText: String, totalVotes: Int)
     }
 }

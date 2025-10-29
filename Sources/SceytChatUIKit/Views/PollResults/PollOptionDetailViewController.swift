@@ -1,5 +1,5 @@
 //
-//  PollResultsViewController.swift
+//  PollOptionDetailViewController.swift
 //  SceytChatUIKit
 //
 //  Created by Sceyt LLC.
@@ -9,12 +9,11 @@
 import UIKit
 import Combine
 
-open class PollResultsViewController: ViewController,
-                                       UITableViewDelegate,
-                                       UITableViewDataSource {
+open class PollOptionDetailViewController: ViewController,
+                                            UITableViewDelegate,
+                                            UITableViewDataSource {
 
-    open var viewModel: PollResultsViewModel!
-    open lazy var router = Components.pollResultsRouter.init(rootViewController: self)
+    open var viewModel: PollOptionDetailViewModel!
     private var subscriptions = Set<AnyCancellable>()
 
     open lazy var tableView = UITableView(frame: .zero, style: .grouped)
@@ -24,16 +23,13 @@ open class PollResultsViewController: ViewController,
     open override func setup() {
         super.setup()
 
-        title = appearance.titleText
+        title = viewModel.option.optionText
 
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0
         }
 
-        tableView.register(QuestionCell.self)
-        tableView.register(AnswerCell.self)
-        tableView.register(VoterCell.self)
-        tableView.register(ShowMoreCell.self)
+        tableView.register(PollResultsViewController.VoterCell.self)
         tableView.delegate = self
         tableView.dataSource = self
         tableView.separatorStyle = .none
@@ -43,17 +39,7 @@ open class PollResultsViewController: ViewController,
         footer.frame.size.height = .leastNormalMagnitude
         tableView.tableFooterView = footer
 
-        setupNavigationBarItems()
         setupBindings()
-    }
-
-    private func setupNavigationBarItems() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: appearance.closeText,
-            style: .plain,
-            target: self,
-            action: #selector(closeTapped)
-        )
     }
 
     private func setupBindings() {
@@ -74,17 +60,8 @@ open class PollResultsViewController: ViewController,
             }
             .store(in: &subscriptions)
 
-        // Handle view model events
-        viewModel.$event
-            .compactMap { $0 }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] event in
-                self?.onEvent(event)
-            }
-            .store(in: &subscriptions)
-
-        // Reload table when poll results change
-        viewModel.$pollResults
+        // Reload table when option changes
+        viewModel.$option
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tableView.reloadData()
@@ -133,86 +110,25 @@ open class PollResultsViewController: ViewController,
     // MARK: UITableViewDataSource
 
     open func numberOfSections(in tableView: UITableView) -> Int {
-        // Section 0: Question cell
-        // Sections 1+: Voter cells for each option (one section per option)
-        return 1 + viewModel.numberOfOptions
+        // Section 0: All voters only
+        return 1
     }
 
     open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if section == 0 {
-            // First section shows the question
-            return 1
-        } else {
-            // Other sections show answer cell + voters for that option
-            let optionIndex = section - 1
-            let voterCount = viewModel.numberOfVoters(for: optionIndex)
-            let showMoreCount = viewModel.shouldShowMoreButton(for: optionIndex) ? 1 : 0
-            return 1 + voterCount + showMoreCount
-        }
+        // Show all voters
+        return viewModel.numberOfVoters
     }
 
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if indexPath.section == 0 {
-            // Question cell
-            let cell = tableView.dequeueReusableCell(for: indexPath, cellType: QuestionCell.self)
-            cell.parentAppearance = appearance.questionCellAppearance
-            cell.configure(questionText: viewModel.pollResults.question)
-            return cell
-        } else {
-            let optionIndex = indexPath.section - 1
-            let voterCount = viewModel.numberOfVoters(for: optionIndex)
+        // Voter cells
+        let cell = tableView.dequeueReusableCell(for: indexPath, cellType: PollResultsViewController.VoterCell.self)
+        cell.parentAppearance = appearance.voterCellAppearance
 
-            if indexPath.row == 0 {
-                // Answer cell (first row of each option section)
-                let cell = tableView.dequeueReusableCell(for: indexPath, cellType: AnswerCell.self)
-                cell.parentAppearance = appearance.answerCellAppearance
-
-                if let option = viewModel.option(at: optionIndex) {
-                    let totalVotes = viewModel.pollResults.options.reduce(0) { $0 + $1.voteCount }
-                    cell.configure(answerText: option.optionText, voteCount: option.voteCount, totalVotes: totalVotes)
-                }
-
-                return cell
-            } else if indexPath.row <= voterCount {
-                // Voter cells
-                let cell = tableView.dequeueReusableCell(for: indexPath, cellType: VoterCell.self)
-                cell.parentAppearance = appearance.voterCellAppearance
-
-                if let option = viewModel.option(at: optionIndex) {
-                    let voterIndex = indexPath.row - 1
-                    if voterIndex < option.voters.count {
-                        let voter = option.voters[voterIndex]
-                        cell.data = voter
-                    }
-                }
-
-                return cell
-            } else {
-                // Show More cell (last row when there are more voters)
-                let cell = tableView.dequeueReusableCell(for: indexPath, cellType: ShowMoreCell.self)
-                cell.parentAppearance = appearance.showMoreCellAppearance
-                cell.configure(text: appearance.showMoreText)
-                cell.onShowMoreTapped = { [weak self] in
-                    self?.viewModel.showMoreVoters(for: optionIndex)
-                }
-                return cell
-            }
+        if let voter = viewModel.voter(at: indexPath.row) {
+            cell.data = voter
         }
-    }
 
-    open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-
-        // Handle "Show More" cell tap
-        guard indexPath.section > 0 else { return }
-
-        let optionIndex = indexPath.section - 1
-        let voterCount = viewModel.numberOfVoters(for: optionIndex)
-
-        // Check if this is the "Show More" cell
-        if indexPath.row == voterCount + 1 {
-            viewModel.showMoreVoters(for: optionIndex)
-        }
+        return cell
     }
 
     open func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
@@ -225,7 +141,7 @@ open class PollResultsViewController: ViewController,
     }
 
     open func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        // No headers needed, everything is shown as cells
+        // No headers needed
         return nil
     }
 
@@ -234,7 +150,7 @@ open class PollResultsViewController: ViewController,
         willDisplay cell: UITableViewCell,
         forRowAt indexPath: IndexPath
     ) {
-        let cornerRadius = Layouts.cellCornerRadius
+        let cornerRadius = PollResultsViewController.Layouts.cellCornerRadius
         var corners: UIRectCorner = []
 
         if tableView.isFirst(indexPath) {
@@ -254,10 +170,10 @@ open class PollResultsViewController: ViewController,
                 cell.layer.addSublayer(layer)
             }
             layer.borderColor = appearance.separatorColor.cgColor
-            layer.borderWidth = Layouts.cellSeparatorWidth
+            layer.borderWidth = PollResultsViewController.Layouts.cellSeparatorWidth
 
             // Calculate separator inset
-            let separatorWidthInset: CGFloat = Layouts.cellHorizontalPadding + 16
+            let separatorWidthInset: CGFloat = PollResultsViewController.Layouts.cellHorizontalPadding + 16
 
             layer.frame = CGRect(
                 x: separatorWidthInset,
@@ -269,8 +185,8 @@ open class PollResultsViewController: ViewController,
 
         let maskLayer = CAShapeLayer()
         var rect = cell.bounds
-        rect.origin.x = Layouts.cellHorizontalPadding
-        rect.size.width -= Layouts.cellHorizontalPadding * 2
+        rect.origin.x = PollResultsViewController.Layouts.cellHorizontalPadding
+        rect.size.width -= PollResultsViewController.Layouts.cellHorizontalPadding * 2
         maskLayer.path = UIBezierPath(roundedRect: rect,
                                       byRoundingCorners: corners,
                                       cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)).cgPath
@@ -281,29 +197,6 @@ open class PollResultsViewController: ViewController,
 
     @objc open func closeTapped() {
         dismiss(animated: true)
-    }
-
-    // MARK: - ViewModel Events
-
-    open func onEvent(_ event: PollResultsViewModel.Event) {
-        switch event {
-        case .reloadData:
-            tableView.reloadData()
-        case .showOptionDetail(let option, let questionText, let totalVotes):
-            showOptionDetail(option: option, questionText: questionText, totalVotes: totalVotes)
-        }
-    }
-
-    open func showOptionDetail(option: PollOptionResult, questionText: String, totalVotes: Int) {
-        router.showPollOptionDetail(option: option, questionText: questionText, totalVotes: totalVotes)
-    }
-}
-
-public extension PollResultsViewController {
-    enum Layouts {
-        public static var cellCornerRadius: CGFloat = 10
-        public static var cellHorizontalPadding: CGFloat = 12
-        public static var cellSeparatorWidth: CGFloat = 1
     }
 }
 

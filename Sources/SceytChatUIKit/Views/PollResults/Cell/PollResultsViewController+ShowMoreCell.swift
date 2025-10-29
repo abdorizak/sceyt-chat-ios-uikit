@@ -17,8 +17,15 @@ extension PollResultsViewController {
         open lazy var containerView = UIView()
             .withoutAutoresizingMask
 
+        open var onShowMoreTapped: (() -> Void)?
+
         open override func setup() {
             super.setup()
+            showMoreButton.addTarget(self, action: #selector(showMoreButtonTapped), for: .touchUpInside)
+        }
+
+        @objc open func showMoreButtonTapped() {
+            onShowMoreTapped?()
         }
 
         open override func setupLayout() {

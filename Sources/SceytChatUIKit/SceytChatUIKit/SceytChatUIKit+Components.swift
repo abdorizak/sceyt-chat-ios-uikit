@@ -38,6 +38,7 @@ extension SceytChatUIKit {
         public static var mentioningUserListViewModel: MentioningUserListViewModel.Type = MentioningUserListViewModel.self
         public static var messageInfoViewModel: MessageInfoViewModel.Type = MessageInfoViewModel.self
         public static var pollResultsViewModel: PollResultsViewModel.Type = PollResultsViewModel.self
+        public static var pollOptionDetailViewModel: PollOptionDetailViewModel.Type = PollOptionDetailViewModel.self
         public static var previewerViewModel: PreviewerViewModel.Type = PreviewerViewModel.self
         public static var reactionScoreViewModel: ReactionScoreViewModel.Type = ReactionScoreViewModel.self
         public static var selectChannelMembersViewModel: SelectChannelMembersViewModel.Type = SelectChannelMembersViewModel.self
@@ -72,6 +73,7 @@ extension SceytChatUIKit {
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self
         public static var navigationController: NavigationController.Type = NavigationController.self
         public static var pollResultsViewController: PollResultsViewController.Type = PollResultsViewController.self
+        public static var pollOptionDetailViewController: PollOptionDetailViewController.Type = PollOptionDetailViewController.self
         public static var qrCodeViewController: QRCodeViewController.Type = QRCodeViewController.self
         public static var reactionPickerViewController: ReactionPickerViewController.Type = ReactionPickerViewController.self
         public static var reactedUserListViewController: ReactedUserListViewController.Type = ReactedUserListViewController.self
@@ -91,8 +93,9 @@ extension SceytChatUIKit {
         public static var channelProfileRouter: ChannelProfileRouter.Type = ChannelProfileRouter.self
         public static var joinGroupRouter: JoinGroupRouter.Type = JoinGroupRouter.self
         public static var inputRouter: InputRouter.Type = InputRouter.self
+        public static var pollResultsRouter: PollResultsRouter.Type = PollResultsRouter.self
         public static var previewerRouter: PreviewerRouter.Type = PreviewerRouter.self
-        
+
         // MARK: - Cells
         
         public static var channelAddMemberCell: ChannelMemberListViewController.AddMemberCell.Type = ChannelMemberListViewController.AddMemberCell.self
