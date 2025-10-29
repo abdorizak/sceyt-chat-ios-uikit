@@ -21,6 +21,11 @@ open class PollResultsViewController: ViewController,
         .withoutAutoresizingMask
         .rowAutomaticDimension
 
+    open lazy var closeButton: UIButton = {
+        $0.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+        return $0.withoutAutoresizingMask
+    }(UIButton(type: .system))
+
     open override func setup() {
         super.setup()
 
@@ -48,12 +53,7 @@ open class PollResultsViewController: ViewController,
     }
 
     private func setupNavigationBarItems() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: appearance.closeText,
-            style: .plain,
-            target: self,
-            action: #selector(closeTapped)
-        )
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: closeButton)
     }
 
     private func setupBindings() {
@@ -105,6 +105,14 @@ open class PollResultsViewController: ViewController,
 
         view.backgroundColor = appearance.backgroundColor
         tableView.backgroundColor = .clear
+
+        // Close button appearance
+        closeButton.setImage(.closeIcon, for: .normal)
+        closeButton.tintColor = appearance.closeButtonTintColor
+        closeButton.backgroundColor = appearance.closeButtonBackgroundColor
+        closeButton.layer.cornerRadius = 14
+        closeButton.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        closeButton.heightAnchor.constraint(equalToConstant: 28).isActive = true
     }
 
     override open func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -279,7 +287,7 @@ open class PollResultsViewController: ViewController,
 
     // MARK: Actions
 
-    @objc open func closeTapped() {
+    @objc open func closeButtonTapped() {
         dismiss(animated: true)
     }
 

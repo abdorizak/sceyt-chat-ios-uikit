@@ -16,6 +16,8 @@ extension PollResultsViewController: AppearanceProviding {
         answerCellAppearance: AnswerCell.appearance,
         voterCellAppearance: VoterCell.appearance,
         showMoreCellAppearance: ShowMoreCell.appearance,
+        closeButtonTintColor: .closeButtonTint,
+        closeButtonBackgroundColor: .closeButtonBackground,
         titleText: "Poll Results",
         closeText: "Close",
         showMoreText: "Show More"
@@ -40,6 +42,12 @@ extension PollResultsViewController: AppearanceProviding {
         @Trackable<Appearance, ShowMoreCell.Appearance>
         public var showMoreCellAppearance: ShowMoreCell.Appearance
 
+        @Trackable<Appearance, UIColor>
+        public var closeButtonTintColor: UIColor
+
+        @Trackable<Appearance, UIColor>
+        public var closeButtonBackgroundColor: UIColor
+
         @Trackable<Appearance, String>
         public var titleText: String
 
@@ -56,6 +64,8 @@ extension PollResultsViewController: AppearanceProviding {
             answerCellAppearance: AnswerCell.Appearance,
             voterCellAppearance: VoterCell.Appearance,
             showMoreCellAppearance: ShowMoreCell.Appearance,
+            closeButtonTintColor: UIColor,
+            closeButtonBackgroundColor: UIColor,
             titleText: String,
             closeText: String,
             showMoreText: String
@@ -66,6 +76,8 @@ extension PollResultsViewController: AppearanceProviding {
             self._answerCellAppearance = Trackable(value: answerCellAppearance)
             self._voterCellAppearance = Trackable(value: voterCellAppearance)
             self._showMoreCellAppearance = Trackable(value: showMoreCellAppearance)
+            self._closeButtonTintColor = Trackable(value: closeButtonTintColor)
+            self._closeButtonBackgroundColor = Trackable(value: closeButtonBackgroundColor)
             self._titleText = Trackable(value: titleText)
             self._closeText = Trackable(value: closeText)
             self._showMoreText = Trackable(value: showMoreText)
@@ -79,6 +91,8 @@ extension PollResultsViewController: AppearanceProviding {
             answerCellAppearance: AnswerCell.Appearance? = nil,
             voterCellAppearance: VoterCell.Appearance? = nil,
             showMoreCellAppearance: ShowMoreCell.Appearance? = nil,
+            closeButtonTintColor: UIColor? = nil,
+            closeButtonBackgroundColor: UIColor? = nil,
             titleText: String? = nil,
             closeText: String? = nil,
             showMoreText: String? = nil
@@ -89,6 +103,8 @@ extension PollResultsViewController: AppearanceProviding {
             self._answerCellAppearance = Trackable(reference: reference, referencePath: \.answerCellAppearance)
             self._voterCellAppearance = Trackable(reference: reference, referencePath: \.voterCellAppearance)
             self._showMoreCellAppearance = Trackable(reference: reference, referencePath: \.showMoreCellAppearance)
+            self._closeButtonTintColor = Trackable(reference: reference, referencePath: \.closeButtonTintColor)
+            self._closeButtonBackgroundColor = Trackable(reference: reference, referencePath: \.closeButtonBackgroundColor)
             self._titleText = Trackable(reference: reference, referencePath: \.titleText)
             self._closeText = Trackable(reference: reference, referencePath: \.closeText)
             self._showMoreText = Trackable(reference: reference, referencePath: \.showMoreText)
@@ -110,6 +126,12 @@ extension PollResultsViewController: AppearanceProviding {
             }
             if let showMoreCellAppearance {
                 self.showMoreCellAppearance = showMoreCellAppearance
+            }
+            if let closeButtonTintColor {
+                self.closeButtonTintColor = closeButtonTintColor
+            }
+            if let closeButtonBackgroundColor {
+                self.closeButtonBackgroundColor = closeButtonBackgroundColor
             }
             if let titleText {
                 self.titleText = titleText
