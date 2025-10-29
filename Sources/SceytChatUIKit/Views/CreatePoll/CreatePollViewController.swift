@@ -659,12 +659,12 @@ open class CreatePollViewController: ViewController,
 
             // Insert the new row with animation
             if shouldRemoveAddOptionCell {
-                // The AddOption cell was at index, after insertion it would be at index + 1
-                // We need to delete it since we've reached the max
-                let addOptionIndexPath = IndexPath(row: index + 1, section: 1)
+                // The AddOption cell is at the same index as the new option will be inserted
+                // Deletions are processed before insertions, so we delete it at its current position
+                let addOptionIndexPath = IndexPath(row: index, section: 1)
                 tableView.beginUpdates()
-                tableView.insertRows(at: [indexPath], with: .automatic)
                 tableView.deleteRows(at: [addOptionIndexPath], with: .automatic)
+                tableView.insertRows(at: [indexPath], with: .automatic)
                 tableView.endUpdates()
             } else {
                 tableView.insertRows(at: [indexPath], with: .automatic)
