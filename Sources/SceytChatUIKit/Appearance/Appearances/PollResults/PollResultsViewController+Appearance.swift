@@ -19,7 +19,6 @@ extension PollResultsViewController: AppearanceProviding {
         closeButtonTintColor: .closeButtonTint,
         closeButtonBackgroundColor: .closeButtonBackground,
         titleText: "Poll Results",
-        closeText: "Close",
         showMoreText: "Show More"
     )
 
@@ -52,9 +51,6 @@ extension PollResultsViewController: AppearanceProviding {
         public var titleText: String
 
         @Trackable<Appearance, String>
-        public var closeText: String
-
-        @Trackable<Appearance, String>
         public var showMoreText: String
 
         public init(
@@ -67,7 +63,6 @@ extension PollResultsViewController: AppearanceProviding {
             closeButtonTintColor: UIColor,
             closeButtonBackgroundColor: UIColor,
             titleText: String,
-            closeText: String,
             showMoreText: String
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -79,7 +74,6 @@ extension PollResultsViewController: AppearanceProviding {
             self._closeButtonTintColor = Trackable(value: closeButtonTintColor)
             self._closeButtonBackgroundColor = Trackable(value: closeButtonBackgroundColor)
             self._titleText = Trackable(value: titleText)
-            self._closeText = Trackable(value: closeText)
             self._showMoreText = Trackable(value: showMoreText)
         }
 
@@ -94,7 +88,6 @@ extension PollResultsViewController: AppearanceProviding {
             closeButtonTintColor: UIColor? = nil,
             closeButtonBackgroundColor: UIColor? = nil,
             titleText: String? = nil,
-            closeText: String? = nil,
             showMoreText: String? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
@@ -106,7 +99,6 @@ extension PollResultsViewController: AppearanceProviding {
             self._closeButtonTintColor = Trackable(reference: reference, referencePath: \.closeButtonTintColor)
             self._closeButtonBackgroundColor = Trackable(reference: reference, referencePath: \.closeButtonBackgroundColor)
             self._titleText = Trackable(reference: reference, referencePath: \.titleText)
-            self._closeText = Trackable(reference: reference, referencePath: \.closeText)
             self._showMoreText = Trackable(reference: reference, referencePath: \.showMoreText)
 
             if let backgroundColor {
@@ -135,9 +127,6 @@ extension PollResultsViewController: AppearanceProviding {
             }
             if let titleText {
                 self.titleText = titleText
-            }
-            if let closeText {
-                self.closeText = closeText
             }
             if let showMoreText {
                 self.showMoreText = showMoreText

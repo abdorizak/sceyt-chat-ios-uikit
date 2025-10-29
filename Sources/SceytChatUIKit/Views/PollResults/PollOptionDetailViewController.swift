@@ -144,6 +144,10 @@ open class PollOptionDetailViewController: ViewController,
         // No headers needed
         return nil
     }
+    
+    open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
 
     open func tableView(
         _ tableView: UITableView,

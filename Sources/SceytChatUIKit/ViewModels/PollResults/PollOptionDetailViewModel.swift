@@ -11,14 +11,14 @@ import Combine
 
 open class PollOptionDetailViewModel: NSObject {
 
-    @Published public var option: PollOptionResult
+    @Published public var option: any PollOptionResultProviding
     @Published public var questionText: String
     @Published public var totalVotes: Int
     @Published public var isLoading = false
     @Published public var error: Error?
 
     public required init(
-        option: PollOptionResult,
+        option: any PollOptionResultProviding,
         questionText: String,
         totalVotes: Int
     ) {
@@ -34,7 +34,7 @@ open class PollOptionDetailViewModel: NSObject {
         option.voters.count
     }
 
-    public func voter(at index: Int) -> PollOptionResult.Voter? {
+    public func voter(at index: Int) -> (any VoterProviding)? {
         guard index < option.voters.count else { return nil }
         return option.voters[index]
     }

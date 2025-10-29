@@ -86,7 +86,7 @@ extension PollResultsViewController {
             contentView.heightAnchor.pin(greaterThanOrEqualToConstant: 56)
         }
 
-        open var data: PollOptionResult.Voter! {
+        open var data: (any VoterProviding)! {
             didSet {
                 guard let data else { return }
 

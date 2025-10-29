@@ -10,7 +10,7 @@ import UIKit
 
 open class PollResultsRouter: Router<PollResultsViewController> {
 
-    open func showPollOptionDetail(option: PollOptionResult, questionText: String, totalVotes: Int) {
+    open func showPollOptionDetail(option: any PollOptionResultProviding, questionText: String, totalVotes: Int) {
         let viewController = Components.pollOptionDetailViewController.init()
         let viewModel = Components.pollOptionDetailViewModel.init(
             option: option,

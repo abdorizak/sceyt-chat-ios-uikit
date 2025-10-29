@@ -11,12 +11,12 @@ import Combine
 
 open class PollResultsViewModel: NSObject {
 
-    @Published public var pollResults: PollResultsModel
+    @Published public var pollResults: any PollResultsProviding
     @Published public var event: Event?
     @Published public var isLoading = false
     @Published public var error: Error?
 
-    public required init(pollResults: PollResultsModel = PollResultsModel()) {
+    public required init(pollResults: any PollResultsProviding = PollResultsModel()) {
         self.pollResults = pollResults
         super.init()
     }
@@ -27,7 +27,7 @@ open class PollResultsViewModel: NSObject {
         pollResults.options.count
     }
 
-    public func option(at index: Int) -> PollOptionResult? {
+    public func option(at index: Int) -> (any PollOptionResultProviding)? {
         guard index < pollResults.options.count else { return nil }
         return pollResults.options[index]
     }
@@ -56,6 +56,6 @@ open class PollResultsViewModel: NSObject {
 public extension PollResultsViewModel {
     enum Event {
         case reloadData
-        case showOptionDetail(option: PollOptionResult, questionText: String, totalVotes: Int)
+        case showOptionDetail(option: any PollOptionResultProviding, questionText: String, totalVotes: Int)
     }
 }

@@ -302,7 +302,7 @@ open class PollResultsViewController: ViewController,
         }
     }
 
-    open func showOptionDetail(option: PollOptionResult, questionText: String, totalVotes: Int) {
+    open func showOptionDetail(option: any PollOptionResultProviding, questionText: String, totalVotes: Int) {
         router.showPollOptionDetail(option: option, questionText: questionText, totalVotes: totalVotes)
     }
 }
