@@ -15,6 +15,7 @@ open class CreatePollViewController: ViewController,
                                       UIAdaptivePresentationControllerDelegate {
 
     open var viewModel: CreatePollViewModel!
+    open var onPollCreated: ((CreatePollModel) -> Void)?
     private var subscriptions = Set<AnyCancellable>()
     
     private var shouldShowAddOptionCell: Bool {
@@ -76,9 +77,15 @@ open class CreatePollViewController: ViewController,
         tableView.tableFooterView = footer
 
         navigationController?.presentationController?.delegate = self
-        
         setupNavigationBarItems()
         setupBindings()
+
+        KeyboardObserver()
+            .willShow { [weak self] in
+                self?.adjustTableViewToKeyboard(notification: $0)
+            }.willHide { [weak self] in
+                self?.adjustTableViewToKeyboard(notification: $0)
+            }
     }
 
     private func setupNavigationBarItems() {
@@ -423,8 +430,10 @@ open class CreatePollViewController: ViewController,
 
     @objc open func createTapped() {
         guard viewModel.canCreatePoll else { return }
-        // This will be handled by the parent/presenter
-        dismiss(animated: true)
+        let poll = viewModel.poll
+        dismiss(animated: true) { [weak self] in
+            self?.onPollCreated?(poll)
+        }
     }
 
     @objc open func addOption() {
@@ -542,6 +551,12 @@ open class CreatePollViewController: ViewController,
 
         // Remove the option (this will trigger the .removeOption event which handles animation)
         viewModel.removeOption(at: indexPath.row)
+    }
+
+    // MARK: - Keyboard Handling
+
+    open func adjustTableViewToKeyboard(notification: Notification) {
+        tableView.adjustInsetsToKeyboard(notification: notification, container: view)
     }
 
     // MARK: - Content Validation
