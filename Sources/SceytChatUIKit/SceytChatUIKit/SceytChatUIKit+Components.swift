@@ -133,6 +133,7 @@ extension SceytChatUIKit {
         public static var messageCellReplyArrowView: MessageCell.ReplyArrowView.Type = MessageCell.ReplyArrowView.self
         public static var messageCellReplyCountView: MessageCell.ReplyCountView.Type = MessageCell.ReplyCountView.self
         public static var messageCellReplyView: MessageCell.ReplyView.Type = MessageCell.ReplyView.self
+        public static var messageCellPollView: MessageCell.PollView.Type = MessageCell.PollView.self
         public static var messageCellUnreadMessagesSeparatorView: MessageCell.UnreadMessagesSeparatorView.Type = MessageCell.UnreadMessagesSeparatorView.self
         public static var messageInfoMarkerCell: MessageInfoViewController.MarkerCell.Type = MessageInfoViewController.MarkerCell.self
         public static var messageInfoMessageCell: MessageInfoViewController.MessageCell.Type = MessageInfoViewController.MessageCell.self

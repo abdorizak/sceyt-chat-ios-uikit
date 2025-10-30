@@ -1459,6 +1459,8 @@ open class ChannelViewController: ViewController,
                 self.didSelectPhoneNumber(phoneNumber, layoutModel: model)
             case .didSwipe:
                 self.reply(layoutModel: model, in: false)
+            case .didTapPollOption(_):
+                print("polll")
             }
             
         }

@@ -59,6 +59,7 @@ open class MessageLayoutModel {
     public private(set) var parentTextSize: CGSize
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
+    public private(set) var pollViewMeasure: CGSize = .zero
     public private(set) var lastCharRect: CGRect
     public private(set) var replyCount = 0
     public              var contentInsets: UIEdgeInsets = .zero
@@ -206,6 +207,9 @@ open class MessageLayoutModel {
         }
         if hasVoiceAttachments {
             contentOptions.insert(.voice)
+        }
+        if message.poll != nil {
+            contentOptions.insert(.poll)
         }
         if attachments.isEmpty {
             for link in Self.createLinkPreviews(message: message, linkAttachments: linkAttachments) {
@@ -768,6 +772,7 @@ open class MessageLayoutModel {
     open func measure() -> CGSize {
         infoViewMeasure = Components.messageCellInfoView.measure(model: self, appearance: appearance)
         linkViewMeasure = Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
+        pollViewMeasure = Components.messageCellPollView.measure(model: self, appearance: appearance)
         if message.incoming {
             return Components.channelIncomingMessageCell.measure(model: self, appearance: appearance)
         } else {
@@ -804,9 +809,10 @@ public extension MessageLayoutModel {
         public static let file     = MessageContentOptions(rawValue: 1 << 3)
         public static let link     = MessageContentOptions(rawValue: 1 << 4)
         public static let voice    = MessageContentOptions(rawValue: 1 << 5)
+        public static let poll     = MessageContentOptions(rawValue: 1 << 6)
         
         public static let attachment: MessageContentOptions = [.image, .file, .voice]
-        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice]
+        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice, .poll]
     }
     
     struct MessageUpdateOptions: OptionSet {

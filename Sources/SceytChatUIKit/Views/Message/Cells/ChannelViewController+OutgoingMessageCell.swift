@@ -188,6 +188,31 @@ extension ChannelViewController {
                 
                 
                 layoutConstraint += [ linkView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4) ]
+            } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {
+                
+                layoutConstraint += [
+                    bubbleView.leadingAnchor.pin(to: textLabel.leadingAnchor, constant: -12),
+                    bubbleView.trailingAnchor.pin(to: containerView.trailingAnchor, constant: -12),
+                    bubbleView.topAnchor.pin(to: containerView.topAnchor),
+                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.pollViewMeasure.width + 24),
+                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.infoViewMeasure.width + 24),
+                    bubbleView.widthAnchor.pin(lessThanOrEqualToConstant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
+                    
+                    infoView.leadingAnchor.pin(greaterThanOrEqualTo: bubbleView.leadingAnchor, constant: 10),
+                    
+                    textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12),
+                    textLabel.topAnchor.pin(to: bubbleViewTopAnchor, constant: 8),
+                    textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
+                    textLabel.heightAnchor.pin(constant: layout.textSize.height),
+                    
+                    pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
+                    pollView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
+                    pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
+                    pollView.heightAnchor.pin(constant: layout.pollViewMeasure.height),
+                ]
+                
+                
+                layoutConstraint += [ pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4) ]
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
                 if !infoView.backgroundView.isHidden {
@@ -369,6 +394,20 @@ extension ChannelViewController {
                 
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
+            } else if model.contentOptions.contains(.poll) {
+                let pollSize = model.pollViewMeasure
+                textSize = model.textSize
+                textSize.width = max(textSize.width, model.parentTextSize.width - 70)
+                bubbleSize = textSize
+                bubbleSize.width = max(bubbleSize.width, pollSize.width)
+                bubbleSize.height += pollSize.height
+                bubbleSize.height += (model.hasReply ? 8 : model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)
+                bubbleSize.height += 12 //padding
+                bubbleSize.height += 12 //padding
+                
+                let infoViewSize = InfoView.measure(model: model, appearance: appearance)
+                bubbleSize.height += infoViewSize.height
+                logger.debug("[POLL SIZE] \(model.message.id), \(bubbleSize.height)")
             } else {
                 shouldShowDateTickBackground = false
                 bubbleSize = model.attachmentsContainerSize

@@ -235,6 +235,34 @@ extension ChannelViewController {
                 
                 layoutConstraint += [ linkView.bottomAnchor.pin(lessThanOrEqualTo: infoView.topAnchor, constant: -4) ]
                 
+            } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {
+                layoutConstraint += [
+                    bubbleView.leadingAnchor.pin(to: avatarView.trailingAnchor, constant: 10),
+                    bubbleView.trailingAnchor.pin(to: infoView.trailingAnchor, constant: 12),
+                    bubbleView.topAnchor.pin(to: containerView.topAnchor),
+                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.messageUserTitleSize.width + 24),
+                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.pollViewMeasure.width + 24),
+                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width + 24),
+                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.infoViewMeasure.width + 24),
+                    bubbleView.widthAnchor.pin(lessThanOrEqualToConstant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
+                    
+                    textLabel.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
+                    textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
+                    textLabel.heightAnchor.pin(constant: layout.textSize.height),
+                    textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
+                    
+                    infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
+                    
+                    pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
+                    pollView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
+                    pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
+                    pollView.heightAnchor.pin(constant: layout.pollViewMeasure.height),
+                    
+                    infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24)
+                ]
+                
+                layoutConstraint += [ pollView.bottomAnchor.pin(lessThanOrEqualTo: infoView.topAnchor, constant: -4) ]
+                
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
                 if !infoView.backgroundView.isHidden {
@@ -438,6 +466,28 @@ extension ChannelViewController {
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
                 logger.debug("[LINK SIZE] \(model.message.id), \(bubbleSize.height)")
+            } else if options.contains(.poll) {
+                let pollSize = model.pollViewMeasure
+                textSize = model.textSize
+                textSize.width = max(textSize.width, model.parentTextSize.width - 70)
+                bubbleSize = textSize
+                bubbleSize.width = max(bubbleSize.width, pollSize.width)
+                bubbleSize.height += pollSize.height
+                if showName, !model.isForwarded, model.hasReply {
+                    bubbleSize.height += 2
+                } else {
+                    bubbleSize.height += model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2
+                }
+                bubbleSize.height += 12 //padding
+                if userNameSize == .zero {
+                    bubbleSize.height += 18
+                } else {
+                    bubbleSize.height += 2
+                }
+                
+                let infoViewSize = InfoView.measure(model: model, appearance: appearance)
+                bubbleSize.height += infoViewSize.height
+                logger.debug("[POLL SIZE] \(model.message.id), \(bubbleSize.height)")
             } else {
                 bubbleSize = model.attachmentsContainerSize
                 bubbleSize.width += 4

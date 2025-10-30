@@ -95,21 +95,26 @@ open class JoinGroupViewController: ViewController {
         super.setup()
         
         setupBindings()
-        loadChannelInfo()
+
+        // Update UI with pre-loaded data if available
+        if let channel = joinGroupViewModel.channel {
+            updateChannelInfo()
+            updateMembersDisplay(members: joinGroupViewModel.members)
+        }
     }
-    
+
     private func setupBindings() {
         // Handle loading state and channel availability
         Publishers.CombineLatest(
             joinGroupViewModel.$isLoading,
-            joinGroupViewModel.$event.map { $0 != nil }
+            joinGroupViewModel.$channel.map { $0 != nil }
         )
         .receive(on: DispatchQueue.main)
         .sink { [weak self] isLoading, hasChannel in
             self?.joinButton.isHidden = isLoading || !hasChannel
         }
         .store(in: &subscriptions)
-        
+
         // Handle joining state
         joinGroupViewModel.$isJoining
             .receive(on: DispatchQueue.main)
@@ -117,7 +122,7 @@ open class JoinGroupViewController: ViewController {
                 self?.updateJoinButtonState(isJoining: isJoining)
             }
             .store(in: &subscriptions)
-        
+
         joinGroupViewModel.$error
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
@@ -125,7 +130,7 @@ open class JoinGroupViewController: ViewController {
                 self?.handleError(error)
             }
             .store(in: &subscriptions)
-        
+
         // Handle view model events
         joinGroupViewModel.$event
             .compactMap { $0 }
@@ -137,15 +142,22 @@ open class JoinGroupViewController: ViewController {
 
         // Handle members update
         joinGroupViewModel.$members
+            .dropFirst() // Skip initial value as we handle it manually in setup()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] members in
                 self?.updateMembersDisplay(members: members)
             }
             .store(in: &subscriptions)
-    }
-    
-    private func loadChannelInfo() {
-        joinGroupViewModel.loadChannelInfo()
+
+        // Handle channel updates
+        joinGroupViewModel.$channel
+            .compactMap { $0 }
+            .dropFirst() // Skip initial value as we handle it manually in setup()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateChannelInfo()
+            }
+            .store(in: &subscriptions)
     }
     
     open override func setupLayout() {
