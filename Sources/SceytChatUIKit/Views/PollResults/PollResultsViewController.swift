@@ -189,8 +189,9 @@ open class PollResultsViewController: ViewController,
 
                 if let option = viewModel.option(at: optionIndex) {
                     let voterIndex = indexPath.row - 1
-                    if voterIndex < option.voters.count {
-                        cell.data = viewModel.voters(for: optionIndex)[voterIndex]
+                    let voters = viewModel.voters(for: optionIndex)
+                    if voterIndex < voters.count {
+                        cell.data = voters[voterIndex]
                     }
                 }
 
