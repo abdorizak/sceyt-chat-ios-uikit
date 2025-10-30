@@ -11,33 +11,43 @@ import Combine
 
 open class PollResultsViewModel: NSObject {
 
-    @Published public var pollResults: any PollResultsProviding
+    @Published public var pollResults: PollDetails
     @Published public var event: Event?
     @Published public var isLoading = false
     @Published public var error: Error?
 
-    public required init(pollResults: any PollResultsProviding = PollResultsModel()) {
+    public required init(pollResults: PollDetails) {
         self.pollResults = pollResults
         super.init()
     }
 
     // MARK: - Computed Properties
-
+    
     public var numberOfOptions: Int {
         pollResults.options.count
     }
 
-    public func option(at index: Int) -> (any PollOptionResultProviding)? {
+    public func option(at index: Int) -> PollOption? {
         guard index < pollResults.options.count else { return nil }
         return pollResults.options[index]
     }
+    
+    public func voters(for optionIndex: Int) -> [PollVote] {
+        guard let option = option(at: optionIndex) else { return [] }
+        
+        // Combine both ownVotes and votes
+        let allVotes = pollResults.votes + pollResults.ownVotes
+
+        // Filter votes belonging to this option
+        return allVotes.filter { $0.optionId == option.id }
+    }
 
     public func numberOfVoters(for optionIndex: Int) -> Int {
-        guard let option = option(at: optionIndex) else { return 0 }
-        return option.voters.count
+        return voters(for: optionIndex).count
     }
 
     public func shouldShowMoreButton(for optionIndex: Int) -> Bool {
+        return true
         guard let option = option(at: optionIndex) else { return false }
         return option.voteCount > option.voters.count
     }
@@ -47,7 +57,8 @@ open class PollResultsViewModel: NSObject {
         let totalVotes = pollResults.options.reduce(0) { $0 + $1.voteCount }
         event = .showOptionDetail(
             option: option,
-            questionText: pollResults.question,
+            pollDetails: pollResults,
+            questionText: pollResults.name,
             totalVotes: totalVotes
         )
     }
@@ -56,6 +67,6 @@ open class PollResultsViewModel: NSObject {
 public extension PollResultsViewModel {
     enum Event {
         case reloadData
-        case showOptionDetail(option: any PollOptionResultProviding, questionText: String, totalVotes: Int)
+        case showOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int)
     }
 }

@@ -8,21 +8,25 @@
 
 import Foundation
 import Combine
+import SceytChat
 
 open class PollOptionDetailViewModel: NSObject {
 
-    @Published public var option: any PollOptionResultProviding
+    @Published public var option: PollOption
+    @Published public var pollDetails: PollDetails
     @Published public var questionText: String
     @Published public var totalVotes: Int
     @Published public var isLoading = false
     @Published public var error: Error?
 
     public required init(
-        option: any PollOptionResultProviding,
+        option: PollOption,
+        pollDetails: PollDetails,
         questionText: String,
         totalVotes: Int
     ) {
         self.option = option
+        self.pollDetails = pollDetails
         self.questionText = questionText
         self.totalVotes = totalVotes
         super.init()
@@ -31,11 +35,20 @@ open class PollOptionDetailViewModel: NSObject {
     // MARK: - Computed Properties
 
     public var numberOfVoters: Int {
-        option.voters.count
+        voters().count
     }
 
-    public func voter(at index: Int) -> (any VoterProviding)? {
-        guard index < option.voters.count else { return nil }
-        return option.voters[index]
+    public func voters() -> [PollVote] {
+        // Combine both ownVotes and votes
+        let allVotes = pollDetails.ownVotes + pollDetails.votes
+
+        // Filter votes belonging to this option
+        return allVotes.filter { $0.optionId == option.id }
+    }
+
+    public func voter(at index: Int) -> PollVote? {
+        let allVoters = voters()
+        guard index < allVoters.count else { return nil }
+        return allVoters[index]
     }
 }

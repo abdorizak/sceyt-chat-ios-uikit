@@ -23,7 +23,7 @@ open class PollOptionDetailViewController: ViewController,
     open override func setup() {
         super.setup()
 
-        title = viewModel.option.optionText
+        title = viewModel.option.text
 
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0

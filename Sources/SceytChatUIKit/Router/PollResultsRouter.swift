@@ -10,10 +10,11 @@ import UIKit
 
 open class PollResultsRouter: Router<PollResultsViewController> {
 
-    open func showPollOptionDetail(option: any PollOptionResultProviding, questionText: String, totalVotes: Int) {
+    open func showPollOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int) {
         let viewController = Components.pollOptionDetailViewController.init()
         let viewModel = Components.pollOptionDetailViewModel.init(
             option: option,
+            pollDetails: pollDetails,
             questionText: questionText,
             totalVotes: totalVotes
         )

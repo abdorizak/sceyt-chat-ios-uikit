@@ -165,7 +165,7 @@ open class PollResultsViewController: ViewController,
             // Question cell
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: QuestionCell.self)
             cell.parentAppearance = appearance.questionCellAppearance
-            cell.configure(questionText: viewModel.pollResults.question)
+            cell.configure(questionText: viewModel.pollResults.name)
             return cell
         } else {
             let optionIndex = indexPath.section - 1
@@ -178,7 +178,7 @@ open class PollResultsViewController: ViewController,
 
                 if let option = viewModel.option(at: optionIndex) {
                     let totalVotes = viewModel.pollResults.options.reduce(0) { $0 + $1.voteCount }
-                    cell.configure(answerText: option.optionText, voteCount: option.voteCount, totalVotes: totalVotes)
+                    cell.configure(answerText: option.text, voteCount: option.voteCount, totalVotes: totalVotes)
                 }
 
                 return cell
@@ -190,8 +190,7 @@ open class PollResultsViewController: ViewController,
                 if let option = viewModel.option(at: optionIndex) {
                     let voterIndex = indexPath.row - 1
                     if voterIndex < option.voters.count {
-                        let voter = option.voters[voterIndex]
-                        cell.data = voter
+                        cell.data = viewModel.voters(for: optionIndex)[voterIndex]
                     }
                 }
 
@@ -298,13 +297,13 @@ open class PollResultsViewController: ViewController,
         switch event {
         case .reloadData:
             tableView.reloadData()
-        case .showOptionDetail(let option, let questionText, let totalVotes):
-            showOptionDetail(option: option, questionText: questionText, totalVotes: totalVotes)
+        case .showOptionDetail(let option, let pollDetails, let questionText, let totalVotes):
+            showOptionDetail(option: option, pollDetails: pollDetails, questionText: questionText, totalVotes: totalVotes)
         }
     }
 
-    open func showOptionDetail(option: any PollOptionResultProviding, questionText: String, totalVotes: Int) {
-        router.showPollOptionDetail(option: option, questionText: questionText, totalVotes: totalVotes)
+    open func showOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int) {
+        router.showPollOptionDetail(option: option, pollDetails: pollDetails, questionText: questionText, totalVotes: totalVotes)
     }
 }
 

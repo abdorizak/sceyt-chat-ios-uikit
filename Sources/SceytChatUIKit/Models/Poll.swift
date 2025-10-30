@@ -50,11 +50,12 @@ public struct PendingPollVote {
     let createdAt: Int64
 }
 
-public struct PollVote: Codable {
+public struct PollVote {
     let pollId: String
     let optionId: String
     let userId: String
     let createdAt: Int64
+    let user: ChatUser?
 }
 
 // MARK: - Initializers from DTO
@@ -136,6 +137,11 @@ extension PollVote {
         self.pollId = dto.pollDetails?.id ?? dto.ownPollDetails?.id ?? ""
         self.optionId = dto.optionId
         self.userId = dto.user?.id ?? ""
+        if let user = dto.user {
+            self.user = ChatUser(dto: user)
+        } else {
+            self.user = nil
+        }
         self.createdAt = dto.createdAt
     }
 }
