@@ -204,14 +204,13 @@ extension ChannelViewController {
                     textLabel.topAnchor.pin(to: bubbleViewTopAnchor, constant: 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
                     textLabel.heightAnchor.pin(constant: layout.textSize.height),
-                    
+
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    pollView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
+                    pollView.topAnchor.pin(to: bubbleView.topAnchor),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
-                    pollView.heightAnchor.pin(constant: layout.pollViewMeasure.height),
+                    pollView.bottomAnchor.pin(to: bubbleView.bottomAnchor)
                 ]
-                
-                
+
                 layoutConstraint += [ pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4) ]
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
@@ -402,8 +401,8 @@ extension ChannelViewController {
                 bubbleSize.width = max(bubbleSize.width, pollSize.width)
                 bubbleSize.height += pollSize.height
                 bubbleSize.height += (model.hasReply ? 8 : model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)
-                bubbleSize.height += 12 //padding
-                bubbleSize.height += 12 //padding
+//                bubbleSize.height += 12 //padding
+//                bubbleSize.height += 12 //padding
                 
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height

@@ -59,7 +59,7 @@ public class PollViewAppearance: AppearanceProviding {
             spacing: -8
         ),
         questionBottomSpacing: 12,
-        optionSpacing: 8,
+        optionSpacing: 20.0,
         optionMinHeight: 40,
         progressBarHeight: 4,
         progressBarCornerRadius: 2,

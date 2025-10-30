@@ -11,7 +11,7 @@ import UIKit
 extension MessageCell {
     open class PollView: View, MessageCellMeasurable {
         
-        open lazy var appearance: PollViewAppearance = Components.messageCell.appearance.pollViewAppearance {
+        open lazy var appearance: MessageCellAppearance = Components.messageCell.appearance {
             didSet {
                 setupAppearance()
             }
@@ -25,6 +25,8 @@ extension MessageCell {
 
         open lazy var optionsStackView = UIStackView()
             .withoutAutoresizingMask
+
+        private var optionViews: [Int: PollOptionView] = [:]
 
         open lazy var separatorView = UIView()
             .withoutAutoresizingMask
@@ -49,15 +51,16 @@ extension MessageCell {
                 configure(with: data)
             }
         }
-        
+
         public var onDidTapOption: ((Int) -> Void)?
         public var onDidTapViewResults: (() -> Void)?
         
         override open func setup() {
             super.setup()
 
+            layer.cornerRadius = 16
             optionsStackView.axis = .vertical
-            optionsStackView.spacing = 8.0
+            optionsStackView.spacing = appearance.pollViewAppearance.optionSpacing
             separatorView.backgroundColor = .white
             questionLabel.numberOfLines = 0
             viewResultButton.setTitle("View Results", for: .normal)
@@ -93,13 +96,14 @@ extension MessageCell {
 
             backgroundColor = .clear
 
-            questionLabel.font = appearance.questionTextStyle.font
-            questionLabel.textColor = appearance.questionTextStyle.foregroundColor
+            questionLabel.font = appearance.pollViewAppearance.questionTextStyle.font
+            questionLabel.textColor = appearance.pollViewAppearance.questionTextStyle.foregroundColor
 
-            typeLabel.font = appearance.pollTypeTextStyle.font
-            typeLabel.textColor = appearance.pollTypeTextStyle.foregroundColor
+            typeLabel.font = appearance.pollViewAppearance.pollTypeTextStyle.font
+            typeLabel.textColor = appearance.pollViewAppearance.pollTypeTextStyle.foregroundColor
 
-            separatorView.backgroundColor = appearance.dividerColor
+            separatorView.backgroundColor = appearance.pollViewAppearance.dividerColor
+            backgroundColor = appearance.outgoingBubbleColor
         }
 
         private func configure(with layoutModel: MessageLayoutModel) {
@@ -109,43 +113,45 @@ extension MessageCell {
                 isHidden = true
                 return
             }
-            
+
             questionLabel.text = poll.name
-            
+
             // Determine poll type text
             var pollTypeText = ""
             if poll.anonymous {
-                pollTypeText += "Anonymous"
+                pollTypeText += "Anonymous poll"
             } else {
-                pollTypeText += "Public"
+                pollTypeText += "Public poll"
             }
-            if poll.allowMultipleVotes {
-                pollTypeText += " • Multiple answers"
-            }
+
             typeLabel.text = pollTypeText
 
             // Remove existing option views
             optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-            
+            optionViews.removeAll()
+
             // Calculate total votes
             let totalVotes = poll.votesPerOption.values.reduce(0, +)
-            
+
             // Add option views
             for (index, option) in poll.options.enumerated() {
                 let voteCount = poll.votesPerOption[option.id] ?? 0
                 let pollOption = PollOption(
                     text: option.text,
                     votes: voteCount,
-                    isSelected: option.selected
+                    isSelected: option.selected,
+                    progress: option.percentage(totalVotes: totalVotes)
                 )
+
                 let optionView = createOptionView(
                     option: pollOption,
                     index: index,
                     isSelected: option.selected,
-                    totalVotes: totalVotes,
-                    isIncoming: message.incoming
+                    totalVotes: totalVotes
                 )
+
                 optionsStackView.addArrangedSubview(optionView)
+                optionViews[index] = optionView
             }
         }
         
@@ -153,35 +159,67 @@ extension MessageCell {
             option: PollOption,
             index: Int,
             isSelected: Bool,
-            totalVotes: Int,
-            isIncoming: Bool
-        ) -> UIView {
+            totalVotes: Int
+        ) -> PollOptionView {
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(optionTapped(_:)))
             let optionView = PollOptionView()
-            optionView.configure(with: option, appearance: appearance)
+            optionView.configure(with: option, appearance: appearance.pollViewAppearance)
             optionView.addGestureRecognizer(tapGesture)
             optionView.tag = index
             return optionView
         }
-        
+
         @objc private func optionTapped(_ sender: UITapGestureRecognizer) {
             guard let view = sender.view else { return }
-            onDidTapOption?(view.tag)
+            let pollOptionView = view as? PollOptionView
+            pollOptionView?.checkboxView.isSelected.toggle()
+            let index = view.tag
+            onDidTapOption?(index)
         }
-        
+
+        /// Update the UI for a specific poll option optimistically
+        open func updateOption(at index: Int, isSelected: Bool, voteCount: Int, totalVotes: Int) {
+            guard let optionView = optionViews[index],
+                  let data = data,
+                  let poll = data.message.poll,
+                  index >= 0 && index < poll.options.count else {
+                return
+            }
+            
+            let option = poll.options[index]
+            let progress = option.percentage(totalVotes: totalVotes)
+            
+            // Update the option data
+            let pollOption = PollOption(
+                text: option.text,
+                votes: voteCount,
+                isSelected: isSelected,
+                progress: progress
+            )
+            
+            // Update the view
+            optionView.configure(with: pollOption, appearance: appearance.pollViewAppearance)
+        }
+
+        /// Update all poll options with the latest data from the message
+        open func refreshPollData() {
+            guard let data = data else { return }
+            configure(with: data)
+        }
+
         @objc private func viewResultsButtonTapped() {
             onDidTapViewResults?()
         }
         
         private func parsePollData(from message: ChatMessage) -> PollData? {
             guard let poll = message.poll else { return nil }
-            
+
             let totalVotes = poll.votesPerOption.values.reduce(0, +)
             let options = poll.options.map { option in
                 let voteCount = poll.votesPerOption[option.id] ?? 0
-                return PollOption(text: option.text, votes: voteCount, isSelected: option.selected)
+                return PollOption(text: option.text, votes: voteCount, isSelected: option.selected, progress: option.percentage(totalVotes: totalVotes))
             }
-            
+
             let selectedIndices = poll.options.enumerated().compactMap { index, option in
                 option.selected ? index : nil
             }
@@ -190,7 +228,7 @@ extension MessageCell {
                 question: poll.name,
                 options: options,
                 selectedOptions: selectedIndices,
-                votedUsers: [], // Can be populated from poll.votes if needed
+                votedUsers: [],
                 totalVotes: totalVotes
             )
         }
@@ -246,7 +284,7 @@ extension MessageCell {
                $0.contentInsets = .zero
                return $0.withoutAutoresizingMask
            }(Components.checkBoxView.init())
-           
+
            open lazy var optionLabel: UILabel = {
                let label = UILabel()
                label.font = .systemFont(ofSize: 16, weight: .regular)
@@ -255,13 +293,17 @@ extension MessageCell {
                label.lineBreakMode = .byWordWrapping
                return label.withoutAutoresizingMask
            }()
-           
+
+           open lazy var votersContainerView: UIView = {
+               let view = UIView()
+               return view.withoutAutoresizingMask
+           }()
+
            open lazy var votersStackView: UIStackView = {
                let stack = UIStackView()
                stack.axis = .horizontal
-               stack.spacing = -8
-               stack.distribution = .fill
-               stack.alignment = .center
+               stack.distribution = .fillEqually
+               stack.spacing = -8.0
                return stack.withoutAutoresizingMask
            }()
 
@@ -275,22 +317,21 @@ extension MessageCell {
 
            open lazy var progressBar: UIProgressView = {
                let progress = UIProgressView(progressViewStyle: .default)
-               progress.trackTintColor = .systemGray5
-               progress.progressTintColor = .systemGreen
                progress.layer.cornerRadius = 3
                progress.clipsToBounds = true
                progress.layer.sublayers?.forEach { $0.cornerRadius = 3 }
                return progress.withoutAutoresizingMask
            }()
 
-           // MARK: - Setup
+           // MARK: Setup
 
            open override func setup() {
                super.setup()
                addSubview(checkboxView)
                addSubview(optionLabel)
-               addSubview(votersStackView)
-               addSubview(voteCountLabel)
+               addSubview(votersContainerView)
+               votersContainerView.addSubview(votersStackView)
+               votersContainerView.addSubview(voteCountLabel)
                addSubview(progressBar)
            }
 
@@ -301,18 +342,23 @@ extension MessageCell {
 
                optionLabel.topAnchor.pin(to: topAnchor)
                optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
-               optionLabel.trailingAnchor.pin(to: votersStackView.leadingAnchor, constant: -8.0)
+               optionLabel.trailingAnchor.pin(to: votersContainerView.leadingAnchor, constant: -8.0)
 
-               voteCountLabel.trailingAnchor.pin(to: trailingAnchor)
-               voteCountLabel.centerYAnchor.pin(to: votersStackView.centerYAnchor)
+               votersContainerView.trailingAnchor.pin(to: trailingAnchor)
+               votersContainerView.topAnchor.pin(to: topAnchor)
+               votersContainerView.widthAnchor.pin(constant: 80.0)
+               votersContainerView.heightAnchor.pin(greaterThanOrEqualToConstant: 20.0)
+
+               votersStackView.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
+               votersStackView.trailingAnchor.pin(lessThanOrEqualTo: voteCountLabel.leadingAnchor, constant: -1.5)
+
+               voteCountLabel.trailingAnchor.pin(to: votersContainerView.trailingAnchor)
+               voteCountLabel.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
                voteCountLabel.contentHuggingPriorityH(.required)
-
-               votersStackView.trailingAnchor.pin(to: voteCountLabel.leadingAnchor, constant: -1.5)
-               votersStackView.topAnchor.pin(to: topAnchor)
 
                progressBar.leadingAnchor.pin(to: optionLabel.leadingAnchor)
                progressBar.trailingAnchor.pin(to: trailingAnchor, constant: -8)
-               progressBar.topAnchor.pin(to: optionLabel.bottomAnchor, constant: 4.0)
+               progressBar.topAnchor.pin(to: optionLabel.bottomAnchor, constant: 8.0)
                progressBar.heightAnchor.pin(constant: 6.0)
                progressBar.bottomAnchor.pin(to: bottomAnchor)
            }
@@ -320,6 +366,7 @@ extension MessageCell {
            open override func setupAppearance() {
                super.setupAppearance()
                backgroundColor = .clear
+               votersContainerView.backgroundColor = .clear
            }
 
            // MARK: Configuration
@@ -329,11 +376,11 @@ extension MessageCell {
                optionLabel.font = appearance.optionTextStyle.font
                optionLabel.textColor = appearance.optionTextStyle.foregroundColor
 
-               voteCountLabel.text = data.votes > 0 ? (data.votes > 6 ? "+\(data.votes)" : "\(data.votes)") : "15"
+               voteCountLabel.text = String(data.votes)
                voteCountLabel.font = appearance.voteCountTextStyle.font
                voteCountLabel.textColor = appearance.voteCountTextStyle.foregroundColor
 
-               progressBar.progress = 0.5
+               progressBar.progress = data.progress
                progressBar.trackTintColor = appearance.progressBarBackground
                progressBar.progressTintColor = appearance.progressBarForeground
 
@@ -390,5 +437,6 @@ extension MessageCell.PollView {
         let text: String
         let votes: Int
         let isSelected: Bool
+        let progress: Float
     }
 }

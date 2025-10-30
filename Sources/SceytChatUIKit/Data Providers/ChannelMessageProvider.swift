@@ -337,6 +337,197 @@ open class ChannelMessageProvider: DataProvider {
         }
     }
     
+    // MARK: - Poll Operations
+    
+    open func addPollVote(
+        messageId: MessageId,
+        pollId: String,
+        optionIds: [String],
+        storeForResend: Bool = true,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        database.write {
+            if storeForResend {
+                // Store pending votes for each option
+                if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
+                    for optionId in optionIds {
+                        if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                            let pendingVote = PendingVoteDTO.fetchOrCreate(
+                                pollId: pollId,
+                                optionId: optionId,
+                                userId: userId,
+                                messageTid: messageDTO.tid,
+                                context: $0
+                            )
+                            pendingVote.isAdd = true
+                        }
+                    }
+                }
+            }
+        } completion: { _ in
+            self.channelOperator.addPollVote(
+                messageId: messageId,
+                pollId: pollId,
+                optionIds: optionIds
+            ) { message, error in
+                guard let message = message
+                else {
+                    completion?(error)
+                    return
+                }
+                self.database.write {
+                    // Remove pending votes after successful vote
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: $0) {
+                        for optionId in optionIds {
+                            if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                                if let pendingVote = PendingVoteDTO.fetch(
+                                    pollId: pollId,
+                                    optionId: optionId,
+                                    userId: userId,
+                                    context: $0
+                                ) {
+                                    $0.delete(pendingVote)
+                                }
+                            }
+                        }
+                    }
+                    $0.createOrUpdate(
+                        message: message,
+                        channelId: self.channelId
+                    )
+                } completion: { _ in
+                    completion?(nil)
+                }
+            }
+        }
+    }
+    
+    open func deletePollVote(
+        messageId: MessageId,
+        pollId: String,
+        optionIds: [String],
+        storeForResend: Bool = true,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        database.write {
+            if storeForResend {
+                // Store pending vote removals
+                if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
+                    for optionId in optionIds {
+                        if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                            let pendingVote = PendingVoteDTO.fetchOrCreate(
+                                pollId: pollId,
+                                optionId: optionId,
+                                userId: userId,
+                                messageTid: messageDTO.tid,
+                                context: $0
+                            )
+                            pendingVote.isAdd = false
+                        }
+                    }
+                }
+            }
+        } completion: { _ in
+            self.channelOperator.deletePollVote(
+                messageId: messageId,
+                pollId: pollId,
+                optionIds: optionIds
+            ) { message, error in
+                guard let message = message
+                else {
+                    completion?(error)
+                    return
+                }
+                self.database.write {
+                    // Remove pending votes after successful deletion
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: $0) {
+                        for optionId in optionIds {
+                            if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                                if let pendingVote = PendingVoteDTO.fetch(
+                                    pollId: pollId,
+                                    optionId: optionId,
+                                    userId: userId,
+                                    context: $0
+                                ) {
+                                    $0.delete(pendingVote)
+                                }
+                            }
+                        }
+                    }
+                    $0.createOrUpdate(
+                        message: message,
+                        channelId: self.channelId
+                    )
+                } completion: { _ in
+                    completion?(nil)
+                }
+            }
+        }
+    }
+    
+    open func retractPollVote(
+        messageId: MessageId,
+        pollId: String,
+        storeForResend: Bool = true,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        database.write { context in
+            // Remove any pending votes for this poll
+            if let messageDTO = MessageDTO.fetch(id: messageId, context: context) {
+                let pendingVotes = PendingVoteDTO.fetch(messageTid: messageDTO.tid, context: context)
+                pendingVotes.forEach { pendingVote in
+                    if pendingVote.pollId == pollId {
+                        context.delete(pendingVote)
+                    }
+                }
+            }
+        } completion: { _ in
+            self.channelOperator.retractPollVote(
+                messageId: messageId,
+                pollId: pollId
+            ) { message, error in
+                guard let message = message
+                else {
+                    completion?(error)
+                    return
+                }
+                self.database.write {
+                    $0.createOrUpdate(
+                        message: message,
+                        channelId: self.channelId
+                    )
+                } completion: { _ in
+                    completion?(nil)
+                }
+            }
+        }
+    }
+    
+    open func closePoll(
+        messageId: MessageId,
+        pollId: String,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        channelOperator.closePoll(
+            messageId: messageId,
+            pollId: pollId
+        ) { message, error in
+            guard let message = message
+            else {
+                completion?(error)
+                return
+            }
+            self.database.write {
+                $0.createOrUpdate(
+                    message: message,
+                    channelId: self.channelId
+                )
+            } completion: { _ in
+                completion?(nil)
+            }
+        }
+    }
+    
     open func markMessagesAsReceived (
         ids: [MessageId],
         storeForResend: Bool = true,
@@ -524,6 +715,34 @@ extension ChannelMessageProvider {
                     .compactMap {
                         if let m = $0.message {
                             return ($0.convert(), ChannelId(m.channelId))
+                        }
+                        return nil
+                    }
+            } completion: { result in
+                switch result {
+                case .success(let result):
+                    completion(result)
+                case .failure(let error):
+                    logger.errorIfNotNil(error, "")
+                    completion([])
+                }
+            }
+        }
+    
+    public class func fetchPendingPollVotes(
+        _ completion: @escaping ([(PendingPollVote, MessageId, ChannelId)]) -> Void) {
+            database.performBgTask(resultQueue: .global()) {
+                let request = PendingVoteDTO.fetchRequest()
+                request.sortDescriptor = NSSortDescriptor(keyPath: \PendingVoteDTO.createdAt, ascending: true)
+                let context = $0
+                return PendingVoteDTO.fetch(request: request, context: context)
+                    .compactMap { pendingVoteDTO in
+                        // Get message from messageTid
+                        if let messageDTO = MessageDTO.fetch(tid: pendingVoteDTO.messageTid, context: context),
+                           let pollId = pendingVoteDTO.pollId,
+                           let optionId = pendingVoteDTO.optionId {
+                            let pendingVote = PendingPollVote(dto: pendingVoteDTO)
+                            return (pendingVote, MessageId(messageDTO.id), ChannelId(messageDTO.channelId))
                         }
                         return nil
                     }

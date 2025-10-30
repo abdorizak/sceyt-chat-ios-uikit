@@ -1518,6 +1518,77 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             key: key
         )
     }
+    
+    // MARK: - Poll Operations
+    
+    open func addPollVote(
+        layoutModel: MessageLayoutModel,
+        optionId: String
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+        provider.addPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionIds: [optionId]
+        )
+    }
+    
+    open func addPollVotes(
+        layoutModel: MessageLayoutModel,
+        optionIds: [String]
+    ) {
+        guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
+        provider.addPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionIds: optionIds
+        )
+    }
+    
+    open func deletePollVote(
+        layoutModel: MessageLayoutModel,
+        optionId: String
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+        provider.deletePollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionIds: [optionId]
+        )
+    }
+    
+    open func deletePollVotes(
+        layoutModel: MessageLayoutModel,
+        optionIds: [String]
+    ) {
+        guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
+        provider.deletePollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionIds: optionIds
+        )
+    }
+    
+    open func retractPollVote(
+        layoutModel: MessageLayoutModel
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+        provider.retractPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id
+        )
+    }
+    
+    open func closePoll(
+        layoutModel: MessageLayoutModel
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+        provider.closePoll(
+            messageId: layoutModel.message.id,
+            pollId: poll.id
+        )
+    }
+    
     open func report(layoutModel: MessageLayoutModel) {
         // TODO: Report Message
         logger.debug("Report Message")
