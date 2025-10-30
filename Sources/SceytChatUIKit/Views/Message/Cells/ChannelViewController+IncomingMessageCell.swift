@@ -252,12 +252,12 @@ extension ChannelViewController {
                     textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
                     
                     infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
-                    
+
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    pollView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
+                    pollView.topAnchor.pin(to: bubbleView.topAnchor),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
-                    pollView.heightAnchor.pin(constant: layout.pollViewMeasure.height),
-                    
+                    pollView.bottomAnchor.pin(to: bubbleView.bottomAnchor),
+
                     infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24)
                 ]
                 
