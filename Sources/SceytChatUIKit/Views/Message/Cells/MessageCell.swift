@@ -63,6 +63,10 @@ open class MessageCell: CollectionViewCell,
         .init()
         .withoutAutoresizingMask
     
+    open lazy var pollView = Components.messageCellPollView
+        .init()
+        .withoutAutoresizingMask
+    
     open lazy var reactionTotalView = Components.messageCellReactionTotalView
         .init()
         .withoutAutoresizingMask
@@ -126,6 +130,10 @@ open class MessageCell: CollectionViewCell,
             onAction?(.openUrl(view.link))
         }
         
+        pollView.onDidTapOption = { [unowned self] index in
+            onAction?(.didTapPollOption(index))
+        }
+        
         replyView.addTarget(
             self,
             action: #selector(replyViewAction(_:)),
@@ -163,6 +171,7 @@ open class MessageCell: CollectionViewCell,
         bubbleView.addSubview(textLabel)
         bubbleView.addSubview(attachmentView)
         bubbleView.addSubview(linkView)
+        bubbleView.addSubview(pollView)
         bubbleView.addSubview(infoView)
         bubbleView.addSubview(nameLabel)
         containerView.addSubview(avatarView)
@@ -254,6 +263,7 @@ open class MessageCell: CollectionViewCell,
         nameLabel.textColor = appearance.senderNameLabelAppearance.foregroundColor ?? appearance.senderNameColorProvider.provideVisual(for: message.user)
         attachmentView.data = data
         linkView.data = data
+        pollView.data = data
         reactionTotalView.data = data
         reactionTotalView.isHidden = (data.reactions?.isEmpty ?? true)
         replyView.data = message.repliedInThread ? nil : data.replyLayout
@@ -683,6 +693,7 @@ public extension MessageCell {
         case didTapMentionUser(String)
         case didTapAvatar
         case didSwipe
+        case didTapPollOption(Int)
     }
     
     enum Measure {

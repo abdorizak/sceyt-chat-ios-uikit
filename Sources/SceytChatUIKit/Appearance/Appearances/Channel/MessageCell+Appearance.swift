@@ -72,6 +72,7 @@ extension MessageCell: AppearanceProviding {
             highlightedLinkBackgroundColor: .footnoteText,
             placeholderIcon: nil
         ),
+        pollViewAppearance: PollViewAppearance.appearance,
         phoneNumberLabelAppearance: LabelAppearance(
             foregroundColor: .systemBlue,
             font: Fonts.regular.withSize(16)
@@ -247,6 +248,9 @@ extension MessageCell: AppearanceProviding {
         @Trackable<Appearance, LinkPreviewAppearance>
         public var linkPreviewAppearance: LinkPreviewAppearance
         
+        @Trackable<Appearance, PollViewAppearance>
+        public var pollViewAppearance: PollViewAppearance
+        
         @Trackable<Appearance, LabelAppearance>
         public var phoneNumberLabelAppearance: LabelAppearance
         
@@ -391,6 +395,7 @@ extension MessageCell: AppearanceProviding {
             messageStateLabelAppearance: LabelAppearance,
             linkLabelAppearance: LabelAppearance,
             linkPreviewAppearance: LinkPreviewAppearance,
+            pollViewAppearance: PollViewAppearance,
             phoneNumberLabelAppearance: LabelAppearance,
             videoDurationLabelAppearance: LabelAppearance,
             threadReplyCountLabelAppearance: LabelAppearance,
@@ -466,6 +471,7 @@ extension MessageCell: AppearanceProviding {
             self._messageStateLabelAppearance = Trackable(value: messageStateLabelAppearance)
             self._linkLabelAppearance = Trackable(value: linkLabelAppearance)
             self._linkPreviewAppearance = Trackable(value: linkPreviewAppearance)
+            self._pollViewAppearance = Trackable(value: pollViewAppearance)
             self._phoneNumberLabelAppearance = Trackable(value: phoneNumberLabelAppearance)
             self._videoDurationLabelAppearance = Trackable(value: videoDurationLabelAppearance)
             self._threadReplyCountLabelAppearance = Trackable(value: threadReplyCountLabelAppearance)
@@ -545,6 +551,7 @@ extension MessageCell: AppearanceProviding {
             messageStateLabelAppearance: LabelAppearance? = nil,
             linkLabelAppearance: LabelAppearance? = nil,
             linkPreviewAppearance: LinkPreviewAppearance? = nil,
+            pollViewAppearance: PollViewAppearance? = nil,
             phoneNumberLabelAppearance: LabelAppearance? = nil,
             videoDurationLabelAppearance: LabelAppearance? = nil,
             threadReplyCountLabelAppearance: LabelAppearance? = nil,
@@ -618,6 +625,7 @@ extension MessageCell: AppearanceProviding {
             self._messageStateLabelAppearance = Trackable(reference: reference, referencePath: \.messageStateLabelAppearance)
             self._linkLabelAppearance = Trackable(reference: reference, referencePath: \.linkLabelAppearance)
             self._linkPreviewAppearance = Trackable(reference: reference, referencePath: \.linkPreviewAppearance)
+            self._pollViewAppearance = Trackable(reference: reference, referencePath: \.pollViewAppearance)
             self._phoneNumberLabelAppearance = Trackable(reference: reference, referencePath: \.phoneNumberLabelAppearance)
             self._videoDurationLabelAppearance = Trackable(reference: reference, referencePath: \.videoDurationLabelAppearance)
             self._threadReplyCountLabelAppearance = Trackable(reference: reference, referencePath: \.threadReplyCountLabelAppearance)
@@ -682,6 +690,7 @@ extension MessageCell: AppearanceProviding {
             if let messageStateLabelAppearance { self.messageStateLabelAppearance = messageStateLabelAppearance }
             if let linkLabelAppearance { self.linkLabelAppearance = linkLabelAppearance }
             if let linkPreviewAppearance { self.linkPreviewAppearance = linkPreviewAppearance }
+            if let pollViewAppearance { self.pollViewAppearance = pollViewAppearance }
             if let phoneNumberLabelAppearance { self.phoneNumberLabelAppearance = phoneNumberLabelAppearance }
             if let videoDurationLabelAppearance { self.videoDurationLabelAppearance = videoDurationLabelAppearance }
             if let threadReplyCountLabelAppearance { self.threadReplyCountLabelAppearance = threadReplyCountLabelAppearance }

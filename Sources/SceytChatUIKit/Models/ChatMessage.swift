@@ -45,6 +45,7 @@ public class ChatMessage {
     public let reactions: [Reaction]?
     public let forwardingDetails: ForwardingDetails?
     public let bodyAttributes: [BodyAttribute]?
+    public let poll: PollDetails?
 
     var hasDisplayedFromMe: Bool {
         userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == DeliveryStatus.displayed.rawValue} ) == true
@@ -78,7 +79,8 @@ public class ChatMessage {
                 user: ChatUser? = nil,
                 changedBy: ChatUser? = nil,
                 forwardingDetails: ForwardingDetails? = nil,
-                bodyAttributes: [BodyAttribute]? = nil
+                bodyAttributes: [BodyAttribute]? = nil,
+                poll: PollDetails? = nil
     ) {
         self.id = id
         self.tid = tid
@@ -118,6 +120,7 @@ public class ChatMessage {
         }
         self.reactionScores = reactionScores
         self.bodyAttributes = bodyAttributes
+        self.poll = poll
     }
     
     public init(dto: MessageDTO) {
@@ -215,6 +218,13 @@ public class ChatMessage {
         }
 
         bodyAttributes = dto.bodyAttributes?.map { $0.convert() }
+        
+        // Convert poll
+        if let pollDTO = dto.poll {
+            poll = PollDetails(dto: pollDTO)
+        } else {
+            poll = nil
+        }
 
         var reactionScores = [String: Int64]()
         var rt = [ReactionTotal]()

@@ -104,6 +104,9 @@ public protocol MessageDatabaseSession {
     
     @discardableResult
     func updateChecksum(data: String, messageTid: Int64, attachmentTid: Int64) -> ChecksumDTO?
+    
+    @discardableResult
+    func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO
 }
 
 public extension MessageDatabaseSession {
@@ -140,6 +143,11 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         createOrUpdate(userMarkers: message.userMarkers ?? [], dto: dto)
         createOrUpdate(forwardDetail: message.forwardingDetails, dto: dto)
         createOrUpdate(bodyAttributes: message.bodyAttributes, dto: dto)
+        
+        // Handle poll
+        if let poll = message.poll {
+            createOrUpdate(poll: poll, dto: dto)
+        }
         
         if dto.markerTotal == nil {
             dto.markerTotal = .init()
@@ -1089,6 +1097,54 @@ extension NSManagedObjectContext: MessageDatabaseSession {
     public func updateChecksum(data: String, messageTid: Int64, attachmentTid: Int64) -> ChecksumDTO? {
         let dto = ChecksumDTO.fetch(message: messageTid, attachmentTid: attachmentTid, context: self)
         dto?.data = data
+        return dto
+    }
+    
+    // MARK: Poll
+    
+    @discardableResult
+    public func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO {
+        let pollDTO = PollDTO.fetchOrCreate(id: poll.id, context: self).map(poll)
+        pollDTO.messageTid = dto.tid
+        pollDTO.message = dto
+        
+        // Create or update options
+        let optionDTOs = poll.options.map { option -> PollOptionDTO in
+            let optionDTO = PollOptionDTO.fetchOrCreate(id: option.id, pollId: poll.id, context: self).map(option)
+            optionDTO.poll = pollDTO
+            return optionDTO
+        }
+        pollDTO.options = NSSet(array: optionDTOs)
+        
+        // Create or update votes
+        let voteDTOs = poll.votes.map { vote -> PollVoteDTO in
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: poll.id,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.pollDetails = pollDTO
+            return voteDTO
+        }
+        pollDTO.votes = NSSet(array: voteDTOs)
+        
+        // Create or update own votes
+        let ownVoteDTOs = poll.ownVotes.map { vote -> PollVoteDTO in
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: poll.id,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.ownPollDetails = pollDTO
+            return voteDTO
+        }
+        pollDTO.ownVotes = NSSet(array: ownVoteDTOs)
+        
+        dto.poll = pollDTO
         return dto
     }
 }
