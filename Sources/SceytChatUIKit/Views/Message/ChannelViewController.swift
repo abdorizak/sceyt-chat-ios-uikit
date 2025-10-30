@@ -419,9 +419,7 @@ open class ChannelViewController: ViewController,
 
         customInputViewController.onCreatePoll = { [weak self] poll in
             guard let self else { return }
-            // TODO: Implement poll message sending
-            // For now, just log that a poll was created
-            logger.verbose("[POLL] Poll created: \(poll.question) with \(poll.options.count) options")
+            channelViewModel.sendPoll(poll)
         }
 
         customInputViewController.$action

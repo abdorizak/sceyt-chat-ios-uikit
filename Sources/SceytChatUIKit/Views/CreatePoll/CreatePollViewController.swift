@@ -258,7 +258,7 @@ open class CreatePollViewController: ViewController,
             switch indexPath.row {
             case 0:
                 cell.titleLabel.text = appearance.showVoterNamesText
-                cell.switchControl.isOn = viewModel.poll.showVoterNames
+                cell.switchControl.isOn = viewModel.poll.isAnonymous
                 cell.onSwitchChanged = { [weak self] isOn in
                     self?.viewModel.updateShowVoterNames(isOn)
                 }
@@ -270,7 +270,7 @@ open class CreatePollViewController: ViewController,
                 }
             case 2:
                 cell.titleLabel.text = appearance.allowAddingOptionsText
-                cell.switchControl.isOn = viewModel.poll.allowAddingOptions
+                cell.switchControl.isOn = viewModel.poll.allowRetractVotes
                 cell.onSwitchChanged = { [weak self] isOn in
                     self?.viewModel.updateAllowAddingOptions(isOn)
                 }

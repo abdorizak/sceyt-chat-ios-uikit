@@ -32,7 +32,7 @@ public struct PollOption {
     let text: String
     let voteCount: Int
     let voters: [ChatUser]
-    let pendingVote: PendingPollVote
+    let pendingVote: PendingPollVote?
     let selected: Bool
 
     func percentage(totalVotes: Int) -> Float {

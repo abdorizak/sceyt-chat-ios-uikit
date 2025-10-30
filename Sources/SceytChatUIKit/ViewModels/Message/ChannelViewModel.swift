@@ -1232,7 +1232,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         } else {
             messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
         }
-        
+
         if case let .edit(message) = userMessage.action,
            message.body == userMessage.text {
             if let oldBodyAttributes = message.bodyAttributes,
@@ -1257,30 +1257,30 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         default:
             break
         }
-        
+
         if isThread {
             builder.parentMessageId(threadMessage!.id)
             builder.replyInThread(true)
         }
-        
+
         if let metadata = userMessage.metadata {
             builder.metadata(metadata)
         }
-        
+
         if let mentionUsers = userMessage.mentionUsers {
             builder.mentionUserIds(mentionUsers.map { $0.id })
         }
-        
+
         var messages = [Message]()
         var linkAttachment = [Attachment]()
         if let attachment = userMessage.linkAttachments.first?.attachment {
             linkAttachment = [attachment]
         }
-        
+
         if let bodyAttributes = userMessage.bodyAttributes {
             builder.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
         }
-        
+
         if let items = userMessage.attachments, items.count > 0 {
             for (index, item) in items.enumerated() {
                 if index == 0 {
@@ -1297,7 +1297,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             messages.append(builder.build())
         }
         guard !messages.isEmpty else { return }
-        
+
         let first = messages.remove(at: 0)
         sendUserMessage(first, action: userMessage.action)
         if let linkMetadata = userMessage.linkMetadata {
@@ -1311,6 +1311,45 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                     self.sendUserMessage(messages[index], action: userMessage.action)
                 }
         }
+    }
+
+    /// Sends a poll message to the channel.
+    /// - Parameter pollModel: The poll model containing question, options, and settings.
+    open func sendPoll(_ pollModel: CreatePollModel) {
+        if isTyping {
+            isTyping = false
+        }
+        scrollToRepliedMessageId = 0
+        scrollToMessageIdIfSearching = 0
+
+        // Ensure observer is up to date
+        if let lastCacheItem = messageObserver.lastItem,
+            let lastMessageItem = channel.lastMessage,
+            lastCacheItem.id != lastMessageItem.id {
+            let offset = messageObserver.calculateMessageFetchOffset()
+            messageObserver.restartObserver(fetchPredicate: messageObserver.defaultFetchPredicate, offset: offset)
+        } else {
+            messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
+        }
+
+        // Create poll details from the model
+        let pollDetails = pollModel.toPollDetails()
+        
+        // Create message builder with poll
+        let builder = Message.Builder()
+            .body(pollModel.question)
+            .poll(pollDetails)
+
+        // Set thread context if applicable
+        if isThread, let threadMessage {
+            builder.parentMessageId(threadMessage.id)
+            builder.replyInThread(true)
+        }
+
+        let message = builder.build()
+
+        // Send the poll message
+        sendUserMessage(message, action: .send)
     }
     
     open func sendUserMessage(

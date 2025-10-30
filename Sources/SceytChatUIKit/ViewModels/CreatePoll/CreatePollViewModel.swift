@@ -69,11 +69,11 @@ open class CreatePollViewModel: NSObject {
     }
 
     public func updateShowVoterNames(_ value: Bool) {
-        poll.showVoterNames = value
+        poll.isAnonymous = value
     }
 
     public func updateAllowAddingOptions(_ value: Bool) {
-        poll.allowAddingOptions = value
+        poll.allowRetractVotes = value
     }
 
     // MARK: - Validation
