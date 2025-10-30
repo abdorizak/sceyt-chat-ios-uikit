@@ -81,7 +81,11 @@ extension SceytChatUIKit {
         public var draftMessageBodyFormatter: any DraftMessageBodyFormatting = DraftMessageBodyFormatter()
         
         public var channelEventTitleFormatter: any ChannelEventTitleFormatting = ChannelEventTitleFormatter()
-        
+
+        public var voteCountFormatter: any VoteCountFormatting = VoteCountFormatter()
+
+        public var voterDateFormatter: any DateFormatting = VoterDateFormatter()
+
         public init() {}
     }
 }

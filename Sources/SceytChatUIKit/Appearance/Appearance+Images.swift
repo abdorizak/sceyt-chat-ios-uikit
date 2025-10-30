@@ -529,7 +529,11 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.chatActionLocation.image,
                                                      renderingMode: .template(.accent)))!
         }()
-        
+        public static var chatActionPoll: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.chatActionPoll.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+
         public static var searchIcon: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.searchIcon.image,
                                                      renderingMode: .template(.iconInactive)))!
@@ -706,7 +710,8 @@ extension UIImage {
     public static var chatActionFile: UIImage { Images.chatActionFile }
     public static var chatActionContact: UIImage { Images.chatActionContact }
     public static var chatActionLocation: UIImage { Images.chatActionLocation }
-    
+    public static var chatActionPoll: UIImage { Images.chatActionPoll }
+
     public static var searchIcon: UIImage { Images.searchIcon }
     public static var searchFill: UIImage { Images.searchFill }
     

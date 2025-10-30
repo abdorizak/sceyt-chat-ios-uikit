@@ -166,3 +166,12 @@ public protocol ChannelEventTitleFormatting: Formatting {
     /// - Returns: An `NSAttributedString` representing the formatted draft message body.
     func format(_ attributes: ChannelEventTitleFormatterAttributes) -> NSAttributedString
 }
+
+/// A protocol for formatting vote counts.
+public protocol VoteCountFormatting: Formatting {
+    /// Formats the given vote count into a `String`.
+    ///
+    /// - Parameter count: The vote count to format.
+    /// - Returns: A formatted `String` representing the vote count (e.g., "1 vote", "5 votes").
+    func format(_ count: Int) -> String
+}

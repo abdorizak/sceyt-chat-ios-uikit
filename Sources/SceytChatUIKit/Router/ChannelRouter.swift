@@ -229,4 +229,15 @@ open class ChannelRouter: Router<ChannelViewController> {
             }
         }
     }
+
+    open func showCreatePoll(_ handler: @escaping ((CreatePollModel?) -> Void)) {
+        let viewController = Components.createPollViewController.init()
+        viewController.viewModel = Components.createPollViewModel.init()
+        viewController.onPollCreated = { poll in
+            handler(poll)
+        }
+        let nav = Components.navigationController.init()
+        nav.viewControllers = [viewController]
+        rootViewController.present(nav, animated: true)
+    }
 }
