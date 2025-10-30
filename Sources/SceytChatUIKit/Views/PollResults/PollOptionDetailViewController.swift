@@ -29,6 +29,7 @@ open class PollOptionDetailViewController: ViewController,
             tableView.sectionHeaderTopPadding = 0
         }
 
+        tableView.register(VoteCountInfoCell.self)
         tableView.register(PollResultsViewController.VoterCell.self)
         tableView.delegate = self
         tableView.dataSource = self
@@ -115,16 +116,25 @@ open class PollOptionDetailViewController: ViewController,
     }
 
     open func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // Show all voters
-        return viewModel.numberOfVoters
+        // First cell is vote count info, rest are voters
+        return viewModel.numberOfVoters + 1
     }
 
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Voter cells
+        // First cell shows vote count info
+        if indexPath.row == 0 {
+            let cell = tableView.dequeueReusableCell(for: indexPath, cellType: VoteCountInfoCell.self)
+            cell.parentAppearance = appearance.voteCountInfoCellAppearance
+            let voteCountText = SceytChatUIKit.shared.formatters.voteCountFormatter.format(viewModel.numberOfVoters)
+            cell.configure(text: voteCountText)
+            return cell
+        }
+
+        // Rest are voter cells
         let cell = tableView.dequeueReusableCell(for: indexPath, cellType: PollResultsViewController.VoterCell.self)
         cell.parentAppearance = appearance.voterCellAppearance
 
-        if let voter = viewModel.voter(at: indexPath.row) {
+        if let voter = viewModel.voter(at: indexPath.row - 1) {
             cell.data = voter
         }
 
@@ -177,7 +187,7 @@ open class PollOptionDetailViewController: ViewController,
             layer.borderWidth = PollResultsViewController.Layouts.cellSeparatorWidth
 
             // Calculate separator inset
-            let separatorWidthInset: CGFloat = PollResultsViewController.Layouts.cellHorizontalPadding + 16
+            let separatorWidthInset: CGFloat = PollResultsViewController.Layouts.cellHorizontalPadding + 12
 
             layer.frame = CGRect(
                 x: separatorWidthInset,

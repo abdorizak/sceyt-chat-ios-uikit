@@ -12,6 +12,7 @@ extension PollOptionDetailViewController: AppearanceProviding {
     public static var appearance = Appearance(
         backgroundColor: .backgroundSecondary,
         separatorColor: .clear,
+        voteCountInfoCellAppearance: PollOptionDetailViewController.VoteCountInfoCell.appearance,
         voterCellAppearance: PollResultsViewController.VoterCell.appearance,
         titleText: "Poll Option",
         closeText: "Close"
@@ -23,6 +24,9 @@ extension PollOptionDetailViewController: AppearanceProviding {
 
         @Trackable<Appearance, UIColor>
         public var separatorColor: UIColor
+
+        @Trackable<Appearance, PollOptionDetailViewController.VoteCountInfoCell.Appearance>
+        public var voteCountInfoCellAppearance: PollOptionDetailViewController.VoteCountInfoCell.Appearance
 
         @Trackable<Appearance, PollResultsViewController.VoterCell.Appearance>
         public var voterCellAppearance: PollResultsViewController.VoterCell.Appearance
@@ -36,12 +40,14 @@ extension PollOptionDetailViewController: AppearanceProviding {
         public init(
             backgroundColor: UIColor,
             separatorColor: UIColor,
+            voteCountInfoCellAppearance: PollOptionDetailViewController.VoteCountInfoCell.Appearance,
             voterCellAppearance: PollResultsViewController.VoterCell.Appearance,
             titleText: String,
             closeText: String
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
             self._separatorColor = Trackable(value: separatorColor)
+            self._voteCountInfoCellAppearance = Trackable(value: voteCountInfoCellAppearance)
             self._voterCellAppearance = Trackable(value: voterCellAppearance)
             self._titleText = Trackable(value: titleText)
             self._closeText = Trackable(value: closeText)
@@ -51,12 +57,14 @@ extension PollOptionDetailViewController: AppearanceProviding {
             reference: PollOptionDetailViewController.Appearance,
             backgroundColor: UIColor? = nil,
             separatorColor: UIColor? = nil,
+            voteCountInfoCellAppearance: PollOptionDetailViewController.VoteCountInfoCell.Appearance? = nil,
             voterCellAppearance: PollResultsViewController.VoterCell.Appearance? = nil,
             titleText: String? = nil,
             closeText: String? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
             self._separatorColor = Trackable(reference: reference, referencePath: \.separatorColor)
+            self._voteCountInfoCellAppearance = Trackable(reference: reference, referencePath: \.voteCountInfoCellAppearance)
             self._voterCellAppearance = Trackable(reference: reference, referencePath: \.voterCellAppearance)
             self._titleText = Trackable(reference: reference, referencePath: \.titleText)
             self._closeText = Trackable(reference: reference, referencePath: \.closeText)
@@ -66,6 +74,9 @@ extension PollOptionDetailViewController: AppearanceProviding {
             }
             if let separatorColor {
                 self.separatorColor = separatorColor
+            }
+            if let voteCountInfoCellAppearance {
+                self.voteCountInfoCellAppearance = voteCountInfoCellAppearance
             }
             if let voterCellAppearance {
                 self.voterCellAppearance = voterCellAppearance
