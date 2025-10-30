@@ -29,6 +29,7 @@ open class PollOptionDetailViewController: ViewController,
             tableView.sectionHeaderTopPadding = 0
         }
 
+        tableView.contentInset = .init(top: 20, left: 0, bottom: 0, right: 0)
         tableView.register(VoteCountInfoCell.self)
         tableView.register(PollResultsViewController.VoterCell.self)
         tableView.delegate = self

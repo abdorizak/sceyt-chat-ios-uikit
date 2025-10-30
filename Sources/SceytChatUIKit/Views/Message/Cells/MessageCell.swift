@@ -134,6 +134,10 @@ open class MessageCell: CollectionViewCell,
             onAction?(.didTapPollOption(index))
         }
         
+        pollView.onDidTapViewResults = { [unowned self] in
+            onAction?(.didTapViewPollResults)
+        }
+        
         replyView.addTarget(
             self,
             action: #selector(replyViewAction(_:)),
@@ -694,6 +698,7 @@ public extension MessageCell {
         case didTapAvatar
         case didSwipe
         case didTapPollOption(Int)
+        case didTapViewPollResults
     }
     
     enum Measure {

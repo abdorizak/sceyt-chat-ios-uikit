@@ -35,6 +35,7 @@ open class PollResultsViewController: ViewController,
             tableView.sectionHeaderTopPadding = 0
         }
 
+        tableView.contentInset = .init(top: 20, left: 0, bottom: 0, right: 0)
         tableView.register(QuestionCell.self)
         tableView.register(AnswerCell.self)
         tableView.register(VoterCell.self)

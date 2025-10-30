@@ -1459,6 +1459,8 @@ open class ChannelViewController: ViewController,
                 self.reply(layoutModel: model, in: false)
             case .didTapPollOption(_):
                 print("polll")
+            case .didTapViewPollResults:
+                self.showPollResults(for: model)
             }
             
         }
@@ -1761,6 +1763,39 @@ open class ChannelViewController: ViewController,
                 generator.notificationOccurred(.success)
             }
         }
+    }
+    
+    open func showPollResults(for layoutModel: MessageLayoutModel) {
+        guard let poll = layoutModel.message.poll else { return }
+        
+        // Convert poll options to PollOptionResult
+        let optionResults: [PollOptionResult] = poll.options.map { option in
+            // Convert voters to VoterProviding
+            let voters: [PollOptionResult.Voter] = option.voters.compactMap { voter in
+                // Create a ChatChannelMember from the voter
+                // We need to fetch the member from the channel
+                guard let member = channelViewModel.channel.members?.first(where: { $0.id == voter.id }) else {
+                    return nil
+                }
+                return PollOptionResult.Voter(
+                    member: member,
+                    votedAt: Date(timeIntervalSince1970: TimeInterval(poll.createdAt) / 1000.0)
+                )
+            }
+            
+            return PollOptionResult(
+                optionText: option.text,
+                voters: voters,
+                voteCount: option.voteCount
+            )
+        }
+        
+        let pollResultsModel = PollResultsModel(
+            question: poll.name,
+            options: optionResults
+        )
+        
+        router.showPollResults(pollResults: pollResultsModel)
     }
     
     open func showProfile(user: ChatUser) {

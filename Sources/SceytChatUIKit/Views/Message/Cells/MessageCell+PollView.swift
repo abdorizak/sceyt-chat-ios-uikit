@@ -51,6 +51,7 @@ extension MessageCell {
         }
         
         public var onDidTapOption: ((Int) -> Void)?
+        public var onDidTapViewResults: (() -> Void)?
         
         override open func setup() {
             super.setup()
@@ -61,6 +62,7 @@ extension MessageCell {
             questionLabel.numberOfLines = 0
             viewResultButton.setTitle("View Results", for: .normal)
             viewResultButton.setTitleColor(.systemBlue, for: .normal)
+            viewResultButton.addTarget(self, action: #selector(viewResultsButtonTapped), for: .touchUpInside)
         }
 
         override open func setupLayout() {
@@ -165,6 +167,10 @@ extension MessageCell {
         @objc private func optionTapped(_ sender: UITapGestureRecognizer) {
             guard let view = sender.view else { return }
             onDidTapOption?(view.tag)
+        }
+        
+        @objc private func viewResultsButtonTapped() {
+            onDidTapViewResults?()
         }
         
         private func parsePollData(from message: ChatMessage) -> PollData? {

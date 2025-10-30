@@ -240,4 +240,12 @@ open class ChannelRouter: Router<ChannelViewController> {
         nav.viewControllers = [viewController]
         rootViewController.present(nav, animated: true)
     }
+
+    open func showPollResults(pollResults: any PollResultsProviding) {
+        let viewController = Components.pollResultsViewController.init()
+        viewController.viewModel = Components.pollResultsViewModel.init(pollResults: pollResults)
+        let nav = Components.navigationController.init()
+        nav.viewControllers = [viewController]
+        rootViewController.present(nav, animated: true)
+    }
 }
