@@ -177,8 +177,7 @@ open class PollResultsViewController: ViewController,
                 cell.parentAppearance = appearance.answerCellAppearance
 
                 if let option = viewModel.option(at: optionIndex) {
-                    let totalVotes = viewModel.pollResults.options.reduce(0) { $0 + $1.voteCount }
-                    cell.configure(answerText: option.text, voteCount: option.voteCount, totalVotes: totalVotes)
+                    cell.configure(answerText: option.text, voteCount: option.voteCount, totalVotes: option.voteCount)
                 }
 
                 return cell

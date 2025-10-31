@@ -20,6 +20,20 @@ open class PollOptionDetailViewController: ViewController,
         .withoutAutoresizingMask
         .rowAutomaticDimension
 
+    open lazy var loadingFooterView: UIView = {
+        let footerView = UIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 60))
+        let activityIndicator = UIActivityIndicatorView(style: .medium)
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.color = .gray
+        activityIndicator.startAnimating()
+        footerView.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: footerView.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: footerView.centerYAnchor)
+        ])
+        return footerView
+    }()
+
     open override func setup() {
         super.setup()
 
@@ -44,12 +58,27 @@ open class PollOptionDetailViewController: ViewController,
         setupBindings()
     }
 
+    open override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Load first page of voters
+        viewModel.loadNext()
+    }
+
     private func setupBindings() {
-        // Handle loading state
+        // Handle loading state - show/hide footer loading indicator
         viewModel.$isLoading
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isLoading in
-                loader.isLoading = isLoading
+                guard let self = self else { return }
+                if isLoading {
+                    self.tableView.tableFooterView = self.loadingFooterView
+                } else {
+                    // Reset to empty footer when not loading
+                    let footer = UIView()
+                    footer.frame.size.height = .leastNormalMagnitude
+                    self.tableView.tableFooterView = footer
+                }
             }
             .store(in: &subscriptions)
 
@@ -64,6 +93,14 @@ open class PollOptionDetailViewController: ViewController,
 
         // Reload table when option changes
         viewModel.$option
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.tableView.reloadData()
+            }
+            .store(in: &subscriptions)
+
+        // Reload table when poll details change (new voters loaded)
+        viewModel.$pollDetails
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tableView.reloadData()
@@ -126,7 +163,7 @@ open class PollOptionDetailViewController: ViewController,
         if indexPath.row == 0 {
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: VoteCountInfoCell.self)
             cell.parentAppearance = appearance.voteCountInfoCellAppearance
-            let voteCountText = SceytChatUIKit.shared.formatters.voteCountFormatter.format(viewModel.numberOfVoters)
+            let voteCountText = SceytChatUIKit.shared.formatters.voteCountFormatter.format(viewModel.option.voteCount)
             cell.configure(text: voteCountText)
             return cell
         }
@@ -206,6 +243,16 @@ open class PollOptionDetailViewController: ViewController,
                                       byRoundingCorners: corners,
                                       cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)).cgPath
         cell.layer.mask = maskLayer
+
+        // Load more voters when approaching the end
+        // Skip the first cell (vote count info cell)
+        let voterIndex = indexPath.row - 1
+        if voterIndex >= 0 {
+            let remainingVoters = viewModel.numberOfVoters - voterIndex
+            if remainingVoters <= 5, viewModel.hasMore {
+                viewModel.loadNext()
+            }
+        }
     }
 
     // MARK: Actions

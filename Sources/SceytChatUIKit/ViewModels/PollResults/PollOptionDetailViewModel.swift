@@ -19,6 +19,9 @@ open class PollOptionDetailViewModel: NSObject {
     @Published public var isLoading = false
     @Published public var error: Error?
 
+    open private(set) var votesQuery: PollVotesListQuery!
+    private var allVoters: [PollVote] = []
+
     public required init(
         option: PollOption,
         pollDetails: PollDetails,
@@ -30,25 +33,80 @@ open class PollOptionDetailViewModel: NSObject {
         self.questionText = questionText
         self.totalVotes = totalVotes
         super.init()
+
+        // Initialize query for fetching voters
+        createVotesQuery()
+
+        // Initialize with existing voters
+        allVoters = voters()
+    }
+
+    private func createVotesQuery() {
+        votesQuery = PollVotesListQuery
+            .Builder(pollId: pollDetails.id)
+            .optionId(option.id)
+            .limit(30)
+            .build()
     }
 
     // MARK: - Computed Properties
 
     public var numberOfVoters: Int {
-        voters().count
+        allVoters.count
     }
 
     public func voters() -> [PollVote] {
         // Combine both ownVotes and votes
-        let allVotes = pollDetails.ownVotes + pollDetails.votes
+        let allVotes = pollDetails.ownVotes
 
         // Filter votes belonging to this option
         return allVotes.filter { $0.optionId == option.id }
     }
 
     public func voter(at index: Int) -> PollVote? {
-        let allVoters = voters()
         guard index < allVoters.count else { return nil }
         return allVoters[index]
+    }
+
+    // MARK: - Public Methods
+
+    open func loadNext() {
+        guard votesQuery.hasNext, !votesQuery.loading, !isLoading else { return }
+
+        isLoading = true
+
+        votesQuery.loadNext { [weak self] _, votes, error in
+            guard let self = self else { return }
+
+            DispatchQueue.main.async {
+                self.isLoading = false
+
+                if let error = error {
+                    self.error = error
+                    return
+                }
+
+                if let votes = votes {
+                    let pollVotes = votes.map { vote in
+                        PollVote(
+                            pollId: self.pollDetails.id,
+                            optionId: self.option.id,
+                            userId: vote.user.id ?? "",
+                            createdAt: Int64(vote.createdAt.timeIntervalSince1970),
+                            user: ChatUser(user: vote.user)
+                        )
+                    }
+                    
+                    // Append new voters to the existing list
+                    pollVotes.forEach {
+                        self.allVoters.append($0)
+                    }
+                }
+            }
+        }
+    }
+
+    public var hasMore: Bool {
+        votesQuery.hasNext
     }
 }
