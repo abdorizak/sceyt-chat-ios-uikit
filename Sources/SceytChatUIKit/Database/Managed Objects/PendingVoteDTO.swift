@@ -54,12 +54,13 @@ public class PendingVoteDTO: NSManagedObject {
         if let vote = fetch(pollId: pollId, optionId: optionId, userId: userId, context: context) {
             return vote
         }
-        
+
         let mo = insertNewObject(into: context)
         mo.pollId = pollId
         mo.optionId = optionId
         mo.messageTid = messageTid
         mo.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
+        mo.user = UserDTO.fetchOrCreate(id: userId, context: context)
         return mo
     }
 }

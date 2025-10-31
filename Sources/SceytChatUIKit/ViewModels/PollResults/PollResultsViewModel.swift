@@ -32,11 +32,12 @@ open class PollResultsViewModel: NSObject {
         return pollResults.options[index]
     }
     
-    public func voters(for optionIndex: Int) -> [PollVote] {
+    // TODO: Check this condition logic
+    public func voters(for optionIndex: Int) -> [PollVoterRepresentable] {
         guard let option = option(at: optionIndex) else { return [] }
         
         // Combine both ownVotes and votes
-        let allVotes = pollResults.votes + pollResults.ownVotes
+        let allVotes = pollResults.ownVotes + pollResults.votes
 
         // Filter votes belonging to this option
         return allVotes.filter { $0.optionId == option.id }
@@ -48,7 +49,6 @@ open class PollResultsViewModel: NSObject {
 
     public func shouldShowMoreButton(for optionIndex: Int) -> Bool {
         guard let option = option(at: optionIndex) else { return false }
-        
         return option.voteCount > numberOfVoters(for: optionIndex)
     }
 

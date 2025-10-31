@@ -86,12 +86,12 @@ extension PollResultsViewController {
             contentView.heightAnchor.pin(greaterThanOrEqualToConstant: 56)
         }
 
-        open var data: PollVote? {
+        open var data: PollVoterRepresentable? {
             didSet {
                 guard let data else { return }
 
                 titleLabel.text = data.user?.displayName
-                subTitleLabel.text = SceytChatUIKit.shared.formatters.voterDateFormatter.format(Date(timeIntervalSince1970: TimeInterval(data.createdAt)))
+                subTitleLabel.text = SceytChatUIKit.shared.formatters.voterDateFormatter.format(data.createdAtDate)
 
                 imageTask?.cancel()
                 if let user = data.user {

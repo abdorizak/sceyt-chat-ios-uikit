@@ -9,53 +9,72 @@ import Foundation
 import SceytChat
 
 public struct PollDetails {
-    let id: String
-    let name: String
-    let messageTid: Int64
-    let description: String
-    let options: [PollOption]
-    let anonymous: Bool
-    let allowMultipleVotes: Bool
-    let allowVoteRetract: Bool
-    let votesPerOption: [String: Int]
-    let votes: [PollVote]
-    let ownVotes: [PollVote]
-    let pendingVotes: [PendingPollVote]?
-    let createdAt: Int64
-    let updatedAt: Int64
-    let closedAt: Int64
-    let closed: Bool
+    public let id: String
+    public let name: String
+    public let messageTid: Int64
+    public let description: String
+    public let options: [PollOption]
+    public let anonymous: Bool
+    public let allowMultipleVotes: Bool
+    public let allowVoteRetract: Bool
+    public let votesPerOption: [String: Int]
+    public let votes: [PollVote]
+    public let ownVotes: [PollVote]
+    public let pendingVotes: [PendingPollVote]?
+    public let createdAt: Int64
+    public let updatedAt: Int64
+    public let closedAt: Int64
+    public let closed: Bool
 }
 
 public struct PollOption {
-    let id: String
-    let text: String
-    let voteCount: Int
-    let voters: [ChatUser]
-    let pendingVote: PendingPollVote?
-    let selected: Bool
+    public let id: String
+    public let text: String
+    public let voteCount: Int
+    public let voters: [ChatUser]
+    public let pendingVote: PendingPollVote?
+    public let selected: Bool
 
-    func percentage(totalVotes: Int) -> Float {
+    public func percentage(totalVotes: Int) -> Float {
         guard totalVotes > 0 else { return 0 }
         return (Float(voteCount) / Float(totalVotes)) * 100
     }
 }
 
+public protocol PollVoterRepresentable {
+    var user: ChatUser? { get }
+    var createdAtDate: Date { get }
+    var optionId: String { get }
+}
+
 public struct PendingPollVote {
-    let messageTid: Int64
-    let pollId: String
-    let optionId: String
-    let userId: String
-    let isAdd: Bool // true = add vote, false = remove vote
-    let createdAt: Int64
+    public let messageTid: Int64
+    public let pollId: String
+    public let optionId: String
+    public let userId: String
+    public let isAdd: Bool // true = add vote, false = remove vote
+    public let createdAt: Int64
+    public let user: ChatUser?
 }
 
 public struct PollVote {
-    let pollId: String
-    let optionId: String
-    let userId: String
-    let createdAt: Int64
-    let user: ChatUser?
+    public let pollId: String
+    public let optionId: String
+    public let userId: String
+    public let createdAt: Int64
+    public let user: ChatUser?
+}
+
+extension PollVote: PollVoterRepresentable {
+    public var createdAtDate: Date {
+        return Date(timeIntervalSince1970: TimeInterval(createdAt))
+    }
+}
+
+extension PendingPollVote: PollVoterRepresentable {
+    public var createdAtDate: Date {
+        return Date(timeIntervalSince1970: TimeInterval(createdAt))
+    }
 }
 
 // MARK: - Initializers from DTO
@@ -120,10 +139,10 @@ extension PollOption {
             if let pendingVote = pendingVoteDTOs.first(where: { $0.optionId == dto.id }) {
                 self.pendingVote = PendingPollVote(dto: pendingVote)
             } else {
-                self.pendingVote = PendingPollVote(messageTid: pollDTO.messageTid, pollId: pollDTO.id, optionId: dto.id, userId: "", isAdd: false, createdAt: 0)
+                self.pendingVote = PendingPollVote(messageTid: pollDTO.messageTid, pollId: pollDTO.id, optionId: dto.id, userId: "", isAdd: false, createdAt: 0, user: nil)
             }
         } else {
-            self.pendingVote = PendingPollVote(messageTid: pollDTO.messageTid, pollId: pollDTO.id, optionId: dto.id, userId: "", isAdd: false, createdAt: 0)
+            self.pendingVote = PendingPollVote(messageTid: pollDTO.messageTid, pollId: pollDTO.id, optionId: dto.id, userId: "", isAdd: false, createdAt: 0, user: nil)
         }
         
         // Check if current user has voted for this option
@@ -154,5 +173,10 @@ extension PendingPollVote {
         self.userId = dto.user?.id ?? ""
         self.isAdd = dto.isAdd
         self.createdAt = dto.createdAt
+        if let user = dto.user {
+            self.user = ChatUser(dto: user)
+        } else {
+            self.user = nil
+        }
     }
 }
