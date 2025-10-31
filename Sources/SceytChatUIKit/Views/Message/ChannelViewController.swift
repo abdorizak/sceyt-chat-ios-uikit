@@ -238,7 +238,10 @@ open class ChannelViewController: ViewController,
                 .init(channelId: channelViewModel.channel.id)
             return viewController
         }
-        
+
+        // Hide poll option for direct chats
+        customInputViewController.shouldHidePollOption = channelViewModel.channel.isDirect
+
         selectingView.onAction = { [weak self] in
             guard let self else { return }
             switch $0 {

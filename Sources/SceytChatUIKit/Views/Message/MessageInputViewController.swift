@@ -85,7 +85,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             updateMediaButtonAppearance(isHidden: shouldHideMediaButton)
         }
     }
-    
+
+    open var shouldHidePollOption = false
+
     public var canRunMentionUserLogic = true
     open var mentionUserListViewController: (() -> MessageInputViewController.MentionUsersListViewController)?
     open weak var presentedMentionUserListViewController: MessageInputViewController.MentionUsersListViewController? {
@@ -543,9 +545,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     @objc
     open func addMediaButtonAction(_ sender: UIButton) {
         inputTextView.resignFirstResponder()
+        var sources: [AttachmentPickerSource] = [.media, .camera, .file]
+        if !shouldHidePollOption {
+            sources.append(.poll)
+        }
         router
             .showAttachmentAlert(
-                sources: [.media, .camera, .file, .poll],
+                sources: sources,
                 sourceView: sender)
         { [unowned self] source in
             switch source {
