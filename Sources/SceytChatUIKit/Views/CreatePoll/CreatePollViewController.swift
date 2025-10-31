@@ -221,7 +221,7 @@ open class CreatePollViewController: ViewController,
 
                 // Configure return key type
                 let isLastOption = indexPath.row == viewModel.poll.options.count - 1
-                cell.textView.returnKeyType = isLastOption ? .done : .next
+                cell.textView.returnKeyType = (isLastOption && !viewModel.canAddMoreOptions) ? .done : .next
 
                 cell.onTextChanged = { [weak self] text in
                     self?.viewModel.updateOption(at: indexPath.row, value: text)
@@ -514,8 +514,12 @@ open class CreatePollViewController: ViewController,
         let isLastOption = indexPath.row == viewModel.poll.options.count - 1
 
         if isLastOption {
-            // Last option - dismiss keyboard
-            view.endEditing(true)
+            // Last option - add new option if possible, otherwise dismiss keyboard
+            if viewModel.canAddMoreOptions {
+                addOption()
+            } else {
+                view.endEditing(true)
+            }
         } else {
             // Move to next option
             let nextIndexPath = IndexPath(row: indexPath.row + 1, section: 1)

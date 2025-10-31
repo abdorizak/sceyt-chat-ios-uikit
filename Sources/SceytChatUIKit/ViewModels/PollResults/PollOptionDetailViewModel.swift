@@ -45,7 +45,7 @@ open class PollOptionDetailViewModel: NSObject {
         votesQuery = PollVotesListQuery
             .Builder(pollId: pollDetails.id)
             .optionId(option.id)
-            .limit(30)
+            .limit(SceytChatUIKit.shared.config.queryLimits.pollVotersListQueryLimit)
             .build()
     }
 
