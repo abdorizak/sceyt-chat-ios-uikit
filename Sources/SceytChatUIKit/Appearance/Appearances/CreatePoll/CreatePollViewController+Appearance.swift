@@ -22,7 +22,7 @@ extension CreatePollViewController: AppearanceProviding {
         parametersHeaderText: "PARAMETERS",
         questionPlaceholderText: "Add question",
         optionPlaceholderText: { _ in "Add" },
-        addOptionText: "Add",
+        addOptionText: "Add an option",
         allowMultipleAnswersText: "Multiple votes",
         showVoterNamesText: "Anonymous poll",
         allowAddingOptionsText: "Can't retract votes",
