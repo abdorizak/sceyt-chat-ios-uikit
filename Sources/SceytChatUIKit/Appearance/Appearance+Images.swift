@@ -197,6 +197,14 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.actionReport.image,
                                                      renderingMode: .template(.primaryText)))!
         }()
+        public static var messageActionEndPoll: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionEndPoll.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
+        public static var messageActionRetractVote: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionRetractVote.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
         public static var messageSendAction: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.circleBackground34.image,
                                                      renderingMode: .template(.accent)),
@@ -647,6 +655,8 @@ extension UIImage {
     public static var messageActionSelect: UIImage { Images.messageActionSelect }
     public static var messageActionRemove: UIImage { Images.messageActionRemove }
     public static var messageActionReport: UIImage { Images.messageActionReport }
+    public static var messageActionEndPoll: UIImage { Images.messageActionEndPoll }
+    public static var messageActionRetractVote: UIImage { Images.messageActionRetractVote }
     public static var attachmentTransferPause: UIImage { Images.attachmentTransferPause }
     public static var attachmentUpload: UIImage { Images.attachmentUpload }
     public static var attachmentDownload: UIImage { Images.attachmentDownload }

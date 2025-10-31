@@ -1570,22 +1570,32 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func retractPollVote(
-        layoutModel: MessageLayoutModel
+        layoutModel: MessageLayoutModel,
+        completion: ((Error?) -> Void)? = nil
     ) {
-        guard let poll = layoutModel.message.poll else { return }
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
         provider.retractPollVote(
             messageId: layoutModel.message.id,
-            pollId: poll.id
+            pollId: poll.id,
+            completion: completion
         )
     }
     
     open func closePoll(
-        layoutModel: MessageLayoutModel
+        layoutModel: MessageLayoutModel,
+        completion: ((Error?) -> Void)? = nil
     ) {
-        guard let poll = layoutModel.message.poll else { return }
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
         provider.closePoll(
             messageId: layoutModel.message.id,
-            pollId: poll.id
+            pollId: poll.id,
+            completion: completion
         )
     }
     

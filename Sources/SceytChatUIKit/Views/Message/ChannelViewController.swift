@@ -2293,6 +2293,24 @@ open class ChannelViewController: ViewController,
         }
     }
     
+    open func showEndPollAlert(for layoutModel: MessageLayoutModel) {
+        showAlert(
+            title: "End Poll",
+            message: "Are you sure you want to end this poll? People will no longer be able to vote.",
+            actions: [
+                .init(title: L10n.Alert.Button.cancel, style: .cancel),
+                .init(title: "End", style: .destructive) { [weak self] in
+                    self?.channelViewModel.closePoll(layoutModel: layoutModel) { [weak self] error in
+                        if let error = error {
+                            self?.showAlert(error: error)
+                        }
+                    }
+                }
+            ],
+            preferredActionIndex: 1
+        )
+    }
+
     private var isShowingRecordDiscardAlert = false
     open func showRecordDiscardAlertIfNeeded() {
         guard customInputViewController.isRecording,
@@ -2347,6 +2365,7 @@ open class ChannelViewController: ViewController,
               model.message.state != .deleted
         else { return [] }
         
+        var isPoll = model.message.poll != nil
         var items: [MenuItem] = []
         if channelViewModel.canShowInfo(model: model) {
             items += [
@@ -2381,16 +2400,33 @@ open class ChannelViewController: ViewController,
                     action: { [weak self] _ in
                         self?.reply(layoutModel: model, in: false)
                     }
-                ),
-//                .init(
-//                    title: L10n.Message.Action.Title.replyInThread,
-//                    image: .messageActionReplyInThread,
-//                    imageRenderingMode: .alwaysTemplate,
-//                    action: { [weak self] _ in
-//                        self?.reply(layoutModel: model, in: true)
-//                    }
-//                )
+                )
             ]
+        }
+        
+        if isPoll {
+            items += [
+                .init(
+                    title: "Retract Vote",
+                    image: .messageActionRetractVote,
+                    imageRenderingMode: .alwaysTemplate,
+                    action: { [weak self] _ in
+                        self?.channelViewModel.retractPollVote(layoutModel: model) { _ in
+                        }
+                    }
+                )]
+            
+            if !model.message.incoming && model.message.state != .deleted && model.message.poll?.closed == false {
+                items += [
+                    .init(
+                        title: "End Poll",
+                        image: .messageActionEndPoll,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            self?.showEndPollAlert(for: model)
+                        }
+                    )]
+            }
         }
         
         items += [
@@ -2401,15 +2437,21 @@ open class ChannelViewController: ViewController,
                 action: { [weak self] _ in
                     self?.forward(messages: [model.message])
                 }
-            ),
-            .init(
-                title: L10n.Message.Action.Title.copy,
-                image: .messageActionCopy,
-                imageRenderingMode: .alwaysTemplate,
-                action: { [weak self] _ in
-                    self?.copy(layoutModel: model)
-                }
             )]
+        
+        
+        if !isPoll {
+            items += [
+                .init(
+                    title: L10n.Message.Action.Title.copy,
+                    image: .messageActionCopy,
+                    imageRenderingMode: .alwaysTemplate,
+                    action: { [weak self] _ in
+                        self?.copy(layoutModel: model)
+                    }
+                )]
+        }
+            
 //        if channelViewModel.canReport(model: model) {
 //            items += [
 //                .init(
