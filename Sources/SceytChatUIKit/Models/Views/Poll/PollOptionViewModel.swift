@@ -13,6 +13,8 @@ public struct PollOptionViewModel {
     let isSelected: Bool
     let progress: Float
     let isAnonymous: Bool
+    let isIncoming: Bool
+    let isClosed: Bool
     let voters: [ChatUser]
 
     init(
@@ -22,6 +24,8 @@ public struct PollOptionViewModel {
         progress: Float,
         selected: Bool,
         isAnonymous: Bool,
+        isIncoming: Bool,
+        isClosed: Bool,
         voters: [ChatUser]
     ) {
         self.id = id
@@ -30,6 +34,8 @@ public struct PollOptionViewModel {
         self.isSelected = selected
         self.progress = progress
         self.voters = voters
+        self.isIncoming = isIncoming
         self.isAnonymous = isAnonymous
+        self.isClosed = isClosed
     }
 }

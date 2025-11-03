@@ -1750,10 +1750,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         
         // Update ownVotes optimistically
         var updatedOwnVotes = currentPoll.ownVotes
-        
+
         // Remove ownVotes for options being removed
         updatedOwnVotes.removeAll { removeOptionIds.contains($0.optionId) }
-        
+
         // Add optimistic ownVotes for options being added
         for optionId in addOptionIds {
             if !updatedOwnVotes.contains(where: { $0.optionId == optionId }) {
@@ -1767,7 +1767,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 updatedOwnVotes.append(optimisticVote)
             }
         }
-        
+
         // Create modified PollDetails with optimistic updates
         let optimisticPoll = PollDetails(
             id: currentPoll.id,
@@ -1787,9 +1787,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             closedAt: currentPoll.closedAt,
             closed: isClosed ?? currentPoll.closed
         )
-        
+
         // Create PollUIModel from optimistic poll
-        return PollViewModel(from: optimisticPoll)
+        return PollViewModel(from: optimisticPoll, isIncmoing: true)
     }
     
     open func report(layoutModel: MessageLayoutModel) {

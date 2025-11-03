@@ -17,7 +17,7 @@ public struct PollViewModel {
     let allowMultipleVotes: Bool
     let allowVoteRetract: Bool
 
-    init(from poll: PollDetails) {
+    init(from poll: PollDetails, isIncmoing: Bool) {
         self.pollId = poll.id
         self.question = poll.name
         self.closed = poll.closed
@@ -64,6 +64,8 @@ public struct PollViewModel {
                 progress: progress,
                 selected: selected,
                 isAnonymous: poll.anonymous,
+                isIncoming: isIncmoing,
+                isClosed: poll.closed,
                 voters: voters
             )
         }

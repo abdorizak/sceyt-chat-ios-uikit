@@ -313,7 +313,7 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             let messageDTO = MessageDTO.fetch(id: message.id, context: $0)
             let ownVotes = (messageDTO?.poll?.ownVotes?.array as? [PollVoteDTO]) ?? []
             let pollDetails = PollDetails(poll: poll, messageTid: Int64(message.tid), ownVotes: ownVotes)
-            let pollUIModel = PollViewModel(from: pollDetails)
+            let pollUIModel = PollViewModel(from: pollDetails, isIncmoing: message.incoming)
             NotificationCenter.default.post(
                 name: .didUpdateMessagePoll,
                 object: nil,
@@ -348,7 +348,7 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             let messageDTO = MessageDTO.fetch(id: message.id, context: $0)
             let ownVotes = (messageDTO?.poll?.ownVotes?.array as? [PollVoteDTO]) ?? []
             let pollDetails = PollDetails(poll: poll, messageTid: Int64(message.tid), ownVotes: ownVotes)
-            let pollUIModel = PollViewModel(from: pollDetails)
+            let pollUIModel = PollViewModel(from: pollDetails, isIncmoing: message.incoming)
             NotificationCenter.default.post(
                 name: .didUpdateMessagePoll,
                 object: nil,

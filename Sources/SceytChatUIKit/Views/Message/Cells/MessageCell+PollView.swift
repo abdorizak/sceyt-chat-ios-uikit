@@ -90,7 +90,8 @@ extension MessageCell {
             separatorView.pin(to: self, anchors: [.leading(4.0), .trailing(-4.0)])
             separatorView.resize(anchors: [.height(1.0)])
             viewResultButton.topAnchor.pin(to: separatorView.bottomAnchor)
-            viewResultButton.pin(to: self, anchors: [.leading, .trailing, .bottom])
+            viewResultButton.pin(to: self, anchors: [.leading, .trailing])
+            viewResultButton.heightAnchor.pin(constant: 40.0)
         }
 
         override open func setupAppearance() {
@@ -105,6 +106,9 @@ extension MessageCell {
             typeLabel.textColor = appearance.pollViewAppearance.pollTypeTextStyle.foregroundColor
 
             separatorView.backgroundColor = appearance.pollViewAppearance.dividerColor
+
+            viewResultButton.setTitleColor(appearance.pollViewAppearance.viewResultsTextStyle.foregroundColor, for: .normal)
+            viewResultButton.titleLabel?.font = appearance.pollViewAppearance.viewResultsTextStyle.font
         }
 
         private func configure(with layoutModel: MessageLayoutModel) {
@@ -115,7 +119,7 @@ extension MessageCell {
                 return
             }
 
-            let viewModel = PollViewModel(from: poll)
+            let viewModel = PollViewModel(from: poll, isIncmoing: layoutModel.message.incoming)
             questionLabel.text = viewModel.question
             typeLabel.text = viewModel.pollTypeText
 
@@ -148,9 +152,12 @@ extension MessageCell {
         }
 
         @objc private func optionTapped(_ sender: UITapGestureRecognizer) {
-            guard let view = sender.view else { return }
-            let pollOptionView = view as? PollOptionView
-            pollOptionView?.checkboxView.isSelected.toggle()
+            guard let view = sender.view,
+                  let pollOptionView = view as? PollOptionView,
+                  let data = data,
+                  let poll = data.message.poll,
+                  !poll.closed else { return }
+            pollOptionView.checkboxView.isSelected.toggle()
             let index = view.tag
             onDidTapOption?(index)
         }
@@ -191,7 +198,7 @@ extension MessageCell {
                 return .zero
             }
             
-            let pollViewModel = PollViewModel(from: poll)
+            let pollViewModel = PollViewModel(from: poll, isIncmoing: model.message.incoming)
             let pollAppearance = appearance.pollViewAppearance
             let maxWidth = Components.messageLayoutModel.defaults.messageWidth - 24 // 12pt padding each side
             var height: CGFloat = 0
@@ -232,7 +239,7 @@ extension MessageCell {
             )
             let optionSpacing = pollAppearance.optionSpacing
             let optionMinHeight: CGFloat = 34 // checkbox (20pt) + spacing (8pt) + progress bar (6pt)
-            
+
             for (index, option) in pollViewModel.options.enumerated() {
                 let optionTextSize = TextSizeMeasure.calculateSize(of: option.text, config: optionConfig).textSize
                 let optionHeight = max(ceil(optionTextSize.height) + 8 + 6, optionMinHeight) // text + spacing (8pt) + progress bar (6pt), minimum 34pt
@@ -241,10 +248,9 @@ extension MessageCell {
                     height += optionSpacing
                 }
             }
-            
+
             // Separator + footer (if not anonymous)
             if !pollViewModel.anonymous {
-                height += 20 // separator spacing
                 height += 1 // separator height
                 height += 40 // button height
             }

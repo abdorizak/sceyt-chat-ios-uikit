@@ -53,18 +53,20 @@ extension MessageCell {
             return progress.withoutAutoresizingMask
         }()
         
+        private var optionLabelLeadingConstraint: NSLayoutConstraint?
+        
         open var viewModel: PollOptionViewModel? {
             didSet {
                 configure()
             }
         }
-        
+
         open lazy var appearance: PollViewAppearance = Components.messageCell.appearance.pollViewAppearance {
             didSet {
                 setupAppearance()
             }
         }
-        
+
         // MARK: Setup
         
         open override func setup() {
@@ -91,7 +93,7 @@ extension MessageCell {
             checkboxView.resize(anchors: [.width(20.0), .height(20.0)])
             
             optionLabel.topAnchor.pin(to: topAnchor)
-            optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
+            optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
             optionLabel.trailingAnchor.pin(to: votersContainerView.leadingAnchor, constant: -8.0)
             
             votersContainerView.trailingAnchor.pin(to: trailingAnchor)
@@ -124,9 +126,9 @@ extension MessageCell {
             
             voteCountLabel.font = appearance.voteCountTextStyle.font
             voteCountLabel.textColor = appearance.voteCountTextStyle.foregroundColor
-            
-            progressBar.trackTintColor = appearance.progressBarBackground
-            progressBar.progressTintColor = appearance.progressBarForeground
+
+            progressBar.trackTintColor = appearance.progressBarForeground
+            progressBar.progressTintColor = appearance.progressBarBackground
         }
         
         
@@ -141,7 +143,16 @@ extension MessageCell {
             optionLabel.text = viewModel.text
             progressBar.setProgress(viewModel.progress, animated: false)
             checkboxView.isSelected = viewModel.isSelected
+            checkboxView.isHidden = viewModel.isClosed
             votersContainerView.isHidden = viewModel.isAnonymous
+            
+            // Update option label leading constraint when checkbox is hidden
+            optionLabelLeadingConstraint?.isActive = false
+            if viewModel.isClosed {
+                optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: leadingAnchor)
+            } else {
+                optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
+            }
             
             votersStackView.removeArrangedSubviews()
             if !viewModel.isAnonymous {
@@ -265,13 +276,15 @@ extension MessageCell {
                 height: appearance.voterAvatarStyle.size * scale
             )
 
+            let messageApperance = Components.messageCell.appearance
+            let borderColor: UIColor = viewModel?.isIncoming == true ? messageApperance.incomingBubbleColor: messageApperance.outgoingBubbleColor
             for voter in sortedVoters.prefix(avatarCount) {
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
                 avatarView.backgroundColor = .systemGray4
                 avatarView.layer.cornerRadius = appearance.voterAvatarStyle.size / 2
                 avatarView.layer.borderWidth = appearance.voterAvatarStyle.borderWidth
-                avatarView.layer.borderColor = appearance.voterAvatarStyle.borderColor.cgColor
+                avatarView.layer.borderColor = borderColor.cgColor
                 avatarView.clipsToBounds = true
                 avatarView.translatesAutoresizingMaskIntoConstraints = false
                 avatarView.widthAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
