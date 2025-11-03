@@ -208,10 +208,8 @@ extension ChannelViewController {
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
                     pollView.topAnchor.pin(to: bubbleView.topAnchor),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
-                    pollView.bottomAnchor.pin(to: bubbleView.bottomAnchor)
+                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4)
                 ]
-
-                layoutConstraint += [ pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4) ]
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
                 if !infoView.backgroundView.isHidden {

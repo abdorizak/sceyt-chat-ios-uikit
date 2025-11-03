@@ -186,42 +186,69 @@ extension MessageCell {
             model: MessageLayoutModel,
             appearance: MessageCell.Appearance
         ) -> CGSize {
-//            guard let pollData = PollView().parsePollData(from: model.message) else {
-                return CGSize(width: 250, height: 293)
-//            }
+            guard let poll = model.message.poll else {
+                return .zero
+            }
             
-//            let pollAppearance = appearance.pollViewAppearance
-//            let maxWidth = Components.messageLayoutModel.defaults.messageWidth - 24 // padding
-//            let containerInsets = pollAppearance.containerInsets
-//            var height: CGFloat = containerInsets.top + containerInsets.bottom
-//            
-//            // Question height
-//            let questionFont = pollAppearance.questionTextStyle.font
-//            let questionSize = (pollData.question as NSString).boundingRect(
-//                with: CGSize(width: maxWidth - 24, height: .greatestFiniteMagnitude),
-//                options: [.usesLineFragmentOrigin, .usesFontLeading],
-//                attributes: [.font: questionFont],
-//                context: nil
-//            ).size
-//            height += ceil(questionSize.height) + pollAppearance.questionBottomSpacing
-//            
-//            // Options height
-//            let optionFont = pollAppearance.optionTextStyle.font
-//            for option in pollData.options {
-//                let optionSize = (option.text as NSString).boundingRect(
-//                    with: CGSize(width: maxWidth - 24 - 50, height: .greatestFiniteMagnitude),
-//                    options: [.usesLineFragmentOrigin, .usesFontLeading],
-//                    attributes: [.font: optionFont],
-//                    context: nil
-//                ).size
-//                height += max(ceil(optionSize.height) + 16, pollAppearance.optionMinHeight)
-//                height += pollAppearance.optionSpacing
-//            }
-//            
-//            // Footer height
-//            height += 20 + 12 // footer labels + spacing
-//            
-//            return CGSize(width: maxWidth, height: height)
+            let pollViewModel = PollViewModel(from: poll)
+            let pollAppearance = appearance.pollViewAppearance
+            let maxWidth = Components.messageLayoutModel.defaults.messageWidth - 24 // 12pt padding each side
+            var height: CGFloat = 0
+            
+            // Top padding
+            height += 8 // questionLabel top padding
+            
+            // Question height
+            let questionConfig = TextSizeMeasure.Config(
+                restrictingWidth: maxWidth - 24, // 12pt leading + 12pt trailing
+                maximumNumberOfLines: 0,
+                font: pollAppearance.questionTextStyle.font,
+                lastFragmentUsedRect: false
+            )
+            let questionSize = TextSizeMeasure.calculateSize(of: pollViewModel.question, config: questionConfig).textSize
+            height += ceil(questionSize.height)
+            
+            // Type label height + spacing
+            height += 4 // spacing between question and type
+            let typeConfig = TextSizeMeasure.Config(
+                restrictingWidth: maxWidth - 24,
+                maximumNumberOfLines: 1,
+                font: pollAppearance.pollTypeTextStyle.font,
+                lastFragmentUsedRect: false
+            )
+            let typeSize = TextSizeMeasure.calculateSize(of: pollViewModel.pollTypeText, config: typeConfig).textSize
+            height += ceil(typeSize.height)
+            
+            // Options stack top spacing
+            height += 16 // spacing between typeLabel and optionsStackView
+            
+            // Options height
+            let optionConfig = TextSizeMeasure.Config(
+                restrictingWidth: maxWidth - 24 - 108, // 12pt*2 padding + 20pt checkbox + 8pt spacing + 80pt voters container
+                maximumNumberOfLines: 0,
+                font: pollAppearance.optionTextStyle.font,
+                lastFragmentUsedRect: false
+            )
+            let optionSpacing = pollAppearance.optionSpacing
+            let optionMinHeight: CGFloat = 34 // checkbox (20pt) + spacing (8pt) + progress bar (6pt)
+            
+            for (index, option) in pollViewModel.options.enumerated() {
+                let optionTextSize = TextSizeMeasure.calculateSize(of: option.text, config: optionConfig).textSize
+                let optionHeight = max(ceil(optionTextSize.height) + 8 + 6, optionMinHeight) // text + spacing (8pt) + progress bar (6pt), minimum 34pt
+                height += optionHeight
+                if index < pollViewModel.options.count - 1 {
+                    height += optionSpacing
+                }
+            }
+            
+            // Separator + footer (if not anonymous)
+            if !pollViewModel.anonymous {
+                height += 20 // separator spacing
+                height += 1 // separator height
+                height += 40 // button height
+            }
+            
+            return CGSize(width: maxWidth, height: ceil(height))
         }
     }
  }
