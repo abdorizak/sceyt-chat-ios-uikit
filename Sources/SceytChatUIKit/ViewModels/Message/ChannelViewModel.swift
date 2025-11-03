@@ -1688,23 +1688,43 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         pendingPollVotes[layoutModel.message.id] = true
         
         // Optimistically update all selected options: deselect and decrease vote count
-        for option in pollViewModel.options where option.isSelected {
-            option.isSelected = false
-            option.voteCount = max(0, option.voteCount - 1)
+        var updatedOptions = pollViewModel.options.map { option -> PollOptionViewModel in
+            if option.isSelected {
+                var updatedOption = option
+                updatedOption.isSelected = false
+                updatedOption.voteCount = max(0, option.voteCount - 1)
+                return updatedOption
+            }
+            return option
         }
         
         // Recalculate progress based on new vote counts
-        let maxVotes = pollViewModel.options.map { $0.voteCount }.max() ?? 1
-        pollViewModel.options.forEach { option in
-            option.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+        let maxVotes = updatedOptions.map { $0.voteCount }.max() ?? 1
+        updatedOptions = updatedOptions.map { option in
+            var updatedOption = option
+            updatedOption.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+            return updatedOption
         }
+        
+        // Create updated poll view model
+        let updatedPollViewModel = PollViewModel(
+            pollId: pollViewModel.pollId,
+            question: pollViewModel.question,
+            pollTypeText: pollViewModel.pollTypeText,
+            options: updatedOptions,
+            totalVotes: pollViewModel.totalVotes,
+            closed: pollViewModel.closed,
+            anonymous: pollViewModel.anonymous,
+            allowMultipleVotes: pollViewModel.allowMultipleVotes,
+            allowVoteRetract: pollViewModel.allowVoteRetract
+        )
         
         // Post optimistic UI update notification
         DispatchQueue.main.async {
             NotificationCenter.default.post(
                 name: .didUpdateMessagePoll,
                 object: nil,
-                userInfo: ["pollUIModel": pollViewModel]
+                userInfo: ["pollUIModel": updatedPollViewModel]
             )
         }
         
@@ -1793,64 +1813,100 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         }
 
         let isSingleSelection = !poll.allowMultipleVotes
+        var updatedOptions = currentPollViewModel.options
 
         // Handle selection state updates
         if isSingleSelection {
             // For single selection: when adding an option, deselect all others
             if let addOptionId {
-                // Find the previously selected option (if different from the new one)
-                let previouslySelectedOption = currentPollViewModel.options.first { option in
-                    option.isSelected && option.id != addOptionId
-                }
-
-                // Decrease vote count for previously selected option if it exists
-                if let previouslySelectedOption {
-                    previouslySelectedOption.voteCount = max(0, previouslySelectedOption.voteCount - 1)
-                }
-
-                // Update selection state for all options
-                currentPollViewModel.options.forEach { option in
-                    option.isSelected = option.id == addOptionId
-                }
-
-                // Increase vote count for the newly selected option
-                if let optionToAdd = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
-                    optionToAdd.voteCount += 1
+                // Create new options array with updated selection state and vote counts
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    var updatedOption = option
+                    
+                    // Find the previously selected option (if different from the new one)
+                    let wasPreviouslySelected = option.isSelected && option.id != addOptionId
+                    
+                    if wasPreviouslySelected {
+                        // Decrease vote count for previously selected option
+                        updatedOption.voteCount = max(0, option.voteCount - 1)
+                    }
+                    
+                    // Update selection state: only the new option should be selected
+                    updatedOption.isSelected = option.id == addOptionId
+                    
+                    // Increase vote count for the newly selected option
+                    if option.id == addOptionId {
+                        updatedOption.voteCount = option.voteCount + 1
+                    }
+                    
+                    return updatedOption
                 }
             } else if let removeOptionId {
                 // Removing a vote in single selection means deselecting it
-                if let optionToRemove = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
-                    optionToRemove.isSelected = false
-                    optionToRemove.voteCount = max(0, optionToRemove.voteCount - 1)
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == removeOptionId {
+                        var updatedOption = option
+                        updatedOption.isSelected = false
+                        updatedOption.voteCount = max(0, option.voteCount - 1)
+                        return updatedOption
+                    }
+                    return option
                 }
             }
         } else {
             // For multiple selection: toggle the specific option
             if let addOptionId {
-                if let optionToAdd = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
-                    optionToAdd.isSelected = true
-                    optionToAdd.voteCount += 1
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == addOptionId {
+                        var updatedOption = option
+                        updatedOption.isSelected = true
+                        updatedOption.voteCount = option.voteCount + 1
+                        return updatedOption
+                    }
+                    return option
                 }
             } else if let removeOptionId {
-                if let optionToRemove = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
-                    optionToRemove.isSelected = false
-                    optionToRemove.voteCount = max(0, optionToRemove.voteCount - 1)
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == removeOptionId {
+                        var updatedOption = option
+                        updatedOption.isSelected = false
+                        updatedOption.voteCount = max(0, option.voteCount - 1)
+                        return updatedOption
+                    }
+                    return option
                 }
             }
         }
 
         // Recalculate progress based on new vote counts
-        let maxVotes = currentPollViewModel.options.map { $0.voteCount }.max() ?? 1
-        currentPollViewModel.options.forEach { option in
-            option.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+        let maxVotes = updatedOptions.map { $0.voteCount }.max() ?? 1
+        updatedOptions = updatedOptions.map { option in
+            var updatedOption = option
+            updatedOption.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+            return updatedOption
         }
 
         // Update closed state if provided
         if let isClosed {
-            currentPollViewModel.options.forEach { $0.isClosed = isClosed }
+            updatedOptions = updatedOptions.map { option in
+                var updatedOption = option
+                updatedOption.isClosed = isClosed
+                return updatedOption
+            }
         }
 
-        return currentPollViewModel
+        // Create new PollViewModel with updated options
+        return PollViewModel(
+            pollId: currentPollViewModel.pollId,
+            question: currentPollViewModel.question,
+            pollTypeText: currentPollViewModel.pollTypeText,
+            options: updatedOptions,
+            totalVotes: currentPollViewModel.totalVotes,
+            closed: currentPollViewModel.closed,
+            anonymous: currentPollViewModel.anonymous,
+            allowMultipleVotes: currentPollViewModel.allowMultipleVotes,
+            allowVoteRetract: currentPollViewModel.allowVoteRetract
+        )
     }
     
     open func report(layoutModel: MessageLayoutModel) {

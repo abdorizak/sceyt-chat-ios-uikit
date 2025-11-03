@@ -6,7 +6,7 @@
 //
 
 /// UI model for displaying poll option in the view
-public final class PollOptionViewModel {
+public struct PollOptionViewModel {
     let id: String
     let text: String
     var voteCount: Int

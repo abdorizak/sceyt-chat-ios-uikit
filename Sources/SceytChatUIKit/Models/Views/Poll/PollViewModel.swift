@@ -6,7 +6,7 @@
 //
 
 /// UI model for displaying poll in the view
-public final class PollViewModel {
+public struct PollViewModel {
     let pollId: String
     let question: String
     let pollTypeText: String
@@ -16,6 +16,28 @@ public final class PollViewModel {
     let anonymous: Bool
     let allowMultipleVotes: Bool
     let allowVoteRetract: Bool
+
+    public init(
+        pollId: String,
+        question: String,
+        pollTypeText: String,
+        options: [PollOptionViewModel],
+        totalVotes: Int,
+        closed: Bool,
+        anonymous: Bool,
+        allowMultipleVotes: Bool,
+        allowVoteRetract: Bool
+    ) {
+        self.pollId = pollId
+        self.question = question
+        self.pollTypeText = pollTypeText
+        self.options = options
+        self.totalVotes = totalVotes
+        self.closed = closed
+        self.anonymous = anonymous
+        self.allowMultipleVotes = allowMultipleVotes
+        self.allowVoteRetract = allowVoteRetract
+    }
 
     init(from poll: PollDetails, isIncmoing: Bool) {
         self.pollId = poll.id
