@@ -168,52 +168,26 @@ extension MessageCell {
                 return
             }
             
-            // Capture old values before comparison (in case oldViewModel and newViewModel are same reference)
             let oldVoteCount = oldViewModel.voteCount
-            let oldProgress = oldViewModel.progress
             let oldIsSelected = oldViewModel.isSelected
-            let oldVoters = oldViewModel.voters
             
-            // Animate vote count change with directional transition
+            // Animate vote count change with smooth transition
             if oldVoteCount != newViewModel.voteCount {
                 let isIncreasing = newViewModel.voteCount > oldVoteCount
-                // Calculate transition distance based on label height or font line height
-                let labelHeight: CGFloat = {
-                    if voteCountLabel.bounds.height > 0 {
-                        return voteCountLabel.bounds.height
-                    } else if let font = voteCountLabel.font {
-                        return font.lineHeight
-                    } else {
-                        return 20.0
-                    }
-                }()
-
-                // Determine transition direction: increasing = from bottom, decreasing = from top
-                let exitTransform: CGAffineTransform
-                let enterTransform: CGAffineTransform
+                let translationDistance: CGFloat = 12.0
                 
-                if isIncreasing {
-                    // Increasing: exit to top, enter from bottom
-                    exitTransform = CGAffineTransform(translationX: 0, y: -labelHeight)
-                    enterTransform = CGAffineTransform(translationX: 0, y: labelHeight)
-                } else {
-                    // Decreasing: exit to bottom, enter from top
-                    exitTransform = CGAffineTransform(translationX: 0, y: labelHeight)
-                    enterTransform = CGAffineTransform(translationX: 0, y: -labelHeight)
-                }
+                let exitTransform = CGAffineTransform(translationX: 0, y: isIncreasing ? -translationDistance : translationDistance)
+                let enterTransform = CGAffineTransform(translationX: 0, y: isIncreasing ? translationDistance : -translationDistance)
 
-                // Phase 1: Exit old value (fade out and slide)
-                UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseIn], animations: {
+                UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseInOut], animations: {
                     self.voteCountLabel.transform = exitTransform
                     self.voteCountLabel.alpha = 0.0
                 }) { _ in
-                    // Phase 2: Update text and position for entry
                     self.voteCountLabel.text = String(newViewModel.voteCount)
                     self.voteCountLabel.transform = enterTransform
                     self.voteCountLabel.alpha = 0.0
 
-                    // Phase 3: Enter new value (fade in and slide to center)
-                    UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut]) {
+                    UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.3, options: [.curveEaseOut]) {
                         self.voteCountLabel.transform = .identity
                         self.voteCountLabel.alpha = 1.0
                     }
@@ -243,7 +217,6 @@ extension MessageCell {
                 createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
             }
 
-            // Update viewModel after all animations are set up
             viewModel = newViewModel
         }
         

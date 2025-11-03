@@ -1908,7 +1908,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             allowVoteRetract: currentPollViewModel.allowVoteRetract
         )
     }
-    
+
     open func report(layoutModel: MessageLayoutModel) {
         // TODO: Report Message
         logger.debug("Report Message")
