@@ -245,23 +245,21 @@ extension ChannelViewController {
                     bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width + 24),
                     bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.infoViewMeasure.width + 24),
                     bubbleView.widthAnchor.pin(lessThanOrEqualToConstant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
-                    
+
                     textLabel.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
                     textLabel.heightAnchor.pin(constant: layout.textSize.height),
                     textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
-                    
+
                     infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
 
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    pollView.topAnchor.pin(to: bubbleView.topAnchor),
+                    pollView.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
-                    pollView.bottomAnchor.pin(to: bubbleView.bottomAnchor),
+                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4),
 
                     infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24)
                 ]
-                
-                layoutConstraint += [ pollView.bottomAnchor.pin(lessThanOrEqualTo: infoView.topAnchor, constant: -4) ]
                 
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
@@ -473,11 +471,8 @@ extension ChannelViewController {
                 bubbleSize = textSize
                 bubbleSize.width = max(bubbleSize.width, pollSize.width)
                 bubbleSize.height += pollSize.height
-                if showName, !model.isForwarded, model.hasReply {
-                    bubbleSize.height += 2
-                } else {
-                    bubbleSize.height += model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2
-                }
+                // Add padding from user name - matches layout constraint: (isForwarded || showSenderInfo) ? 2 : 8
+                bubbleSize.height += (model.isForwarded || showName) ? 2 : 8
                 bubbleSize.height += 12 //padding
                 if userNameSize == .zero {
                     bubbleSize.height += 18

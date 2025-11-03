@@ -18,8 +18,8 @@ public class PollViewAppearance: AppearanceProviding {
     
     public static var appearance = PollViewAppearance(
         dividerColor: .white,
-        progressBarBackground: UIColor.systemGray5,
-        progressBarForeground: UIColor.systemBlue,
+        progressBarBackground: UIColor.systemBlue,
+        progressBarForeground: UIColor.systemGray5,
         questionTextStyle: .init(
             foregroundColor: .label,
             font: Fonts.semiBold.withSize(16)

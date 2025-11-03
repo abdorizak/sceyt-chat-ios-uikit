@@ -53,12 +53,14 @@ extension MessageCell {
             return progress.withoutAutoresizingMask
         }()
         
+        private var optionLabelLeadingConstraint: NSLayoutConstraint?
+        
         open var viewModel: PollOptionViewModel? {
             didSet {
                 configure()
             }
         }
-        
+
         open lazy var appearance: PollViewAppearance = Components.messageCell.appearance.pollViewAppearance {
             didSet {
                 setupAppearance()
@@ -91,7 +93,7 @@ extension MessageCell {
             checkboxView.resize(anchors: [.width(20.0), .height(20.0)])
             
             optionLabel.topAnchor.pin(to: topAnchor)
-            optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
+            optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
             optionLabel.trailingAnchor.pin(to: votersContainerView.leadingAnchor, constant: -8.0)
             
             votersContainerView.trailingAnchor.pin(to: trailingAnchor)
@@ -124,9 +126,9 @@ extension MessageCell {
             
             voteCountLabel.font = appearance.voteCountTextStyle.font
             voteCountLabel.textColor = appearance.voteCountTextStyle.foregroundColor
-            
-            progressBar.trackTintColor = appearance.progressBarBackground
-            progressBar.progressTintColor = appearance.progressBarForeground
+
+            progressBar.trackTintColor = appearance.progressBarForeground
+            progressBar.progressTintColor = appearance.progressBarBackground
         }
         
         
@@ -141,7 +143,16 @@ extension MessageCell {
             optionLabel.text = viewModel.text
             progressBar.setProgress(viewModel.progress, animated: false)
             checkboxView.isSelected = viewModel.isSelected
+            checkboxView.isHidden = viewModel.isClosed
             votersContainerView.isHidden = viewModel.isAnonymous
+            
+            // Update option label leading constraint when checkbox is hidden
+            optionLabelLeadingConstraint?.isActive = false
+            if viewModel.isClosed {
+                optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: leadingAnchor)
+            } else {
+                optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
+            }
             
             votersStackView.removeArrangedSubviews()
             if !viewModel.isAnonymous {
@@ -157,9 +168,15 @@ extension MessageCell {
                 return
             }
             
+            // Capture old values before comparison (in case oldViewModel and newViewModel are same reference)
+            let oldVoteCount = oldViewModel.voteCount
+            let oldProgress = oldViewModel.progress
+            let oldIsSelected = oldViewModel.isSelected
+            let oldVoters = oldViewModel.voters
+            
             // Animate vote count change with directional transition
-            if oldViewModel.voteCount != newViewModel.voteCount {
-                let isIncreasing = newViewModel.voteCount > oldViewModel.voteCount
+            if oldVoteCount != newViewModel.voteCount {
+                let isIncreasing = newViewModel.voteCount > oldVoteCount
                 // Calculate transition distance based on label height or font line height
                 let labelHeight: CGFloat = {
                     if voteCountLabel.bounds.height > 0 {
@@ -206,12 +223,12 @@ extension MessageCell {
             }
             
             // Animate progress bar smoothly
-            if abs(oldViewModel.progress - newViewModel.progress) > 0.001 {
+            if abs(oldProgress - newViewModel.progress) > 0.001 {
                 progressBar.setProgress(newViewModel.progress, animated: true)
             }
             
             // Animate checkbox selection with bounce effect
-            if oldViewModel.isSelected != newViewModel.isSelected {
+            if oldIsSelected != newViewModel.isSelected {
                 UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseInOut], animations: {
                     self.checkboxView.isSelected = newViewModel.isSelected
                     if newViewModel.isSelected {
@@ -226,8 +243,8 @@ extension MessageCell {
 
             votersStackView.removeArrangedSubviews()
             // Update voters if changed (no animation)
-            if oldViewModel.voters.count != newViewModel.voters.count ||
-                !oldViewModel.voters.elementsEqual(newViewModel.voters, by: { $0.id == $1.id }) {
+            if oldVoters.count != newViewModel.voters.count ||
+                !oldVoters.elementsEqual(newViewModel.voters, by: { $0.id == $1.id }) {
                 votersStackView.removeArrangedSubviews()
                 if !newViewModel.isAnonymous {
                     createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
@@ -265,13 +282,15 @@ extension MessageCell {
                 height: appearance.voterAvatarStyle.size * scale
             )
 
+            let messageApperance = Components.messageCell.appearance
+            let borderColor: UIColor = viewModel?.isIncoming == true ? messageApperance.incomingBubbleColor: messageApperance.outgoingBubbleColor
             for voter in sortedVoters.prefix(avatarCount) {
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
                 avatarView.backgroundColor = .systemGray4
                 avatarView.layer.cornerRadius = appearance.voterAvatarStyle.size / 2
                 avatarView.layer.borderWidth = appearance.voterAvatarStyle.borderWidth
-                avatarView.layer.borderColor = appearance.voterAvatarStyle.borderColor.cgColor
+                avatarView.layer.borderColor = borderColor.cgColor
                 avatarView.clipsToBounds = true
                 avatarView.translatesAutoresizingMaskIntoConstraints = false
                 avatarView.widthAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true

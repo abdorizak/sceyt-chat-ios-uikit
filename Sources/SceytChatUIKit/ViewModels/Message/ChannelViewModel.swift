@@ -126,6 +126,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     @Atomic private var lastPendingMarkDisplayedMessageId: MessageId = 0
     @Atomic private var isAppActive: Bool = true
     @Atomic private var isRestartingMessageObserver: DataReloadingType = .none
+    @Atomic private var pendingPollVotes: [MessageId: Bool] = [:]
     
     // MARK: internal properties
     var lastNavigatedIndexPath: IndexPath?
@@ -1521,153 +1522,252 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     
     // MARK: - Poll Operations
     
+    open func hasPendingPollVote(for messageId: MessageId) -> Bool {
+        return pendingPollVotes[messageId] == true
+    }
+    
     open func addPollVote(
         layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
         optionId: String
     ) {
         guard let poll = layoutModel.message.poll else { return }
-        
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+
         // Post optimistic UI update notification
         postOptimisticPollUpdate(
             messageId: layoutModel.message.id,
-            currentPoll: poll,
-            addOptionIds: [optionId],
-            removeOptionIds: []
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: optionId,
+            removeOptionId: nil
         )
-        
+
         provider.addPollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
             optionIds: [optionId]
-        )
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
     }
-    
+
     open func addPollVotes(
         layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
         optionIds: [String]
     ) {
         guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
-        
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+
         // Post optimistic UI update notification
         postOptimisticPollUpdate(
             messageId: layoutModel.message.id,
-            currentPoll: poll,
-            addOptionIds: optionIds,
-            removeOptionIds: []
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: optionIds.first,
+            removeOptionId: nil
         )
-        
+
         provider.addPollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
             optionIds: optionIds
-        )
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
     }
     
     open func deletePollVote(
         layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
         optionId: String
     ) {
         guard let poll = layoutModel.message.poll else { return }
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
         
         // Post optimistic UI update notification
         postOptimisticPollUpdate(
             messageId: layoutModel.message.id,
-            currentPoll: poll,
-            addOptionIds: [],
-            removeOptionIds: [optionId]
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: nil,
+            removeOptionId: optionId
         )
-        
+
         provider.deletePollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
             optionIds: [optionId]
-        )
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
     }
-    
+
     open func deletePollVotes(
         layoutModel: MessageLayoutModel,
-        optionIds: [String]
+        pollViewModel: PollViewModel,
+        optionIds: [String],
+        completion: ((Error?) -> Void)? = nil
     ) {
-        guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
+        guard let poll = layoutModel.message.poll, !optionIds.isEmpty else {
+            completion?(nil)
+            return
+        }
+        
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            completion?(nil)
+            return
+        }
+        
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
         
         // Post optimistic UI update notification
         postOptimisticPollUpdate(
             messageId: layoutModel.message.id,
-            currentPoll: poll,
-            addOptionIds: [],
-            removeOptionIds: optionIds
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: nil,
+            removeOptionId: optionIds.first
         )
-        
+
         provider.deletePollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
             optionIds: optionIds
-        )
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+            // Post notification to re-enable interaction
+        }
     }
-    
+
     open func retractPollVote(
         layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
         completion: ((Error?) -> Void)? = nil
     ) {
-//        guard let poll = layoutModel.message.poll else { return }
-//        
-//        // Post optimistic UI update notification - remove all own votes
-//        let ownVoteOptionIds = poll.options.filter { $0.selected }.map { $0.id }
-//        postOptimisticPollUpdate(
-//            messageId: layoutModel.message.id,
-//            currentPoll: poll,
-//            addOptionIds: [],
-//            removeOptionIds: ownVoteOptionIds
-//        )
-//        
-//        provider.retractPollVote(
-//            messageId: layoutModel.message.id,
-//            pollId: poll.id,
-//            completion: completion
-//        )
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
+        
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            completion?(nil)
+            return
+        }
+        
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+        
+        // Optimistically update all selected options: deselect and decrease vote count
+        for option in pollViewModel.options where option.isSelected {
+            option.isSelected = false
+            option.voteCount = max(0, option.voteCount - 1)
+        }
+        
+        // Recalculate progress based on new vote counts
+        let maxVotes = pollViewModel.options.map { $0.voteCount }.max() ?? 1
+        pollViewModel.options.forEach { option in
+            option.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+        }
+        
+        // Post optimistic UI update notification
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .didUpdateMessagePoll,
+                object: nil,
+                userInfo: ["pollUIModel": pollViewModel]
+            )
+        }
+        
+        provider.retractPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+            completion?(error)
+        }
     }
     
     open func closePoll(
         layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
         completion: ((Error?) -> Void)? = nil
     ) {
-//        guard let poll = layoutModel.message.poll else { return }
-//        
-//        // Post optimistic UI update notification - mark as closed
-//        if let pollUIModel = createOptimisticPollUIModel(
-//            messageId: layoutModel.message.id,
-//            currentPoll: poll,
-//            addOptionIds: [],
-//            removeOptionIds: [],
-//            isClosed: true
-//        ) {
-//            NotificationCenter.default.post(
-//                name: .didUpdateMessagePoll,
-//                object: nil,
-//                userInfo: ["pollUIModel": pollUIModel]
-//            )
-//        }
-//
-//        provider.closePoll(
-//            messageId: layoutModel.message.id,
-//            pollId: poll.id,
-//            completion: completion
-//        )
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
+        
+        // Post optimistic UI update notification - mark as closed
+        if let pollUIModel = createOptimisticPollUIModel(
+            messageId: layoutModel.message.id,
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: nil,
+            removeOptionId: nil,
+            isClosed: true
+        ) {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .didUpdateMessagePoll,
+                    object: nil,
+                    userInfo: ["pollUIModel": pollUIModel]
+                )
+            }
+        }
+        
+        provider.closePoll(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            completion: completion
+        )
     }
     
     // MARK: - Poll Update Helpers
     
     private func postOptimisticPollUpdate(
         messageId: MessageId,
-        currentPoll: PollDetails,
-        addOptionIds: [String],
-        removeOptionIds: [String]
+        layoutModel: MessageLayoutModel,
+        currentPollViewModel: PollViewModel,
+        addOptionId: String?,
+        removeOptionId: String?
     ) {
         if let pollUIModel = createOptimisticPollUIModel(
             messageId: messageId,
-            currentPoll: currentPoll,
-            addOptionIds: addOptionIds,
-            removeOptionIds: removeOptionIds,
+            layoutModel: layoutModel,
+            currentPollViewModel: currentPollViewModel,
+            addOptionId: addOptionId,
+            removeOptionId: removeOptionId,
             isClosed: nil
         ) {
             DispatchQueue.main.async {
@@ -1679,117 +1779,68 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             }
         }
     }
-    
+
     private func createOptimisticPollUIModel(
         messageId: MessageId,
-        currentPoll: PollDetails,
-        addOptionIds: [String],
-        removeOptionIds: [String],
+        layoutModel: MessageLayoutModel,
+        currentPollViewModel: PollViewModel,
+        addOptionId: String?,
+        removeOptionId: String?,
         isClosed: Bool?
     ) -> PollViewModel? {
-        guard let currentUserId = SceytChatUIKit.shared.currentUserId else {
+        guard let currentUserId = SceytChatUIKit.shared.currentUserId, let poll = layoutModel.message.poll else {
             return nil
         }
-        
-        // Create updated votes per option with optimistic changes
-        var updatedVotesPerOption = currentPoll.votesPerOption
-        
-        // Add votes for added options
-        for optionId in addOptionIds {
-            updatedVotesPerOption[optionId, default: 0] += 1
-        }
-        
-        // Remove votes for removed options
-        for optionId in removeOptionIds {
-            if let currentCount = updatedVotesPerOption[optionId], currentCount > 0 {
-                updatedVotesPerOption[optionId] = currentCount - 1
+
+        let isSingleSelection = !poll.allowMultipleVotes
+
+        // Handle selection state updates
+        if isSingleSelection {
+            // For single selection: when adding an option, deselect all others
+            if let addOptionId {
+                currentPollViewModel.options.forEach { option in
+                    option.isSelected = option.id == addOptionId
+                }
+            } else if let removeOptionId {
+                // Removing a vote in single selection means deselecting it
+                if let optionToRemove = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
+                    optionToRemove.isSelected = false
+                }
+            }
+        } else {
+            // For multiple selection: toggle the specific option
+            if let addOptionId {
+                if let optionToAdd = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
+                    optionToAdd.isSelected = true
+                }
+            } else if let removeOptionId {
+                if let optionToRemove = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
+                    optionToRemove.isSelected = false
+                }
             }
         }
 
-        // Create optimistic pending votes
-        var optimisticPendingVotes: [PendingPollVote] = []
-        let now = Int64(Date().timeIntervalSince1970 * 1000)
-
-        // Add pending votes for options being added
-        for optionId in addOptionIds {
-            let pendingVote = PendingPollVote(
-                messageTid: currentPoll.messageTid,
-                pollId: currentPoll.id,
-                optionId: optionId,
-                userId: currentUserId,
-                isAdd: true,
-                createdAt: now,
-                user: ChatUser(id: currentUserId)
-            )
-            optimisticPendingVotes.append(pendingVote)
+        // Update vote counts optimistically
+        if let addOptionId, let optionToUpdate = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
+            optionToUpdate.voteCount += 1
+        }
+        
+        if let removeOptionId, let optionToUpdate = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
+            optionToUpdate.voteCount = max(0, optionToUpdate.voteCount - 1)
         }
 
-        // Add pending votes for options being removed
-        for optionId in removeOptionIds {
-            let pendingVote = PendingPollVote(
-                messageTid: currentPoll.messageTid,
-                pollId: currentPoll.id,
-                optionId: optionId,
-                userId: currentUserId,
-                isAdd: false,
-                createdAt: now,
-                user: ChatUser(id: currentUserId)
-            )
-            optimisticPendingVotes.append(pendingVote)
+        // Recalculate progress based on new vote counts
+        let maxVotes = currentPollViewModel.options.map { $0.voteCount }.max() ?? 1
+        currentPollViewModel.options.forEach { option in
+            option.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
         }
-        
-        // Merge with existing pending votes (keep existing ones, add new optimistic ones)
-        var allPendingVotes: [PendingPollVote] = []
-        if let existingPendingVotes = currentPoll.pendingVotes {
-            // Filter out existing pending votes for the same options that we're optimistically updating
-            let updatedOptionIds = Set(addOptionIds + removeOptionIds)
-            let filteredExisting = existingPendingVotes.filter { !updatedOptionIds.contains($0.optionId) || $0.userId != currentUserId }
-            allPendingVotes.append(contentsOf: filteredExisting)
+
+        // Update closed state if provided
+        if let isClosed {
+            currentPollViewModel.options.forEach { $0.isClosed = isClosed }
         }
-        allPendingVotes.append(contentsOf: optimisticPendingVotes)
-        
-        // Update ownVotes optimistically
-        var updatedOwnVotes = currentPoll.ownVotes
-        
-        // Remove ownVotes for options being removed
-        updatedOwnVotes.removeAll { removeOptionIds.contains($0.optionId) }
-        
-        // Add optimistic ownVotes for options being added
-        for optionId in addOptionIds {
-            if !updatedOwnVotes.contains(where: { $0.optionId == optionId }) {
-                let optimisticVote = PollVote(
-                    pollId: currentPoll.id,
-                    optionId: optionId,
-                    userId: currentUserId,
-                    createdAt: now / 1000, // PollVote uses seconds
-                    user: ChatUser(id: currentUserId)
-                )
-                updatedOwnVotes.append(optimisticVote)
-            }
-        }
-        
-        // Create modified PollDetails with optimistic updates
-        let optimisticPoll = PollDetails(
-            id: currentPoll.id,
-            name: currentPoll.name,
-            messageTid: currentPoll.messageTid,
-            description: currentPoll.description,
-            options: currentPoll.options,
-            anonymous: currentPoll.anonymous,
-            allowMultipleVotes: currentPoll.allowMultipleVotes,
-            allowVoteRetract: currentPoll.allowVoteRetract,
-            votesPerOption: updatedVotesPerOption,
-            votes: currentPoll.votes,
-            ownVotes: updatedOwnVotes,
-            pendingVotes: allPendingVotes.isEmpty ? nil : allPendingVotes,
-            createdAt: currentPoll.createdAt,
-            updatedAt: currentPoll.updatedAt,
-            closedAt: currentPoll.closedAt,
-            closed: isClosed ?? currentPoll.closed
-        )
-        
-        // Create PollUIModel from optimistic poll
-        return PollViewModel(from: optimisticPoll)
+
+        return currentPollViewModel
     }
     
     open func report(layoutModel: MessageLayoutModel) {

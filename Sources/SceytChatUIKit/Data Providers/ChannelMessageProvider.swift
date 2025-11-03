@@ -338,7 +338,7 @@ open class ChannelMessageProvider: DataProvider {
     }
     
     // MARK: - Poll Operations
-    
+
     open func addPollVote(
         messageId: MessageId,
         pollId: String,

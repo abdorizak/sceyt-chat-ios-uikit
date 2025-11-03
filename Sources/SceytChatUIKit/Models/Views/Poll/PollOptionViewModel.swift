@@ -6,13 +6,15 @@
 //
 
 /// UI model for displaying poll option in the view
-public struct PollOptionViewModel {
+public final class PollOptionViewModel {
     let id: String
     let text: String
-    let voteCount: Int
-    let isSelected: Bool
-    let progress: Float
+    var voteCount: Int
+    var isSelected: Bool
+    var progress: Float
     let isAnonymous: Bool
+    let isIncoming: Bool
+    var isClosed: Bool
     let voters: [ChatUser]
 
     init(
@@ -22,6 +24,8 @@ public struct PollOptionViewModel {
         progress: Float,
         selected: Bool,
         isAnonymous: Bool,
+        isIncoming: Bool,
+        isClosed: Bool,
         voters: [ChatUser]
     ) {
         self.id = id
@@ -30,6 +34,8 @@ public struct PollOptionViewModel {
         self.isSelected = selected
         self.progress = progress
         self.voters = voters
+        self.isIncoming = isIncoming
         self.isAnonymous = isAnonymous
+        self.isClosed = isClosed
     }
 }
