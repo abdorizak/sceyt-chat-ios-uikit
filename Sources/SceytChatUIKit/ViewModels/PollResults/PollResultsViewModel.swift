@@ -58,7 +58,6 @@ open class PollResultsViewModel: NSObject {
     }
 
     public func shouldShowMoreButton(for optionIndex: Int) -> Bool {
-        return true
         guard let option = option(at: optionIndex) else { return false }
         let voteCount = pollResults.votesPerOption[option.id] ?? 0
         return voteCount > numberOfVoters(for: optionIndex)
