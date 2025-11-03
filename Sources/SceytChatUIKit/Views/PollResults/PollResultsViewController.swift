@@ -8,6 +8,7 @@
 
 import UIKit
 import Combine
+import SceytChat
 
 open class PollResultsViewController: ViewController,
                                        UITableViewDelegate,
@@ -298,13 +299,13 @@ open class PollResultsViewController: ViewController,
         switch event {
         case .reloadData:
             tableView.reloadData()
-        case .showOptionDetail(let option, let pollDetails, let questionText, let totalVotes):
-            showOptionDetail(option: option, pollDetails: pollDetails, questionText: questionText, totalVotes: totalVotes)
+        case .showOptionDetail(let option, let pollDetails, let messageID):
+            showOptionDetail(option: option, pollDetails: pollDetails, messageID: messageID)
         }
     }
 
-    open func showOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int) {
-        router.showPollOptionDetail(option: option, pollDetails: pollDetails, questionText: questionText, totalVotes: totalVotes)
+    open func showOptionDetail(option: PollOption, pollDetails: PollDetails, messageID: MessageId) {
+        router.showPollOptionDetail(option: option, pollDetails: pollDetails, messageID: messageID)
     }
 }
 

@@ -90,6 +90,14 @@ open class PollOptionDetailViewController: ViewController,
                 self?.showAlert(error: error)
             }
             .store(in: &subscriptions)
+        
+        viewModel.$event
+            .compactMap { $0 }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] event in
+                self?.onEvent(event)
+            }
+            .store(in: &subscriptions)
 
         // Reload table when option changes
         viewModel.$option
@@ -253,6 +261,15 @@ open class PollOptionDetailViewController: ViewController,
             if remainingVoters <= 5, viewModel.hasMore {
                 viewModel.loadNext()
             }
+        }
+    }
+    
+    open func onEvent(_ event: PollOptionDetailViewModel.Event) {
+        switch event {
+        case .reloadData:
+            tableView.reloadData()
+        default:
+            break
         }
     }
 

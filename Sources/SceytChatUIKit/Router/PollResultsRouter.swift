@@ -7,16 +7,16 @@
 //
 
 import UIKit
+import SceytChat
 
 open class PollResultsRouter: Router<PollResultsViewController> {
 
-    open func showPollOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int) {
+    open func showPollOptionDetail(option: PollOption, pollDetails: PollDetails, messageID: MessageId) {
         let viewController = Components.pollOptionDetailViewController.init()
         let viewModel = Components.pollOptionDetailViewModel.init(
             option: option,
             pollDetails: pollDetails,
-            questionText: questionText,
-            totalVotes: totalVotes
+            messageID: messageID
         )
         viewController.viewModel = viewModel
         rootViewController.show(viewController, sender: self)
