@@ -40,7 +40,9 @@ extension MessageCell {
                     isHidden = true
                     return
                 }
-                
+
+                backgroundColor = data.message.incoming ? appearance.incomingBubbleColor : appearance.outgoingBubbleColor
+
                 // Check if message has poll data
                 guard data.message.poll != nil else {
                     isHidden = true
@@ -103,7 +105,6 @@ extension MessageCell {
             typeLabel.textColor = appearance.pollViewAppearance.pollTypeTextStyle.foregroundColor
 
             separatorView.backgroundColor = appearance.pollViewAppearance.dividerColor
-            backgroundColor = appearance.outgoingBubbleColor
         }
 
         private func configure(with layoutModel: MessageLayoutModel) {
