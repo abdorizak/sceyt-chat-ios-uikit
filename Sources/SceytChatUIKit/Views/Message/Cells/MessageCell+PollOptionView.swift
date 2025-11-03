@@ -138,14 +138,14 @@ extension MessageCell {
             guard let viewModel else {
                 return
             }
-            
+
             voteCountLabel.text = String(viewModel.voteCount)
             optionLabel.text = viewModel.text
             progressBar.setProgress(viewModel.progress, animated: false)
             checkboxView.isSelected = viewModel.isSelected
             checkboxView.isHidden = viewModel.isClosed
             votersContainerView.isHidden = viewModel.isAnonymous
-            
+
             // Update option label leading constraint when checkbox is hidden
             optionLabelLeadingConstraint?.isActive = false
             if viewModel.isClosed {
@@ -153,13 +153,13 @@ extension MessageCell {
             } else {
                 optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
             }
-            
+
             votersStackView.removeArrangedSubviews()
             if !viewModel.isAnonymous {
                 createVoterAvatars(voters: viewModel.voters, appearance: appearance)
             }
         }
-        
+
         /// Update view model with animations
         func updateViewModel(_ newViewModel: PollOptionViewModel) {
             guard let oldViewModel = viewModel else {
@@ -221,12 +221,9 @@ extension MessageCell {
             } else {
                 voteCountLabel.text = String(newViewModel.voteCount)
             }
-            
-            // Animate progress bar smoothly
-            if abs(oldProgress - newViewModel.progress) > 0.001 {
-                progressBar.setProgress(newViewModel.progress, animated: true)
-            }
-            
+
+            progressBar.setProgress(newViewModel.progress, animated: true)
+
             // Animate checkbox selection with bounce effect
             if oldIsSelected != newViewModel.isSelected {
                 UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseInOut], animations: {
@@ -242,13 +239,8 @@ extension MessageCell {
             }
 
             votersStackView.removeArrangedSubviews()
-            // Update voters if changed (no animation)
-            if oldVoters.count != newViewModel.voters.count ||
-                !oldVoters.elementsEqual(newViewModel.voters, by: { $0.id == $1.id }) {
-                votersStackView.removeArrangedSubviews()
-                if !newViewModel.isAnonymous {
-                    createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
-                }
+            if !newViewModel.isAnonymous {
+                createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
             }
 
             // Update viewModel after all animations are set up
