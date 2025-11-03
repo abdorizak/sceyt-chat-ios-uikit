@@ -13,20 +13,17 @@ public struct CreatePollModel {
     public var options: [String]
     public var allowMultipleAnswers: Bool
     public var isAnonymous: Bool
-    public var allowRetractVotes: Bool
 
     public init(
         question: String = "",
         options: [String] = ["", ""],
         allowMultipleAnswers: Bool = true,
-        isAnonymous: Bool = false,
-        allowRetractVotes: Bool = true
+        isAnonymous: Bool = false
     ) {
         self.question = question
         self.options = options
         self.allowMultipleAnswers = allowMultipleAnswers
         self.isAnonymous = isAnonymous
-        self.allowRetractVotes = allowRetractVotes
     }
 
     public var isValid: Bool {

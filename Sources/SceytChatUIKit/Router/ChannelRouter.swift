@@ -241,9 +241,9 @@ open class ChannelRouter: Router<ChannelViewController> {
         rootViewController.present(nav, animated: true)
     }
 
-    open func showPollResults(pollResults: PollDetails) {
+    open func showPollResults(pollResults: PollDetails, messageID: MessageId) {
         let viewController = Components.pollResultsViewController.init()
-        viewController.viewModel = Components.pollResultsViewModel.init(pollResults: pollResults)
+        viewController.viewModel = Components.pollResultsViewModel.init(pollResults: pollResults, messageID: messageID)
         let nav = Components.navigationController.init()
         nav.viewControllers = [viewController]
         rootViewController.present(nav, animated: true)

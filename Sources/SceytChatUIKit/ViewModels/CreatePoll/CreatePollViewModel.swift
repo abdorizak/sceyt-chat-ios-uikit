@@ -72,10 +72,6 @@ open class CreatePollViewModel: NSObject {
         poll.isAnonymous = value
     }
 
-    public func updateAllowAddingOptions(_ value: Bool) {
-        poll.allowRetractVotes = value
-    }
-
     // MARK: - Validation
 
     public var canCreatePoll: Bool {

@@ -1815,7 +1815,7 @@ open class ChannelViewController: ViewController,
     
     open func showPollResults(for layoutModel: MessageLayoutModel) {
         guard let poll = layoutModel.message.poll else { return }
-        router.showPollResults(pollResults: poll)
+        router.showPollResults(pollResults: poll, messageID: layoutModel.message.id)
     }
     
     open func showProfile(user: ChatUser) {

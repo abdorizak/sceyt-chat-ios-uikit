@@ -8,6 +8,7 @@
 
 import UIKit
 import Combine
+import SceytChat
 
 open class PollResultsViewController: ViewController,
                                        UITableViewDelegate,
@@ -221,6 +222,13 @@ open class PollResultsViewController: ViewController,
         // Check if this is the "Show More" cell
         if indexPath.row == voterCount + 1 {
             viewModel.showMoreVoters(for: optionIndex)
+        } else if indexPath.row > 0 && indexPath.row <= voterCount {
+            // This is a voter cell, show user profile
+            let voterIndex = indexPath.row - 1
+            let voters = viewModel.voters(for: optionIndex)
+            if voterIndex < voters.count, let user = voters[voterIndex].user {
+                router.showProfile(user: user)
+            }
         }
     }
 
@@ -298,13 +306,13 @@ open class PollResultsViewController: ViewController,
         switch event {
         case .reloadData:
             tableView.reloadData()
-        case .showOptionDetail(let option, let pollDetails, let questionText, let totalVotes):
-            showOptionDetail(option: option, pollDetails: pollDetails, questionText: questionText, totalVotes: totalVotes)
+        case .showOptionDetail(let option, let pollDetails, let messageID):
+            showOptionDetail(option: option, pollDetails: pollDetails, messageID: messageID)
         }
     }
 
-    open func showOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int) {
-        router.showPollOptionDetail(option: option, pollDetails: pollDetails, questionText: questionText, totalVotes: totalVotes)
+    open func showOptionDetail(option: PollOption, pollDetails: PollDetails, messageID: MessageId) {
+        router.showPollOptionDetail(option: option, pollDetails: pollDetails, messageID: messageID)
     }
 }
 

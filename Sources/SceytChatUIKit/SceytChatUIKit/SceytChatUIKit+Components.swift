@@ -94,6 +94,7 @@ extension SceytChatUIKit {
         public static var joinGroupRouter: JoinGroupRouter.Type = JoinGroupRouter.self
         public static var inputRouter: InputRouter.Type = InputRouter.self
         public static var pollResultsRouter: PollResultsRouter.Type = PollResultsRouter.self
+        public static var pollOptionDetailRouter: PollOptionDetailRouter.Type = PollOptionDetailRouter.self
         public static var previewerRouter: PreviewerRouter.Type = PreviewerRouter.self
 
         // MARK: - Cells

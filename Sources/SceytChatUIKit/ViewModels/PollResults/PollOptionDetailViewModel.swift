@@ -14,37 +14,37 @@ open class PollOptionDetailViewModel: NSObject {
 
     @Published public var option: PollOption
     @Published public var pollDetails: PollDetails
-    @Published public var questionText: String
-    @Published public var totalVotes: Int
+    @Published public var event: Event?
     @Published public var isLoading = false
     @Published public var error: Error?
 
+    public let messageID: MessageId
+
     open private(set) var votesQuery: PollVotesListQuery!
-    private var allVoters: [PollVote] = []
+    private var allVoters: [PollVoterRepresentable] = []
 
     public required init(
         option: PollOption,
         pollDetails: PollDetails,
-        questionText: String,
-        totalVotes: Int
+        messageID: MessageId
     ) {
         self.option = option
         self.pollDetails = pollDetails
-        self.questionText = questionText
-        self.totalVotes = totalVotes
+        self.messageID = messageID
         super.init()
 
         // Initialize query for fetching voters
         createVotesQuery()
 
         // Initialize with existing voters
-        allVoters = voters()
+        allVoters = defaultVoters()
     }
 
     private func createVotesQuery() {
         votesQuery = PollVotesListQuery
             .Builder(pollId: pollDetails.id)
             .optionId(option.id)
+            .messageID(messageID)
             .limit(SceytChatUIKit.shared.config.queryLimits.pollVotersListQueryLimit)
             .build()
     }
@@ -55,15 +55,19 @@ open class PollOptionDetailViewModel: NSObject {
         allVoters.count
     }
 
-    public func voters() -> [PollVote] {
-        // Combine both ownVotes and votes
-        let allVotes = pollDetails.ownVotes
+    public func defaultVoters() -> [PollVoterRepresentable] {
+        var ownVotes: [PollVoterRepresentable] = []
+        if let pending = pollDetails.pendingVotes?.first(where: { $0.optionId == option.id }) {
+            ownVotes = [pending]
+        } else {
+            ownVotes = pollDetails.ownVotes
+        }
 
         // Filter votes belonging to this option
-        return allVotes.filter { $0.optionId == option.id }
+        return ownVotes.filter { $0.optionId == option.id }
     }
 
-    public func voter(at index: Int) -> PollVote? {
+    public func voter(at index: Int) -> PollVoterRepresentable? {
         guard index < allVoters.count else { return nil }
         return allVoters[index]
     }
@@ -75,7 +79,7 @@ open class PollOptionDetailViewModel: NSObject {
 
         isLoading = true
 
-        votesQuery.loadNext { [weak self] _, votes, error in
+        votesQuery.loadNext { [weak self] _, voters, error in
             guard let self = self else { return }
 
             DispatchQueue.main.async {
@@ -86,21 +90,21 @@ open class PollOptionDetailViewModel: NSObject {
                     return
                 }
 
-                if let votes = votes {
-                    let pollVotes = votes.map { vote in
-                        PollVote(
+                if let newVoters = voters {
+                    for v in newVoters {
+                        let pollVote = PollVote(
                             pollId: self.pollDetails.id,
                             optionId: self.option.id,
-                            userId: vote.user.id ?? "",
-                            createdAt: Int64(vote.createdAt.timeIntervalSince1970),
-                            user: ChatUser(user: vote.user)
+                            userId: v.user.id ?? "",
+                            createdAt: Int64(v.createdAt.timeIntervalSince1970),
+                            user: ChatUser(user: v.user)
                         )
+                        
+                        self.allVoters.append(pollVote)
                     }
-                    
-                    // Append new voters to the existing list
-                    pollVotes.forEach {
-                        self.allVoters.append($0)
-                    }
+
+                    // Trigger table view reload
+                    self.event = .reloadData
                 }
             }
         }
@@ -108,5 +112,11 @@ open class PollOptionDetailViewModel: NSObject {
 
     public var hasMore: Bool {
         votesQuery.hasNext
+    }
+}
+
+public extension PollOptionDetailViewModel {
+    enum Event {
+        case reloadData
     }
 }

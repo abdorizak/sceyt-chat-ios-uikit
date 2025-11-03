@@ -8,6 +8,7 @@
 
 import Foundation
 import Combine
+import SceytChat
 
 open class PollResultsViewModel: NSObject {
 
@@ -16,8 +17,11 @@ open class PollResultsViewModel: NSObject {
     @Published public var isLoading = false
     @Published public var error: Error?
 
-    public required init(pollResults: PollDetails) {
+    public let messageID: MessageId
+
+    public required init(pollResults: PollDetails, messageID: MessageId) {
         self.pollResults = pollResults
+        self.messageID = messageID
         super.init()
     }
 
@@ -32,12 +36,18 @@ open class PollResultsViewModel: NSObject {
         return pollResults.options[index]
     }
     
-    // TODO: Check this condition logic
     public func voters(for optionIndex: Int) -> [PollVoterRepresentable] {
         guard let option = option(at: optionIndex) else { return [] }
         
+        var ownVotes: [PollVoterRepresentable] = []
+        if let pending = pollResults.pendingVotes?.first(where: { $0.optionId == option.id }) {
+            ownVotes = [pending]
+        } else {
+            ownVotes = pollResults.ownVotes
+        }
+        
         // Combine both ownVotes and votes
-        let allVotes = pollResults.ownVotes + pollResults.votes
+        let allVotes = ownVotes + pollResults.votes
 
         // Filter votes belonging to this option
         return allVotes.filter { $0.optionId == option.id }
@@ -55,12 +65,10 @@ open class PollResultsViewModel: NSObject {
 
     public func showMoreVoters(for optionIndex: Int) {
         guard let option = option(at: optionIndex) else { return }
-        let totalVotes = pollResults.votesPerOption.values.reduce(0) { $0 + $1 }
         event = .showOptionDetail(
             option: option,
             pollDetails: pollResults,
-            questionText: pollResults.name,
-            totalVotes: totalVotes
+            messageID: messageID
         )
     }
 }
@@ -68,6 +76,6 @@ open class PollResultsViewModel: NSObject {
 public extension PollResultsViewModel {
     enum Event {
         case reloadData
-        case showOptionDetail(option: PollOption, pollDetails: PollDetails, questionText: String, totalVotes: Int)
+        case showOptionDetail(option: PollOption, pollDetails: PollDetails, messageID: MessageId)
     }
 }
