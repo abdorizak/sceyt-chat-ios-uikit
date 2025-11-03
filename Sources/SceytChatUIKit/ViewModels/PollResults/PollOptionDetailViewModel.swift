@@ -21,7 +21,7 @@ open class PollOptionDetailViewModel: NSObject {
     public let messageID: MessageId
 
     open private(set) var votesQuery: PollVotesListQuery!
-    private var allVoters: [PollVote] = []
+    private var allVoters: [PollVoterRepresentable] = []
 
     public required init(
         option: PollOption,
@@ -37,7 +37,7 @@ open class PollOptionDetailViewModel: NSObject {
         createVotesQuery()
 
         // Initialize with existing voters
-        allVoters = voters()
+        allVoters = defaultVoters()
     }
 
     private func createVotesQuery() {
@@ -55,15 +55,19 @@ open class PollOptionDetailViewModel: NSObject {
         allVoters.count
     }
 
-    public func voters() -> [PollVote] {
-        // Combine both ownVotes and votes
-        let allVotes = pollDetails.ownVotes
+    public func defaultVoters() -> [PollVoterRepresentable] {
+        var ownVotes: [PollVoterRepresentable] = []
+        if let pending = pollDetails.pendingVotes?.first(where: { $0.optionId == option.id }) {
+            ownVotes = [pending]
+        } else {
+            ownVotes = pollDetails.ownVotes
+        }
 
         // Filter votes belonging to this option
-        return allVotes.filter { $0.optionId == option.id }
+        return ownVotes.filter { $0.optionId == option.id }
     }
 
-    public func voter(at index: Int) -> PollVote? {
+    public func voter(at index: Int) -> PollVoterRepresentable? {
         guard index < allVoters.count else { return nil }
         return allVoters[index]
     }
