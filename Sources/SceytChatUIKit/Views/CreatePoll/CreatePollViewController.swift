@@ -190,7 +190,7 @@ open class CreatePollViewController: ViewController,
         switch section {
         case 0: return 1 // Question field
         case 1: return viewModel.poll.options.count + (shouldShowAddOptionCell ? 1 : 0) // Options + Add button
-        case 2: return 3 // 3 switch cells for parameters
+        case 2: return 2 // 2 switch cells for parameters
         default: return 0
         }
     }
@@ -267,12 +267,6 @@ open class CreatePollViewController: ViewController,
                 cell.switchControl.isOn = viewModel.poll.allowMultipleAnswers
                 cell.onSwitchChanged = { [weak self] isOn in
                     self?.viewModel.updateAllowMultipleAnswers(isOn)
-                }
-            case 2:
-                cell.titleLabel.text = appearance.allowAddingOptionsText
-                cell.switchControl.isOn = viewModel.poll.allowRetractVotes
-                cell.onSwitchChanged = { [weak self] isOn in
-                    self?.viewModel.updateAllowAddingOptions(isOn)
                 }
             default:
                 break
