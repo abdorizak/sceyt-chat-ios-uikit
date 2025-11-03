@@ -176,7 +176,7 @@ open class QRCodeViewController: ViewController {
     }
 
     @objc open func shareButtonTapped() {
-        var activityItems: [Any] = [inviteLink]
+        var activityItems: [Any] = []
         
         // Add composite QR code image if available
         if let compositeImage = createCompositeQRCodeImage() {
