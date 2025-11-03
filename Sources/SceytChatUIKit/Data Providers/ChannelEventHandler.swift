@@ -305,41 +305,22 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
     }
 
     open func channel(_ channel: Channel, user: User, didAddVote message: Message) {
-        guard let poll = message.poll else {
-            return
-        }
-
-        self.database.read {
-            let messageDTO = MessageDTO.fetch(id: message.id, context: $0)
-            let ownVotes = (messageDTO?.poll?.ownVotes?.array as? [PollVoteDTO]) ?? []
-            let pollDetails = PollDetails(poll: poll, messageTid: Int64(message.tid), ownVotes: ownVotes)
-            let pollUIModel = PollViewModel(from: pollDetails, isIncmoing: message.incoming)
-            NotificationCenter.default.post(
-                name: .didUpdateMessagePoll,
-                object: nil,
-                userInfo: ["pollUIModel": pollUIModel]
-            )
-        }
-
-        // Update database after UI animation completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-            self.database.write {
-                // Preserve existing ownVotes when updating poll votes
-                let existingMessageDTO = MessageDTO.fetch(id: message.id, context: $0)
-                let existingOwnVotes = existingMessageDTO?.poll?.ownVotes?.copy() as? NSOrderedSet
-                let messageDTO = $0.createOrUpdate(message: message, channelId: channel.id, changedBy: user)
-                // Restore ownVotes if they existed
-                if let existingOwnVotes = existingOwnVotes, let pollDTO = messageDTO.poll {
-                    pollDTO.ownVotes = existingOwnVotes
-                }
-            } completion: { error in
-                logger.debug(error?.localizedDescription ?? "")
-            }
-        }
+        updatePollMessage(channel, message, user: user)
     }
 
     open func channel(_ channel: Channel, user: User, didDeleteVote message: Message) {
+        updatePollMessage(channel, message, user: user)
+    }
+
+    open func channel(_ channel: Channel, user: User, didRetractVote message: Message) {
+        updatePollMessage(channel, message, user: user)
+    }
+
+    open func channel(_ channel: Channel, user: User, didClosePoll message: Message) {
+        updatePollMessage(channel, message, user: user)
+    }
+
+    func updatePollMessage(_ channel: Channel, _ message: Message, user: User) {
         guard let poll = message.poll else {
             return
         }
@@ -374,68 +355,6 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
         }
     }
 
-    open func channel(_ channel: Channel, user: User, didRetractVote message: Message) {
-        // Post UI notification first for optimistic update
-//        if let poll = PollDetails(poll: message.poll, messageTid: message.id)
-//        if let pollUIModel = PollUIModel(from: message.poll, messageId: message.id, currentUserId: chatClient.user.id) {
-//            NotificationCenter.default.post(
-//                name: .didUpdateMessagePoll,
-//                object: nil,
-//                userInfo: ["pollUIModel": pollUIModel]
-//            )
-//        }
-
-        // Update database after UI animation completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-            self.database.write {
-                // Preserve existing ownVotes when updating poll votes
-                let existingMessageDTO = MessageDTO.fetch(id: message.id, context: $0)
-                let existingOwnVotes = existingMessageDTO?.poll?.ownVotes?.copy() as? NSOrderedSet
-                let messageDTO = $0.createOrUpdate(message: message, channelId: channel.id, changedBy: user)
-                // Restore ownVotes if they existed
-                if let existingOwnVotes = existingOwnVotes, let pollDTO = messageDTO.poll {
-                    pollDTO.ownVotes = existingOwnVotes
-                }
-            } completion: { error in
-                logger.debug(error?.localizedDescription ?? "")
-            }
-        }
-    }
-
-    open func channel(_ channel: Channel, user: User, didClosePoll message: Message) {
-        // Post UI notification first for optimistic update
-        
-//        self.database.read {
-//            let existingMessageDTO = MessageDTO.fetch(id: message.id, context: $0)
-//            let existingOwnVotes = existingMessageDTO?.poll?.ownVotes?.copy() as? NSOrderedSet
-//
-//            if let pollUIModel = PollUIModel(from: message.poll, messageId: message.id, currentUserId: chatClient.user.id) {
-//                NotificationCenter.default.post(
-//                    name: .didUpdateMessagePoll,
-//                    object: nil,
-//                    userInfo: ["pollUIModel": pollUIModel]
-//                )
-//            }
-//            
-//        }
-        // Update database after UI animation completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
-            self.database.write {
-                // Preserve existing ownVotes when updating poll votes
-                let existingMessageDTO = MessageDTO.fetch(id: message.id, context: $0)
-                let existingOwnVotes = existingMessageDTO?.poll?.ownVotes?.copy() as? NSOrderedSet
-                let messageDTO = $0.createOrUpdate(message: message, channelId: channel.id, changedBy: user)
-                // Restore ownVotes if they existed
-                if let existingOwnVotes = existingOwnVotes, let pollDTO = messageDTO.poll {
-                    pollDTO.ownVotes = existingOwnVotes
-                }
-            } completion: { error in
-                logger.debug(error?.localizedDescription ?? "")
-            }
-        }
-    }
 
     open func markReceivedMessageAsReceivedIfNeeded(
         message: Message,

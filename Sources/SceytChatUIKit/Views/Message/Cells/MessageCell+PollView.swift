@@ -27,7 +27,10 @@ extension MessageCell {
             .withoutAutoresizingMask
 
         private var optionViews: [Int: PollOptionView] = [:]
-
+        
+        // Store the current PollViewModel to pass with actions
+        private(set) var pollViewModel: PollViewModel?
+        
         open lazy var separatorView = UIView()
             .withoutAutoresizingMask
 
@@ -54,7 +57,7 @@ extension MessageCell {
             }
         }
 
-        public var onDidTapOption: ((Int) -> Void)?
+        public var onDidTapOption: ((Int, PollViewModel) -> Void)?
         public var onDidTapViewResults: (() -> Void)?
         
         override open func setup() {
@@ -120,6 +123,9 @@ extension MessageCell {
             }
 
             let viewModel = PollViewModel(from: poll, isIncmoing: layoutModel.message.incoming)
+            // Store the current PollViewModel
+            self.pollViewModel = viewModel
+            
             questionLabel.text = viewModel.question
             typeLabel.text = viewModel.pollTypeText
 
@@ -155,14 +161,17 @@ extension MessageCell {
             guard let view = sender.view,
                   let pollOptionView = view as? PollOptionView,
                   let data = data,
-                  let poll = data.message.poll,
-                  !poll.closed else { return }
-            pollOptionView.checkboxView.isSelected.toggle()
+                  let currentPollViewModel = pollViewModel,
+                  !currentPollViewModel.closed else { return }
+            // Check if interaction is disabled (vote in progress)
+            guard view.isUserInteractionEnabled else { return }
             let index = view.tag
-            onDidTapOption?(index)
+            onDidTapOption?(index, currentPollViewModel)
         }
-        
+
         open func updatePoll(poll: PollViewModel) {
+            // Update stored PollViewModel
+            self.pollViewModel = poll
             for (index, option) in poll.options.enumerated() {
                 self.updateOption(with: option, at: index, animated: true)
             }
@@ -176,8 +185,6 @@ extension MessageCell {
                   index >= 0 && index < poll.options.count else {
                 return
             }
-
-            let option = poll.options[index]
 
             if animated {
                 optionView.updateViewModel(viewModel)

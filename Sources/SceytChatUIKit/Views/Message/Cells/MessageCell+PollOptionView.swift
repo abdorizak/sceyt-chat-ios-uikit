@@ -66,7 +66,7 @@ extension MessageCell {
                 setupAppearance()
             }
         }
-
+        
         // MARK: Setup
         
         open override func setup() {
@@ -168,9 +168,15 @@ extension MessageCell {
                 return
             }
             
+            // Capture old values before comparison (in case oldViewModel and newViewModel are same reference)
+            let oldVoteCount = oldViewModel.voteCount
+            let oldProgress = oldViewModel.progress
+            let oldIsSelected = oldViewModel.isSelected
+            let oldVoters = oldViewModel.voters
+            
             // Animate vote count change with directional transition
-            if oldViewModel.voteCount != newViewModel.voteCount {
-                let isIncreasing = newViewModel.voteCount > oldViewModel.voteCount
+            if oldVoteCount != newViewModel.voteCount {
+                let isIncreasing = newViewModel.voteCount > oldVoteCount
                 // Calculate transition distance based on label height or font line height
                 let labelHeight: CGFloat = {
                     if voteCountLabel.bounds.height > 0 {
@@ -217,12 +223,12 @@ extension MessageCell {
             }
             
             // Animate progress bar smoothly
-            if abs(oldViewModel.progress - newViewModel.progress) > 0.001 {
+            if abs(oldProgress - newViewModel.progress) > 0.001 {
                 progressBar.setProgress(newViewModel.progress, animated: true)
             }
             
             // Animate checkbox selection with bounce effect
-            if oldViewModel.isSelected != newViewModel.isSelected {
+            if oldIsSelected != newViewModel.isSelected {
                 UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseInOut], animations: {
                     self.checkboxView.isSelected = newViewModel.isSelected
                     if newViewModel.isSelected {
@@ -237,8 +243,8 @@ extension MessageCell {
 
             votersStackView.removeArrangedSubviews()
             // Update voters if changed (no animation)
-            if oldViewModel.voters.count != newViewModel.voters.count ||
-                !oldViewModel.voters.elementsEqual(newViewModel.voters, by: { $0.id == $1.id }) {
+            if oldVoters.count != newViewModel.voters.count ||
+                !oldVoters.elementsEqual(newViewModel.voters, by: { $0.id == $1.id }) {
                 votersStackView.removeArrangedSubviews()
                 if !newViewModel.isAnonymous {
                     createVoterAvatars(voters: newViewModel.voters, appearance: appearance)

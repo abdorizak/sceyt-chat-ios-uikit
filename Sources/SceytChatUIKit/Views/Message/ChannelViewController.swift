@@ -1398,6 +1398,7 @@ open class ChannelViewController: ViewController,
             }
             return self.channelViewModel.previewer
         }
+
         cell.onAction = { [weak self] action in
             guard let self else { return }
             
@@ -1462,8 +1463,8 @@ open class ChannelViewController: ViewController,
                 self.reply(layoutModel: model, in: false)
             case .didTapViewPollResults:
                 self.showPollResults(for: model)
-            case .didTapPollOption(let optionIndex):
-                self.didTapPollOption(layoutModel: model, optionIndex: optionIndex)
+            case .didTapPollOption(let optionIndex, let pollViewModel):
+                self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
             }
         }
         cell.contextMenu = contextMenu
@@ -1731,63 +1732,49 @@ open class ChannelViewController: ViewController,
     
     // MARK: - Poll Operations
     
-    open func didTapPollOption(layoutModel: MessageLayoutModel, optionIndex: Int) {
-        guard let poll = layoutModel.message.poll else { return }
+    open func didTapPollOption(layoutModel: MessageLayoutModel, optionIndex: Int, pollViewModel: PollViewModel) {
+        // Use the passed PollViewModel which reflects the current UI state
+        // (including pending votes and optimistic updates)
 
         // Check if poll is closed
-        guard !poll.closed else {
+        guard !pollViewModel.closed else {
             // Optionally show poll results if closed
             return
         }
 
-        // Validate option index
-        guard optionIndex >= 0, optionIndex < poll.options.count else {
+        // Check if there's a pending vote for this poll message
+        guard !channelViewModel.hasPendingPollVote(for: layoutModel.message.id) else {
             return
         }
 
-        let option = poll.options[optionIndex]
-        let isAlreadySelected = poll.ownVotes.contains(where: { $0.optionId == option.id })
+        // Validate option index
+        guard optionIndex >= 0, optionIndex < pollViewModel.options.count else {
+            return
+        }
+
+        // Get the option from PollViewModel which reflects the current selection state
+        // (including pending votes)
+        let optionViewModel = pollViewModel.options[optionIndex]
+        let isAlreadySelected = optionViewModel.isSelected
 
         if isAlreadySelected {
             // Option is already selected - remove vote if retracting is allowed
-            if poll.allowVoteRetract {
+            if pollViewModel.allowVoteRetract {
                 channelViewModel.deletePollVote(
                     layoutModel: layoutModel,
-                    optionId: option.id
+                    pollViewModel: pollViewModel,
+                    optionId: optionViewModel.id
                 )
             }
         } else {
-            // Option is not selected - add vote
-            if poll.allowMultipleVotes {
-                // Multiple votes allowed - just add this vote
-                channelViewModel.addPollVote(
-                    layoutModel: layoutModel,
-                    optionId: option.id
-                )
-            } else {
-                // Single vote only - retract all existing votes first, then add new one
-                let selectedOptionIds = poll.options
-                    .enumerated()
-//                    .filter { $0.element.selected }
-                    .map { $0.element.id }
-
-                if !selectedOptionIds.isEmpty {
-                    // Remove all existing votes
-                    channelViewModel.deletePollVotes(
-                        layoutModel: layoutModel,
-                        optionIds: selectedOptionIds
-                    )
-                }
-
-                // Add the new vote
-                channelViewModel.addPollVote(
-                    layoutModel: layoutModel,
-                    optionId: option.id
-                )
-            }
+            channelViewModel.addPollVote(
+                layoutModel: layoutModel,
+                pollViewModel: pollViewModel,
+                optionId: optionViewModel.id
+            )
         }
     }
-    
+
     open func showLink(_ link: URL) {
         router.showLink(link)
     }
@@ -2299,13 +2286,19 @@ open class ChannelViewController: ViewController,
     }
     
     open func showEndPollAlert(for layoutModel: MessageLayoutModel) {
+        guard let pollDetails = layoutModel.message.poll else { return }
+        let pollViewModel = PollViewModel(from: pollDetails, isIncmoing: layoutModel.message.incoming)
+        
         showAlert(
             title: "End Poll",
             message: "Are you sure you want to end this poll? People will no longer be able to vote.",
             actions: [
                 .init(title: L10n.Alert.Button.cancel, style: .cancel),
                 .init(title: "End", style: .destructive) { [weak self] in
-                    self?.channelViewModel.closePoll(layoutModel: layoutModel) { [weak self] error in
+                    self?.channelViewModel.closePoll(
+                        layoutModel: layoutModel,
+                        pollViewModel: pollViewModel
+                    ) { [weak self] error in
                         if let error = error {
                             self?.showAlert(error: error)
                         }
@@ -2410,13 +2403,24 @@ open class ChannelViewController: ViewController,
         }
         
         if isPoll {
+            let pollViewModel: PollViewModel?
+            if let pollDetails = model.message.poll {
+                pollViewModel = PollViewModel(from: pollDetails, isIncmoing: model.message.incoming)
+            } else {
+                pollViewModel = nil
+            }
+            
             items += [
                 .init(
                     title: "Retract Vote",
                     image: .messageActionRetractVote,
                     imageRenderingMode: .alwaysTemplate,
                     action: { [weak self] _ in
-                        self?.channelViewModel.retractPollVote(layoutModel: model) { _ in
+                        guard let pollViewModel = pollViewModel else { return }
+                        self?.channelViewModel.retractPollVote(
+                            layoutModel: model,
+                            pollViewModel: pollViewModel
+                        ) { _ in
                         }
                     }
                 )]

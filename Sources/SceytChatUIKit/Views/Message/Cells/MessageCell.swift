@@ -130,8 +130,8 @@ open class MessageCell: CollectionViewCell,
             onAction?(.openUrl(view.link))
         }
         
-        pollView.onDidTapOption = { [unowned self] index in
-            onAction?(.didTapPollOption(index))
+        pollView.onDidTapOption = { [unowned self] index, pollViewModel in
+            onAction?(.didTapPollOption(index, pollViewModel))
         }
         
         pollView.onDidTapViewResults = { [unowned self] in
@@ -447,7 +447,7 @@ open class MessageCell: CollectionViewCell,
 
         pollView.updatePoll(poll: pollUIModel)
     }
-    
+
     // MARK: Actions
     @objc
     open func replyCountAction(_ sender: UIButton) {
@@ -715,7 +715,7 @@ public extension MessageCell {
         case didTapMentionUser(String)
         case didTapAvatar
         case didSwipe
-        case didTapPollOption(Int)
+        case didTapPollOption(Int, PollViewModel)
         case didTapViewPollResults
     }
     

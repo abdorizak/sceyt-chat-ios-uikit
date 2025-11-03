@@ -6,7 +6,7 @@
 //
 
 /// UI model for displaying poll in the view
-public struct PollViewModel {
+public final class PollViewModel {
     let pollId: String
     let question: String
     let pollTypeText: String
