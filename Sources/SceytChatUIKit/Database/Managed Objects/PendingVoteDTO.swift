@@ -17,6 +17,7 @@ public class PendingVoteDTO: NSManagedObject {
     @NSManaged public var messageTid: Int64
     @NSManaged public var createdAt: Int64
     @NSManaged public var isAdd: Bool
+    @NSManaged public var poll: PollDTO?
     @NSManaged public var user: UserDTO?
     
     @nonobjc
@@ -52,6 +53,10 @@ public class PendingVoteDTO: NSManagedObject {
         context: NSManagedObjectContext
     ) -> PendingVoteDTO {
         if let vote = fetch(pollId: pollId, optionId: optionId, userId: userId, context: context) {
+            // Set poll relationship if not already set
+            if vote.poll == nil {
+                vote.poll = PollDTO.fetch(id: pollId, context: context)
+            }
             return vote
         }
 
@@ -61,6 +66,7 @@ public class PendingVoteDTO: NSManagedObject {
         mo.messageTid = messageTid
         mo.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
         mo.user = UserDTO.fetchOrCreate(id: userId, context: context)
+        mo.poll = PollDTO.fetch(id: pollId, context: context)
         return mo
     }
 }

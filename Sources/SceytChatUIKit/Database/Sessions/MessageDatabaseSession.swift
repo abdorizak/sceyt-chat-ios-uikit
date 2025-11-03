@@ -1114,7 +1114,7 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             optionDTO.poll = pollDTO
             return optionDTO
         }
-        pollDTO.options = NSSet(array: optionDTOs)
+        pollDTO.options = NSOrderedSet(array: optionDTOs)
         
         // Create or update votes
         let voteDTOs = poll.votes.map { vote -> PollVoteDTO in
@@ -1128,8 +1128,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             voteDTO.pollDetails = pollDTO
             return voteDTO
         }
-        pollDTO.votes = NSSet(array: voteDTOs)
-        
+        pollDTO.votes = NSOrderedSet(array: voteDTOs)
+
         // Create or update own votes
         let ownVoteDTOs = poll.ownVotes.map { vote -> PollVoteDTO in
             let voteDTO = PollVoteDTO.fetchOrCreate(
@@ -1142,8 +1142,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             voteDTO.ownPollDetails = pollDTO
             return voteDTO
         }
-        pollDTO.ownVotes = NSSet(array: ownVoteDTOs)
-        
+        pollDTO.ownVotes = NSOrderedSet(array: ownVoteDTOs)
+
         dto.poll = pollDTO
         return dto
     }

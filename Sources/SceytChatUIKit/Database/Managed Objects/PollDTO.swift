@@ -25,9 +25,10 @@ public class PollDTO: NSManagedObject {
     @NSManaged public var closed: Bool
     @NSManaged public var messageTid: Int64
     @NSManaged public var message: MessageDTO?
-    @NSManaged public var options: NSSet?
-    @NSManaged public var votes: NSSet?
-    @NSManaged public var ownVotes: NSSet?
+    @NSManaged public var options: NSOrderedSet?
+    @NSManaged public var votes: NSOrderedSet?
+    @NSManaged public var ownVotes: NSOrderedSet?
+    @NSManaged public var pendingVotes: NSSet?
     
     @nonobjc
     public static func fetchRequest() -> NSFetchRequest<PollDTO> {
@@ -91,51 +92,3 @@ public class PollDTO: NSManagedObject {
         return self
     }
 }
-
-extension PollDTO: Identifiable { }
-
-// MARK: Generated accessors for options
-extension PollDTO {
-    @objc(addOptionsObject:)
-    @NSManaged public func addToOptions(_ value: PollOptionDTO)
-    
-    @objc(removeOptionsObject:)
-    @NSManaged public func removeFromOptions(_ value: PollOptionDTO)
-    
-    @objc(addOptions:)
-    @NSManaged public func addToOptions(_ values: NSSet)
-    
-    @objc(removeOptions:)
-    @NSManaged public func removeFromOptions(_ values: NSSet)
-}
-
-// MARK: Generated accessors for votes
-extension PollDTO {
-    @objc(addVotesObject:)
-    @NSManaged public func addToVotes(_ value: PollVoteDTO)
-    
-    @objc(removeVotesObject:)
-    @NSManaged public func removeFromVotes(_ value: PollVoteDTO)
-    
-    @objc(addVotes:)
-    @NSManaged public func addToVotes(_ values: NSSet)
-    
-    @objc(removeVotes:)
-    @NSManaged public func removeFromVotes(_ values: NSSet)
-}
-
-// MARK: Generated accessors for ownVotes
-extension PollDTO {
-    @objc(addOwnVotesObject:)
-    @NSManaged public func addToOwnVotes(_ value: PollVoteDTO)
-    
-    @objc(removeOwnVotesObject:)
-    @NSManaged public func removeFromOwnVotes(_ value: PollVoteDTO)
-    
-    @objc(addOwnVotes:)
-    @NSManaged public func addToOwnVotes(_ values: NSSet)
-    
-    @objc(removeOwnVotes:)
-    @NSManaged public func removeFromOwnVotes(_ values: NSSet)
-}
-

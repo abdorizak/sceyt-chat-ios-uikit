@@ -177,6 +177,7 @@
         <attribute name="messageTid" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="optionId" optional="YES" attributeType="String"/>
         <attribute name="pollId" optional="YES" attributeType="String"/>
+        <relationship name="poll" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PollDTO" inverseName="pendingVotes" inverseEntity="PollDTO"/>
         <relationship name="user" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserDTO" inverseName="pendingVote" inverseEntity="UserDTO"/>
     </entity>
     <entity name="PollDTO" representedClassName="PollDTO" syncable="YES">
@@ -193,9 +194,10 @@
         <attribute name="updatedAt" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="votesPerOption" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="NSDictionary"/>
         <relationship name="message" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="MessageDTO" inverseName="poll" inverseEntity="MessageDTO"/>
-        <relationship name="options" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PollOptionDTO" inverseName="poll" inverseEntity="PollOptionDTO"/>
-        <relationship name="ownVotes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PollVoteDTO" inverseName="ownPollDetails" inverseEntity="PollVoteDTO"/>
-        <relationship name="votes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PollVoteDTO" inverseName="pollDetails" inverseEntity="PollVoteDTO"/>
+        <relationship name="options" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="PollOptionDTO" inverseName="poll" inverseEntity="PollOptionDTO"/>
+        <relationship name="ownVotes" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="PollVoteDTO" inverseName="ownPollDetails" inverseEntity="PollVoteDTO"/>
+        <relationship name="pendingVotes" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PendingVoteDTO" inverseName="poll" inverseEntity="PendingVoteDTO"/>
+        <relationship name="votes" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="PollVoteDTO" inverseName="pollDetails" inverseEntity="PollVoteDTO"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="id"/>
