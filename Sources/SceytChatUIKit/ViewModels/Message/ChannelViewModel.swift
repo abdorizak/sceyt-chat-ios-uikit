@@ -1798,13 +1798,30 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         if isSingleSelection {
             // For single selection: when adding an option, deselect all others
             if let addOptionId {
+                // Find the previously selected option (if different from the new one)
+                let previouslySelectedOption = currentPollViewModel.options.first { option in
+                    option.isSelected && option.id != addOptionId
+                }
+
+                // Decrease vote count for previously selected option if it exists
+                if let previouslySelectedOption {
+                    previouslySelectedOption.voteCount = max(0, previouslySelectedOption.voteCount - 1)
+                }
+
+                // Update selection state for all options
                 currentPollViewModel.options.forEach { option in
                     option.isSelected = option.id == addOptionId
+                }
+
+                // Increase vote count for the newly selected option
+                if let optionToAdd = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
+                    optionToAdd.voteCount += 1
                 }
             } else if let removeOptionId {
                 // Removing a vote in single selection means deselecting it
                 if let optionToRemove = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
                     optionToRemove.isSelected = false
+                    optionToRemove.voteCount = max(0, optionToRemove.voteCount - 1)
                 }
             }
         } else {
@@ -1812,21 +1829,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             if let addOptionId {
                 if let optionToAdd = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
                     optionToAdd.isSelected = true
+                    optionToAdd.voteCount += 1
                 }
             } else if let removeOptionId {
                 if let optionToRemove = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
                     optionToRemove.isSelected = false
+                    optionToRemove.voteCount = max(0, optionToRemove.voteCount - 1)
                 }
             }
-        }
-
-        // Update vote counts optimistically
-        if let addOptionId, let optionToUpdate = currentPollViewModel.options.first(where: { $0.id == addOptionId }) {
-            optionToUpdate.voteCount += 1
-        }
-        
-        if let removeOptionId, let optionToUpdate = currentPollViewModel.options.first(where: { $0.id == removeOptionId }) {
-            optionToUpdate.voteCount = max(0, optionToUpdate.voteCount - 1)
         }
 
         // Recalculate progress based on new vote counts
@@ -2707,5 +2717,6 @@ public extension ChannelViewModel {
         }
     }
 }
+
 
 
