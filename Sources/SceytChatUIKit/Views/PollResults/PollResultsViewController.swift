@@ -222,6 +222,13 @@ open class PollResultsViewController: ViewController,
         // Check if this is the "Show More" cell
         if indexPath.row == voterCount + 1 {
             viewModel.showMoreVoters(for: optionIndex)
+        } else if indexPath.row > 0 && indexPath.row <= voterCount {
+            // This is a voter cell, show user profile
+            let voterIndex = indexPath.row - 1
+            let voters = viewModel.voters(for: optionIndex)
+            if voterIndex < voters.count, let user = voters[voterIndex].user {
+                router.showProfile(user: user)
+            }
         }
     }
 

@@ -14,6 +14,7 @@ open class PollOptionDetailViewController: ViewController,
                                             UITableViewDataSource {
 
     open var viewModel: PollOptionDetailViewModel!
+    open lazy var router = Components.pollOptionDetailRouter.init(rootViewController: self)
     private var subscriptions = Set<AnyCancellable>()
 
     open lazy var tableView = UITableView(frame: .zero, style: .grouped)
@@ -204,6 +205,15 @@ open class PollOptionDetailViewController: ViewController,
     
     open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+
+        // Skip the first cell (vote count info cell)
+        guard indexPath.row > 0 else { return }
+
+        // This is a voter cell, show user profile
+        let voterIndex = indexPath.row - 1
+        if let voter = viewModel.voter(at: voterIndex), let user = voter.user {
+            router.showProfile(user: user)
+        }
     }
 
     open func tableView(
