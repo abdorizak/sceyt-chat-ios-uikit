@@ -382,11 +382,11 @@ open class ChannelMessageProvider: DataProvider {
                 pollId: pollId,
                 optionIds: optionIds
             ) { message, error in
-                guard let message = message
-                else {
+                guard let message = message  else {
                     completion?(error)
                     return
                 }
+
                 self.database.write {
                     // Remove pending votes after successful vote
                     if let messageDTO = MessageDTO.fetch(id: message.id, context: $0) {
@@ -403,6 +403,7 @@ open class ChannelMessageProvider: DataProvider {
                             }
                         }
                     }
+
                     $0.createOrUpdate(
                         message: message,
                         channelId: self.channelId
