@@ -163,7 +163,8 @@ open class PollOptionDetailViewController: ViewController,
         if indexPath.row == 0 {
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: VoteCountInfoCell.self)
             cell.parentAppearance = appearance.voteCountInfoCellAppearance
-            let voteCountText = SceytChatUIKit.shared.formatters.voteCountFormatter.format(viewModel.option.voteCount)
+            let voteCount = viewModel.pollDetails.votesPerOption[viewModel.option.id] ?? 0
+            let voteCountText = SceytChatUIKit.shared.formatters.voteCountFormatter.format(voteCount)
             cell.configure(text: voteCountText)
             return cell
         }

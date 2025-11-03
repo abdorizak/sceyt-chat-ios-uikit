@@ -49,12 +49,13 @@ open class PollResultsViewModel: NSObject {
 
     public func shouldShowMoreButton(for optionIndex: Int) -> Bool {
         guard let option = option(at: optionIndex) else { return false }
-        return option.voteCount > numberOfVoters(for: optionIndex)
+        let voteCount = pollResults.votesPerOption[option.id] ?? 0
+        return voteCount > numberOfVoters(for: optionIndex)
     }
 
     public func showMoreVoters(for optionIndex: Int) {
         guard let option = option(at: optionIndex) else { return }
-        let totalVotes = pollResults.options.reduce(0) { $0 + $1.voteCount }
+        let totalVotes = pollResults.votesPerOption.values.reduce(0) { $0 + $1 }
         event = .showOptionDetail(
             option: option,
             pollDetails: pollResults,
