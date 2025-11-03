@@ -352,6 +352,17 @@ open class ChannelMessageProvider: DataProvider {
                 if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
                     for optionId in optionIds {
                         if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                            // Cancel any existing pending vote for the same option
+                            if let existingPendingVote = PendingVoteDTO.fetch(
+                                pollId: pollId,
+                                optionId: optionId,
+                                userId: userId,
+                                context: $0
+                            ) {
+                                $0.delete(existingPendingVote)
+                            }
+                            
+                            // Create fresh pending vote
                             let pendingVote = PendingVoteDTO.fetchOrCreate(
                                 pollId: pollId,
                                 optionId: optionId,
@@ -360,6 +371,7 @@ open class ChannelMessageProvider: DataProvider {
                                 context: $0
                             )
                             pendingVote.isAdd = true
+                            pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
                         }
                     }
                 }
@@ -415,6 +427,17 @@ open class ChannelMessageProvider: DataProvider {
                 if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
                     for optionId in optionIds {
                         if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                            // Cancel any existing pending vote for the same option
+                            if let existingPendingVote = PendingVoteDTO.fetch(
+                                pollId: pollId,
+                                optionId: optionId,
+                                userId: userId,
+                                context: $0
+                            ) {
+                                $0.delete(existingPendingVote)
+                            }
+                            
+                            // Create fresh pending vote removal
                             let pendingVote = PendingVoteDTO.fetchOrCreate(
                                 pollId: pollId,
                                 optionId: optionId,
@@ -423,6 +446,7 @@ open class ChannelMessageProvider: DataProvider {
                                 context: $0
                             )
                             pendingVote.isAdd = false
+                            pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
                         }
                     }
                 }

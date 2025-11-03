@@ -1733,19 +1733,21 @@ open class ChannelViewController: ViewController,
     
     open func didTapPollOption(layoutModel: MessageLayoutModel, optionIndex: Int) {
         guard let poll = layoutModel.message.poll else { return }
-        
+
         // Check if poll is closed
         guard !poll.closed else {
             // Optionally show poll results if closed
             return
         }
-        
+
         // Validate option index
-        guard optionIndex >= 0, optionIndex < poll.options.count else { return }
-        
+        guard optionIndex >= 0, optionIndex < poll.options.count else {
+            return
+        }
+
         let option = poll.options[optionIndex]
-        let isAlreadySelected = option.selected
-        
+        let isAlreadySelected = poll.ownVotes.contains(where: { $0.optionId == option.id })
+
         if isAlreadySelected {
             // Option is already selected - remove vote if retracting is allowed
             if poll.allowVoteRetract {
@@ -1766,9 +1768,9 @@ open class ChannelViewController: ViewController,
                 // Single vote only - retract all existing votes first, then add new one
                 let selectedOptionIds = poll.options
                     .enumerated()
-                    .filter { $0.element.selected }
+//                    .filter { $0.element.selected }
                     .map { $0.element.id }
-                
+
                 if !selectedOptionIds.isEmpty {
                     // Remove all existing votes
                     channelViewModel.deletePollVotes(
@@ -1776,7 +1778,7 @@ open class ChannelViewController: ViewController,
                         optionIds: selectedOptionIds
                     )
                 }
-                
+
                 // Add the new vote
                 channelViewModel.addPollVote(
                     layoutModel: layoutModel,

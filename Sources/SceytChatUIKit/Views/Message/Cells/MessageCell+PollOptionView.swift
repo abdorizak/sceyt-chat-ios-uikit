@@ -1,0 +1,308 @@
+//
+//  MessageCell+PollOptionView.swift
+//  SceytChatUIKit
+//
+//  Created by Vahagn Manasyan on 02.11.25.
+//
+
+import UIKit
+
+extension MessageCell {
+    open class PollOptionView: View {
+        
+        // MARK: - UI Components
+        open lazy var checkboxView = {
+            $0.contentInsets = .zero
+            return $0.withoutAutoresizingMask
+        }(Components.checkBoxView.init())
+        
+        open lazy var optionLabel: UILabel = {
+            let label = UILabel()
+            label.font = .systemFont(ofSize: 16, weight: .regular)
+            label.textColor = .label
+            label.numberOfLines = 0
+            label.lineBreakMode = .byWordWrapping
+            return label.withoutAutoresizingMask
+        }()
+        
+        open lazy var votersContainerView: UIView = {
+            let view = UIView()
+            return view.withoutAutoresizingMask
+        }()
+        
+        open lazy var votersStackView: UIStackView = {
+            let stack = UIStackView()
+            stack.axis = .horizontal
+            stack.distribution = .fillEqually
+            stack.spacing = -8.0
+            return stack.withoutAutoresizingMask
+        }()
+        
+        open lazy var voteCountLabel: UILabel = {
+            let label = UILabel()
+            label.font = .systemFont(ofSize: 14, weight: .medium)
+            label.textColor = .label
+            label.textAlignment = .right
+            return label.withoutAutoresizingMask
+        }()
+        
+        open lazy var progressBar: UIProgressView = {
+            let progress = UIProgressView(progressViewStyle: .default)
+            progress.layer.cornerRadius = 3
+            progress.clipsToBounds = true
+            return progress.withoutAutoresizingMask
+        }()
+        
+        open var viewModel: PollOptionViewModel? {
+            didSet {
+                configure()
+            }
+        }
+        
+        open lazy var appearance: PollViewAppearance = Components.messageCell.appearance.pollViewAppearance {
+            didSet {
+                setupAppearance()
+            }
+        }
+        
+        // MARK: Setup
+        
+        open override func setup() {
+            super.setup()
+            addSubview(checkboxView)
+            addSubview(optionLabel)
+            addSubview(votersContainerView)
+            votersContainerView.addSubview(votersStackView)
+            votersContainerView.addSubview(voteCountLabel)
+            addSubview(progressBar)
+            
+            let cornerRadius = appearance.progressBarCornerRadius
+            progressBar.layer.cornerRadius = cornerRadius
+            progressBar.clipsToBounds = true
+            progressBar.subviews.forEach { subview in
+                subview.layer.cornerRadius = cornerRadius
+                subview.clipsToBounds = true
+            }
+        }
+        
+        open override func setupLayout() {
+            checkboxView.leadingAnchor.pin(to: leadingAnchor)
+            checkboxView.topAnchor.pin(to: topAnchor)
+            checkboxView.resize(anchors: [.width(20.0), .height(20.0)])
+            
+            optionLabel.topAnchor.pin(to: topAnchor)
+            optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
+            optionLabel.trailingAnchor.pin(to: votersContainerView.leadingAnchor, constant: -8.0)
+            
+            votersContainerView.trailingAnchor.pin(to: trailingAnchor)
+            votersContainerView.topAnchor.pin(to: topAnchor)
+            votersContainerView.widthAnchor.pin(constant: 80.0)
+            votersContainerView.heightAnchor.pin(greaterThanOrEqualToConstant: 20.0)
+            
+            votersStackView.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
+            votersStackView.trailingAnchor.pin(lessThanOrEqualTo: voteCountLabel.leadingAnchor, constant: -1.5)
+            
+            voteCountLabel.trailingAnchor.pin(to: votersContainerView.trailingAnchor)
+            voteCountLabel.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
+            voteCountLabel.contentHuggingPriorityH(.required)
+            
+            progressBar.leadingAnchor.pin(to: optionLabel.leadingAnchor)
+            progressBar.trailingAnchor.pin(to: trailingAnchor, constant: -8)
+            progressBar.topAnchor.pin(to: optionLabel.bottomAnchor, constant: 8.0)
+            progressBar.heightAnchor.pin(constant: 6.0)
+            progressBar.bottomAnchor.pin(to: bottomAnchor)
+        }
+        
+        open override func setupAppearance() {
+            super.setupAppearance()
+            
+            backgroundColor = .clear
+            votersContainerView.backgroundColor = .clear
+            
+            optionLabel.font = appearance.optionTextStyle.font
+            optionLabel.textColor = appearance.optionTextStyle.foregroundColor
+            
+            voteCountLabel.font = appearance.voteCountTextStyle.font
+            voteCountLabel.textColor = appearance.voteCountTextStyle.foregroundColor
+            
+            progressBar.trackTintColor = appearance.progressBarBackground
+            progressBar.progressTintColor = appearance.progressBarForeground
+        }
+        
+        
+        // MARK: Configuration
+        
+        func configure() {
+            guard let viewModel else {
+                return
+            }
+            
+            voteCountLabel.text = String(viewModel.voteCount)
+            optionLabel.text = viewModel.text
+            progressBar.setProgress(viewModel.progress, animated: false)
+            checkboxView.isSelected = viewModel.isSelected
+            votersContainerView.isHidden = viewModel.isAnonymous
+            
+            votersStackView.removeArrangedSubviews()
+            if !viewModel.isAnonymous {
+                createVoterAvatars(voters: viewModel.voters, appearance: appearance)
+            }
+        }
+        
+        /// Update view model with animations
+        func updateViewModel(_ newViewModel: PollOptionViewModel) {
+            guard let oldViewModel = viewModel else {
+                viewModel = newViewModel
+                configure()
+                return
+            }
+            
+            // Animate vote count change with directional transition
+            if oldViewModel.voteCount != newViewModel.voteCount {
+                let isIncreasing = newViewModel.voteCount > oldViewModel.voteCount
+                // Calculate transition distance based on label height or font line height
+                let labelHeight: CGFloat = {
+                    if voteCountLabel.bounds.height > 0 {
+                        return voteCountLabel.bounds.height
+                    } else if let font = voteCountLabel.font {
+                        return font.lineHeight
+                    } else {
+                        return 20.0
+                    }
+                }()
+
+                // Determine transition direction: increasing = from bottom, decreasing = from top
+                let exitTransform: CGAffineTransform
+                let enterTransform: CGAffineTransform
+                
+                if isIncreasing {
+                    // Increasing: exit to top, enter from bottom
+                    exitTransform = CGAffineTransform(translationX: 0, y: -labelHeight)
+                    enterTransform = CGAffineTransform(translationX: 0, y: labelHeight)
+                } else {
+                    // Decreasing: exit to bottom, enter from top
+                    exitTransform = CGAffineTransform(translationX: 0, y: labelHeight)
+                    enterTransform = CGAffineTransform(translationX: 0, y: -labelHeight)
+                }
+
+                // Phase 1: Exit old value (fade out and slide)
+                UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseIn], animations: {
+                    self.voteCountLabel.transform = exitTransform
+                    self.voteCountLabel.alpha = 0.0
+                }) { _ in
+                    // Phase 2: Update text and position for entry
+                    self.voteCountLabel.text = String(newViewModel.voteCount)
+                    self.voteCountLabel.transform = enterTransform
+                    self.voteCountLabel.alpha = 0.0
+
+                    // Phase 3: Enter new value (fade in and slide to center)
+                    UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut]) {
+                        self.voteCountLabel.transform = .identity
+                        self.voteCountLabel.alpha = 1.0
+                    }
+                }
+            } else {
+                voteCountLabel.text = String(newViewModel.voteCount)
+            }
+            
+            // Animate progress bar smoothly
+            if abs(oldViewModel.progress - newViewModel.progress) > 0.001 {
+                progressBar.setProgress(newViewModel.progress, animated: true)
+            }
+            
+            // Animate checkbox selection with bounce effect
+            if oldViewModel.isSelected != newViewModel.isSelected {
+                UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseInOut], animations: {
+                    self.checkboxView.isSelected = newViewModel.isSelected
+                    if newViewModel.isSelected {
+                        self.checkboxView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+                    }
+                }) { _ in
+                    UIView.animate(withDuration: 0.1) {
+                        self.checkboxView.transform = .identity
+                    }
+                }
+            }
+
+            votersStackView.removeArrangedSubviews()
+            // Update voters if changed (no animation)
+            if oldViewModel.voters.count != newViewModel.voters.count ||
+                !oldViewModel.voters.elementsEqual(newViewModel.voters, by: { $0.id == $1.id }) {
+                votersStackView.removeArrangedSubviews()
+                if !newViewModel.isAnonymous {
+                    createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
+                }
+            }
+
+            // Update viewModel after all animations are set up
+            viewModel = newViewModel
+        }
+        
+        private func createVoterAvatars(voters: [ChatUser], appearance: PollViewAppearance) {
+            votersStackView.spacing = appearance.voterAvatarStyle.spacing
+
+            // Sort voters: current user first, then others
+            guard let currentUserId = SceytChatUIKit.shared.currentUserId else {
+                return
+            }
+
+            let sortedVoters = voters.sorted { voter1, voter2 in
+                let isCurrent1 = voter1.id == currentUserId
+                let isCurrent2 = voter2.id == currentUserId
+                if isCurrent1 && !isCurrent2 {
+                    return true
+                } else if !isCurrent1 && isCurrent2 {
+                    return false
+                }
+                return false
+            }
+
+            // Add voter avatars (limit to 3 for display)
+            let avatarCount = min(sortedVoters.count, 3)
+            let scale = UIScreen.main.traitCollection.displayScale
+            let avatarSize = CGSize(
+                width: appearance.voterAvatarStyle.size * scale,
+                height: appearance.voterAvatarStyle.size * scale
+            )
+
+            for voter in sortedVoters.prefix(avatarCount) {
+                let avatarView = SceytImageView()
+                avatarView.contentMode = .scaleAspectFill
+                avatarView.backgroundColor = .systemGray4
+                avatarView.layer.cornerRadius = appearance.voterAvatarStyle.size / 2
+                avatarView.layer.borderWidth = appearance.voterAvatarStyle.borderWidth
+                avatarView.layer.borderColor = appearance.voterAvatarStyle.borderColor.cgColor
+                avatarView.clipsToBounds = true
+                avatarView.translatesAutoresizingMaskIntoConstraints = false
+                avatarView.widthAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
+                avatarView.heightAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
+
+                // Get avatar appearance from user avatar provider
+                let avatarRepresentation = SceytChatUIKit.shared.visualProviders.userAvatarProvider.provideVisual(for: voter)
+                let initialsAppearance: InitialsBuilderAppearance? = {
+                    if case .initialsAppearance(let appearance) = avatarRepresentation {
+                        return appearance
+                    }
+                    return nil
+                }()
+                let defaultImage: UIImage? = {
+                    if case .image(let image) = avatarRepresentation {
+                        return image
+                    }
+                    return nil
+                }()
+
+                // Load avatar using AvatarBuilder
+                _ = Components.avatarBuilder.loadAvatar(
+                    into: avatarView,
+                    for: voter,
+                    appearance: initialsAppearance,
+                    defaultImage: defaultImage,
+                    size: avatarSize
+                )
+                
+                votersStackView.addArrangedSubview(avatarView)
+            }
+        }
+    }
+}

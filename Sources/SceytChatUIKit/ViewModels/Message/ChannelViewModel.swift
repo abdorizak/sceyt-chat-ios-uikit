@@ -1526,6 +1526,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         optionId: String
     ) {
         guard let poll = layoutModel.message.poll else { return }
+        
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            currentPoll: poll,
+            addOptionIds: [optionId],
+            removeOptionIds: []
+        )
+        
         provider.addPollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
@@ -1538,6 +1547,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         optionIds: [String]
     ) {
         guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
+        
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            currentPoll: poll,
+            addOptionIds: optionIds,
+            removeOptionIds: []
+        )
+        
         provider.addPollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
@@ -1550,6 +1568,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         optionId: String
     ) {
         guard let poll = layoutModel.message.poll else { return }
+        
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            currentPoll: poll,
+            addOptionIds: [],
+            removeOptionIds: [optionId]
+        )
+        
         provider.deletePollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
@@ -1562,6 +1589,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         optionIds: [String]
     ) {
         guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
+        
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            currentPoll: poll,
+            addOptionIds: [],
+            removeOptionIds: optionIds
+        )
+        
         provider.deletePollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
@@ -1573,30 +1609,187 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         layoutModel: MessageLayoutModel,
         completion: ((Error?) -> Void)? = nil
     ) {
-        guard let poll = layoutModel.message.poll else {
-            completion?(nil)
-            return
-        }
-        provider.retractPollVote(
-            messageId: layoutModel.message.id,
-            pollId: poll.id,
-            completion: completion
-        )
+//        guard let poll = layoutModel.message.poll else { return }
+//        
+//        // Post optimistic UI update notification - remove all own votes
+//        let ownVoteOptionIds = poll.options.filter { $0.selected }.map { $0.id }
+//        postOptimisticPollUpdate(
+//            messageId: layoutModel.message.id,
+//            currentPoll: poll,
+//            addOptionIds: [],
+//            removeOptionIds: ownVoteOptionIds
+//        )
+//        
+//        provider.retractPollVote(
+//            messageId: layoutModel.message.id,
+//            pollId: poll.id,
+//            completion: completion
+//        )
     }
     
     open func closePoll(
         layoutModel: MessageLayoutModel,
         completion: ((Error?) -> Void)? = nil
     ) {
-        guard let poll = layoutModel.message.poll else {
-            completion?(nil)
-            return
+//        guard let poll = layoutModel.message.poll else { return }
+//        
+//        // Post optimistic UI update notification - mark as closed
+//        if let pollUIModel = createOptimisticPollUIModel(
+//            messageId: layoutModel.message.id,
+//            currentPoll: poll,
+//            addOptionIds: [],
+//            removeOptionIds: [],
+//            isClosed: true
+//        ) {
+//            NotificationCenter.default.post(
+//                name: .didUpdateMessagePoll,
+//                object: nil,
+//                userInfo: ["pollUIModel": pollUIModel]
+//            )
+//        }
+//
+//        provider.closePoll(
+//            messageId: layoutModel.message.id,
+//            pollId: poll.id,
+//            completion: completion
+//        )
+    }
+    
+    // MARK: - Poll Update Helpers
+    
+    private func postOptimisticPollUpdate(
+        messageId: MessageId,
+        currentPoll: PollDetails,
+        addOptionIds: [String],
+        removeOptionIds: [String]
+    ) {
+        if let pollUIModel = createOptimisticPollUIModel(
+            messageId: messageId,
+            currentPoll: currentPoll,
+            addOptionIds: addOptionIds,
+            removeOptionIds: removeOptionIds,
+            isClosed: nil
+        ) {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .didUpdateMessagePoll,
+                    object: nil,
+                    userInfo: ["pollUIModel": pollUIModel]
+                )
+            }
         }
-        provider.closePoll(
-            messageId: layoutModel.message.id,
-            pollId: poll.id,
-            completion: completion
+    }
+    
+    private func createOptimisticPollUIModel(
+        messageId: MessageId,
+        currentPoll: PollDetails,
+        addOptionIds: [String],
+        removeOptionIds: [String],
+        isClosed: Bool?
+    ) -> PollViewModel? {
+        guard let currentUserId = SceytChatUIKit.shared.currentUserId else {
+            return nil
+        }
+        
+        // Create updated votes per option with optimistic changes
+        var updatedVotesPerOption = currentPoll.votesPerOption
+        
+        // Add votes for added options
+        for optionId in addOptionIds {
+            updatedVotesPerOption[optionId, default: 0] += 1
+        }
+        
+        // Remove votes for removed options
+        for optionId in removeOptionIds {
+            if let currentCount = updatedVotesPerOption[optionId], currentCount > 0 {
+                updatedVotesPerOption[optionId] = currentCount - 1
+            }
+        }
+
+        // Create optimistic pending votes
+        var optimisticPendingVotes: [PendingPollVote] = []
+        let now = Int64(Date().timeIntervalSince1970 * 1000)
+
+        // Add pending votes for options being added
+        for optionId in addOptionIds {
+            let pendingVote = PendingPollVote(
+                messageTid: currentPoll.messageTid,
+                pollId: currentPoll.id,
+                optionId: optionId,
+                userId: currentUserId,
+                isAdd: true,
+                createdAt: now,
+                user: ChatUser(id: currentUserId)
+            )
+            optimisticPendingVotes.append(pendingVote)
+        }
+
+        // Add pending votes for options being removed
+        for optionId in removeOptionIds {
+            let pendingVote = PendingPollVote(
+                messageTid: currentPoll.messageTid,
+                pollId: currentPoll.id,
+                optionId: optionId,
+                userId: currentUserId,
+                isAdd: false,
+                createdAt: now,
+                user: ChatUser(id: currentUserId)
+            )
+            optimisticPendingVotes.append(pendingVote)
+        }
+        
+        // Merge with existing pending votes (keep existing ones, add new optimistic ones)
+        var allPendingVotes: [PendingPollVote] = []
+        if let existingPendingVotes = currentPoll.pendingVotes {
+            // Filter out existing pending votes for the same options that we're optimistically updating
+            let updatedOptionIds = Set(addOptionIds + removeOptionIds)
+            let filteredExisting = existingPendingVotes.filter { !updatedOptionIds.contains($0.optionId) || $0.userId != currentUserId }
+            allPendingVotes.append(contentsOf: filteredExisting)
+        }
+        allPendingVotes.append(contentsOf: optimisticPendingVotes)
+        
+        // Update ownVotes optimistically
+        var updatedOwnVotes = currentPoll.ownVotes
+        
+        // Remove ownVotes for options being removed
+        updatedOwnVotes.removeAll { removeOptionIds.contains($0.optionId) }
+        
+        // Add optimistic ownVotes for options being added
+        for optionId in addOptionIds {
+            if !updatedOwnVotes.contains(where: { $0.optionId == optionId }) {
+                let optimisticVote = PollVote(
+                    pollId: currentPoll.id,
+                    optionId: optionId,
+                    userId: currentUserId,
+                    createdAt: now / 1000, // PollVote uses seconds
+                    user: ChatUser(id: currentUserId)
+                )
+                updatedOwnVotes.append(optimisticVote)
+            }
+        }
+        
+        // Create modified PollDetails with optimistic updates
+        let optimisticPoll = PollDetails(
+            id: currentPoll.id,
+            name: currentPoll.name,
+            messageTid: currentPoll.messageTid,
+            description: currentPoll.description,
+            options: currentPoll.options,
+            anonymous: currentPoll.anonymous,
+            allowMultipleVotes: currentPoll.allowMultipleVotes,
+            allowVoteRetract: currentPoll.allowVoteRetract,
+            votesPerOption: updatedVotesPerOption,
+            votes: currentPoll.votes,
+            ownVotes: updatedOwnVotes,
+            pendingVotes: allPendingVotes.isEmpty ? nil : allPendingVotes,
+            createdAt: currentPoll.createdAt,
+            updatedAt: currentPoll.updatedAt,
+            closedAt: currentPoll.closedAt,
+            closed: isClosed ?? currentPoll.closed
         )
+        
+        // Create PollUIModel from optimistic poll
+        return PollViewModel(from: optimisticPoll)
     }
     
     open func report(layoutModel: MessageLayoutModel) {

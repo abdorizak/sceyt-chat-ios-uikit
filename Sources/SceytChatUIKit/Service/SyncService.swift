@@ -130,15 +130,20 @@ public final class SyncService: NSObject {
                 let group = Dictionary(grouping: pendingVotes) { $0.2 } // Group by ChannelId
                 for ch in group {
                     let provider = Components.channelMessageProvider.init(channelId: ch.key)
-                    for (pendingVote, messageId, _) in ch.value {
-                        let op = PollVoteResendOperation(
-                            provider: provider,
-                            messageId: messageId,
-                            pollId: pendingVote.pollId,
-                            optionId: pendingVote.optionId,
-                            isAdd: pendingVote.isAdd
-                        )
-                        operations.append(op)
+                    // Group by optionId to ensure only the latest pending vote per option is processed
+                    let optionGroups = Dictionary(grouping: ch.value) { $0.0.optionId }
+                    for (optionId, votes) in optionGroups {
+                        // Get the latest pending vote for this option (highest createdAt)
+                        if let latestVote = votes.max(by: { $0.0.createdAt < $1.0.createdAt }) {
+                            let op = PollVoteResendOperation(
+                                provider: provider,
+                                messageId: latestVote.1,
+                                pollId: latestVote.0.pollId,
+                                optionId: optionId,
+                                isAdd: latestVote.0.isAdd
+                            )
+                            operations.append(op)
+                        }
                     }
                 }
                 completion(operations)

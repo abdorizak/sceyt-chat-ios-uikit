@@ -161,6 +161,12 @@ open class MessageCell: CollectionViewCell,
             name: .selectMessage,
             object: nil
         )
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(didUpdateMessagePoll(_:)),
+            name: .didUpdateMessagePoll,
+            object: nil
+        )
 
         replyIcon.isHidden = true
     }
@@ -428,6 +434,18 @@ open class MessageCell: CollectionViewCell,
         } else if highlightMode != .none  {
             highlightMode = .none
         }
+    }
+    
+    @objc
+    func didUpdateMessagePoll(_ notification: Notification) {
+        guard let data,
+              let userInfo = notification.userInfo,
+              let pollUIModel = userInfo["pollUIModel"] as? PollViewModel,
+              pollUIModel.pollId == data.message.poll?.id else {
+            return
+        }
+
+        pollView.updatePoll(poll: pollUIModel)
     }
     
     // MARK: Actions
