@@ -1107,15 +1107,23 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         let pollDTO = PollDTO.fetchOrCreate(id: poll.id, context: self).map(poll)
         pollDTO.messageTid = dto.tid
         pollDTO.message = dto
-        
+
+        // Force the object to be fully loaded from the fault state
+        // This ensures the relationships are materialized before we try to mutate them
+        _ = pollDTO.id
+
         // Create or update options
         let optionDTOs = poll.options.map { option -> PollOptionDTO in
             let optionDTO = PollOptionDTO.fetchOrCreate(id: option.id, pollId: poll.id, context: self).map(option)
             optionDTO.poll = pollDTO
             return optionDTO
         }
-        pollDTO.options = NSOrderedSet(array: optionDTOs)
-        
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let optionsSet = pollDTO.mutableOrderedSetValue(forKey: "options")
+        optionsSet.removeAllObjects()
+        optionsSet.addObjects(from: optionDTOs)
+
         // Create or update votes
         let voteDTOs = poll.votes.map { vote -> PollVoteDTO in
             let voteDTO = PollVoteDTO.fetchOrCreate(
@@ -1128,7 +1136,11 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             voteDTO.pollDetails = pollDTO
             return voteDTO
         }
-        pollDTO.votes = NSOrderedSet(array: voteDTOs)
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+        votesSet.removeAllObjects()
+        votesSet.addObjects(from: voteDTOs)
 
         // Create or update own votes
         let ownVoteDTOs = poll.ownVotes.map { vote -> PollVoteDTO in
@@ -1142,7 +1154,11 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             voteDTO.ownPollDetails = pollDTO
             return voteDTO
         }
-        pollDTO.ownVotes = NSOrderedSet(array: ownVoteDTOs)
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+        ownVotesSet.removeAllObjects()
+        ownVotesSet.addObjects(from: ownVoteDTOs)
 
         dto.poll = pollDTO
         return dto

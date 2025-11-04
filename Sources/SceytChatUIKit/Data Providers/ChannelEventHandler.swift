@@ -343,11 +343,13 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             self.database.write {
                 // Preserve existing ownVotes when updating poll votes
                 let existingMessageDTO = MessageDTO.fetch(id: message.id, context: $0)
-                let existingOwnVotes = existingMessageDTO?.poll?.ownVotes?.copy() as? NSOrderedSet
+                let existingOwnVotes = existingMessageDTO?.poll?.ownVotes?.array as? [PollVoteDTO]
                 let messageDTO = $0.createOrUpdate(message: message, channelId: channel.id, changedBy: user)
                 // Restore ownVotes if they existed
                 if let existingOwnVotes = existingOwnVotes, let pollDTO = messageDTO.poll {
-                    pollDTO.ownVotes = existingOwnVotes
+                    let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+                    ownVotesSet.removeAllObjects()
+                    ownVotesSet.addObjects(from: existingOwnVotes)
                 }
             } completion: { error in
                 logger.debug(error?.localizedDescription ?? "")
