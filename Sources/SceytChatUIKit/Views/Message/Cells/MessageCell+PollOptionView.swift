@@ -8,7 +8,7 @@
 import UIKit
 
 extension MessageCell {
-    open class PollOptionView: View {
+    open class PollOptionView: View, MessageCellMeasurable {
         
         // MARK: - UI Components
         open lazy var checkboxView = {
@@ -109,7 +109,7 @@ extension MessageCell {
             progressBar.leadingAnchor.pin(to: optionLabel.leadingAnchor)
             progressBar.trailingAnchor.pin(to: trailingAnchor)
             progressBar.topAnchor.pin(to: optionLabel.bottomAnchor, constant: 8.0)
-            progressBar.heightAnchor.pin(constant: 6.0)
+            progressBar.heightAnchor.pin(constant: appearance.progressBarHeight)
             progressBar.bottomAnchor.pin(to: bottomAnchor)
         }
 
@@ -203,7 +203,7 @@ extension MessageCell {
 
             viewModel = newViewModel
         }
-        
+
         private func createVoterAvatars(voters: [ChatUser], appearance: PollViewAppearance) {
             votersStackView.spacing = appearance.voterAvatarStyle.spacing
 
@@ -271,6 +271,60 @@ extension MessageCell {
                 
                 votersStackView.addArrangedSubview(avatarView)
             }
+        }
+        
+        // MARK: - Measurement
+        
+        open class func measure(
+            model: MessageLayoutModel,
+            appearance: MessageCell.Appearance
+        ) -> CGSize {
+            // This method is required by MessageCellMeasurable but not used directly
+            // Use measure(option:appearance:maxWidth:) instead
+            return .zero
+        }
+        
+        open class func measure(
+            option: PollOptionViewModel,
+            appearance: PollViewAppearance,
+            maxWidth: CGFloat,
+            isClosed: Bool
+        ) -> CGSize {
+            let pollAppearance = appearance
+            var height: CGFloat = 0
+            
+            // Checkbox height (if not closed)
+            if !isClosed {
+                height = max(height, pollAppearance.checkboxStyle.size)
+            }
+            
+            // Calculate option text width
+            // Available width: maxWidth - checkbox (if visible) - spacing - spacing - voters container
+            let checkboxWidth: CGFloat = isClosed ? 0 : pollAppearance.checkboxStyle.size
+            let spacingAfterCheckbox: CGFloat = 8.0
+            let spacingBeforeVoters: CGFloat = 8.0
+            let votersContainerWidth = pollAppearance.votersContainerWidth
+            let availableTextWidth = maxWidth - checkboxWidth - spacingAfterCheckbox - spacingBeforeVoters - votersContainerWidth
+            
+            // Option text height
+            let optionConfig = TextSizeMeasure.Config(
+                restrictingWidth: availableTextWidth,
+                maximumNumberOfLines: 0,
+                font: pollAppearance.optionTextStyle.font,
+                lastFragmentUsedRect: false
+            )
+            let optionTextSize = TextSizeMeasure.calculateSize(of: option.text, config: optionConfig).textSize
+            let textHeight = ceil(optionTextSize.height)
+            
+            // Total option height: max of checkbox height or text height, plus spacing and progress bar
+            let spacingBetweenTextAndProgress: CGFloat = 8.0
+            let progressBarHeight = pollAppearance.progressBarHeight
+            let minHeight = max(checkboxWidth > 0 ? pollAppearance.checkboxStyle.size : 0, textHeight) + spacingBetweenTextAndProgress + progressBarHeight
+            
+            // Use appearance optionMinHeight if available
+            let finalHeight = max(minHeight, pollAppearance.optionMinHeight)
+            
+            return CGSize(width: maxWidth, height: finalHeight)
         }
     }
 }

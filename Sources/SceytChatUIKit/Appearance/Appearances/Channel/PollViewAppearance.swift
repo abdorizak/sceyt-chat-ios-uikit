@@ -58,13 +58,13 @@ public class PollViewAppearance: AppearanceProviding {
             borderColor: .systemBackground,
             spacing: -8
         ),
-        questionBottomSpacing: 12,
+        questionBottomSpacing: 16.0,
         optionSpacing: 20.0,
         optionMinHeight: 40,
-        progressBarHeight: 4,
+        progressBarHeight: 6,
         progressBarCornerRadius: 2,
         containerCornerRadius: 12,
-        containerInsets: UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12),
+        containerInsets: UIEdgeInsets(top: 8, left: 12, bottom: 0, right: 12),
         votersContainerWidth: 50.0
     )
     

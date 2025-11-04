@@ -208,15 +208,18 @@ extension MessageCell {
 
             let pollViewModel = PollViewModel(from: poll, isIncmoing: model.message.incoming)
             let pollAppearance = appearance.pollViewAppearance
-            let maxWidth = Components.messageLayoutModel.defaults.messageWidth - 24 // 12pt padding each side
+            
+            // Calculate max width using container insets
+            let containerInsets = pollAppearance.containerInsets
+            let contentMaxWidth = Components.messageLayoutModel.defaults.messageWidth - 24.0 // container left/right paddings
             var height: CGFloat = 0
 
-            // Top padding
-            height += 8 // questionLabel top padding
+            // Top padding from container insets
+            height += containerInsets.top
 
             // Question height
             let questionConfig = TextSizeMeasure.Config(
-                restrictingWidth: maxWidth - 24, // 12pt leading + 12pt trailing
+                restrictingWidth: contentMaxWidth,
                 maximumNumberOfLines: 0,
                 font: pollAppearance.questionTextStyle.font,
                 lastFragmentUsedRect: false
@@ -224,10 +227,11 @@ extension MessageCell {
             let questionSize = TextSizeMeasure.calculateSize(of: pollViewModel.question, config: questionConfig).textSize
             height += ceil(questionSize.height)
 
-            // Type label height + spacing
-            height += 4 // spacing between question and type
+            // Type label height + spacing (using spacing between question and type)
+            let typeLabelSpacing: CGFloat = 4.0 // Spacing between question and type label
+            height += typeLabelSpacing
             let typeConfig = TextSizeMeasure.Config(
-                restrictingWidth: maxWidth - 24,
+                restrictingWidth: contentMaxWidth,
                 maximumNumberOfLines: 1,
                 font: pollAppearance.pollTypeTextStyle.font,
                 lastFragmentUsedRect: false
@@ -235,25 +239,17 @@ extension MessageCell {
             let typeSize = TextSizeMeasure.calculateSize(of: pollViewModel.pollTypeText, config: typeConfig).textSize
             height += ceil(typeSize.height)
 
-            // Options stack top spacing
-            height += 16 // spacing between typeLabel and optionsStackView
-
-            // Options height
-            // Calculation: maxWidth already has -24 (12pt padding each side)
-            // Inside option view: 20pt checkbox + 8pt spacing + 8pt spacing + 80pt voters container = 116pt
-            let optionConfig = TextSizeMeasure.Config(
-                restrictingWidth: maxWidth - 116, // 20pt checkbox + 8pt spacing + 8pt spacing + 80pt voters container
-                maximumNumberOfLines: 0,
-                font: pollAppearance.optionTextStyle.font,
-                lastFragmentUsedRect: false
-            )
+            // Options height - use PollOptionView.measure for each option
             let optionSpacing = pollAppearance.optionSpacing
-            let optionMinHeight: CGFloat = 34 // checkbox (20pt) + spacing (8pt) + progress bar (6pt)
 
             for (index, option) in pollViewModel.options.enumerated() {
-                let optionTextSize = TextSizeMeasure.calculateSize(of: option.text, config: optionConfig).textSize
-                let optionHeight = max(ceil(optionTextSize.height) + 8 + 6, optionMinHeight) // text + spacing (8pt) + progress bar (6pt), minimum 34pt
-                height += optionHeight
+                let optionSize = PollOptionView.measure(
+                    option: option,
+                    appearance: pollAppearance,
+                    maxWidth: contentMaxWidth,
+                    isClosed: pollViewModel.closed
+                )
+                height += optionSize.height
                 if index < pollViewModel.options.count - 1 {
                     height += optionSpacing
                 }
@@ -261,12 +257,21 @@ extension MessageCell {
 
             // Separator + footer (if not anonymous)
             if !pollViewModel.anonymous {
-                height += 20 // separator top spacing
-                height += 1 // separator height
-                height += 30 // button height (16pt top + 16pt bottom contentEdgeInsets + ~16pt intrinsic height)
+                let separatorTopSpacing: CGFloat = 20.0 // Spacing before separator
+                height += separatorTopSpacing
+                let separatorHeight: CGFloat = 1.0 // Separator height
+                height += separatorHeight
+                // Button height: contentEdgeInsets (from setup: top: 16.0, bottom: 16.0) + intrinsic height
+                let buttonTopInset: CGFloat = 16.0
+                let buttonBottomInset: CGFloat = 16.0
+                let buttonIntrinsicHeight: CGFloat = 16.0 // Approximate intrinsic height
+                height += buttonTopInset + buttonBottomInset + buttonIntrinsicHeight
             }
 
-            return CGSize(width: maxWidth, height: ceil(height))
+            // Bottom padding from container insets
+            height += containerInsets.bottom
+
+            return CGSize(width: Components.messageLayoutModel.defaults.messageWidth, height: ceil(height))
         }
     }
  }
