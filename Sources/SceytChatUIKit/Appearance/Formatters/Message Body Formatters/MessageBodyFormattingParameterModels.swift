@@ -31,6 +31,7 @@ public struct LastMessageBodyFormatterAttributes {
     let deletedLabelAppearance: LabelAppearance
     let attachmentNameFormatter: any AttachmentFormatting
     let attachmentIconProvider: any AttachmentIconProviding
+    let messageTypeIconProvider: any MessageTypeIconProviding
     let mentionUserNameFormatter: any UserFormatting
 }
 
