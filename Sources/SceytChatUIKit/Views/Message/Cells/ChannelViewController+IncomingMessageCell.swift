@@ -460,13 +460,8 @@ extension ChannelViewController {
                 bubbleSize.height += infoViewSize.height
             } else if options.contains(.poll) {
                 let pollSize = model.pollViewMeasure
-                textSize = pollSize
-                textSize.width = max(textSize.width, model.parentTextSize.width - 70)
-                bubbleSize = textSize
-                bubbleSize.width = max(bubbleSize.width, pollSize.width)
-                // Add padding from user name - matches layout constraint: (isForwarded || showSenderInfo) ? 2 : 8
-                bubbleSize.height += (model.isForwarded || showName) ? 2 : 8
-                bubbleSize.height += 12 //padding
+                bubbleSize = pollSize
+                bubbleSize.height += showName ? 2 : 8
                 if userNameSize == .zero {
                     bubbleSize.height += 18
                 } else {
