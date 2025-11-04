@@ -22,6 +22,7 @@ extension CreatePollViewController {
 
         open var onTextChanged: ((String) -> Void)?
         open var onHeightChanged: (() -> Void)?
+        open var onReturnKeyPressed: (() -> Void)?
 
         open override func setup() {
             super.setup()
@@ -30,6 +31,7 @@ extension CreatePollViewController {
             textView.isScrollEnabled = false
             textView.textContainer.lineFragmentPadding = 0
             textView.textContainerInset = .zero
+            textView.returnKeyType = .next
         }
 
         open override func setupLayout() {
@@ -71,6 +73,12 @@ extension CreatePollViewController {
 
 extension CreatePollViewController.QuestionFieldCell: UITextViewDelegate {
     public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Handle return key press
+        if text == "\n" {
+            onReturnKeyPressed?()
+            return false
+        }
+
         guard let validationPattern = appearance.validationPattern else {
             return true
         }

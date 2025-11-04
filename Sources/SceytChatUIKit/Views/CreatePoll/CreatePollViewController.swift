@@ -209,6 +209,9 @@ open class CreatePollViewController: ViewController,
             cell.onHeightChanged = { [weak self] in
                 self?.updateQuestionCellHeight()
             }
+            cell.onReturnKeyPressed = { [weak self] in
+                self?.handleQuestionReturnKeyPressed()
+            }
             return cell
 
         case 1:
@@ -499,6 +502,14 @@ open class CreatePollViewController: ViewController,
         if isFirstResponder {
             cell.textView.becomeFirstResponder()
             cell.textView.selectedRange = selectedRange
+        }
+    }
+
+    open func handleQuestionReturnKeyPressed() {
+        // Move focus to the first option
+        let firstOptionIndexPath = IndexPath(row: 0, section: 1)
+        if let firstOptionCell = tableView.cellForRow(at: firstOptionIndexPath) as? OptionFieldCell {
+            firstOptionCell.textView.becomeFirstResponder()
         }
     }
 
