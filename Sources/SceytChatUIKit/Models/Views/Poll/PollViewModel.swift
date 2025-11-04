@@ -101,11 +101,6 @@ public struct PollViewModel {
             )
         }
 
-        // TODO: - Remove
-        if poll.anonymous {
-            self.pollTypeText = "Anonymous poll"
-        } else {
-            self.pollTypeText = "Public poll"
-        }
+        self.pollTypeText = SceytChatUIKit.shared.formatters.pollTypeFormatter.format((closed: poll.closed, anonymous: poll.anonymous))
     }
 }

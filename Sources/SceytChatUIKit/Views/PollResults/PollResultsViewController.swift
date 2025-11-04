@@ -52,6 +52,11 @@ open class PollResultsViewController: ViewController,
 
         setupNavigationBarItems()
         setupBindings()
+        viewModel.startDatabaseObserver()
+    }
+
+    deinit {
+        viewModel.stopDatabaseObserver()
     }
 
     private func setupNavigationBarItems() {
@@ -308,6 +313,8 @@ open class PollResultsViewController: ViewController,
             tableView.reloadData()
         case .showOptionDetail(let option, let pollDetails, let messageID):
             showOptionDetail(option: option, pollDetails: pollDetails, messageID: messageID)
+        case .messageDeleted:
+            dismiss(animated: true)
         }
     }
 

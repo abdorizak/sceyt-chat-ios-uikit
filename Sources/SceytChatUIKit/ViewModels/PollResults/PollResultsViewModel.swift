@@ -19,6 +19,17 @@ open class PollResultsViewModel: NSObject {
 
     public let messageID: MessageId
 
+    open lazy var pollObserver: DatabaseObserver<PollDTO, PollDetails> = {
+        let predicate = NSPredicate(format: "id == %@", pollResults.id)
+
+        return DatabaseObserver<PollDTO, PollDetails>(
+            request: PollDTO.fetchRequest()
+                .sort(descriptors: [.init(keyPath: \PollDTO.id, ascending: true)])
+                .fetch(predicate: predicate),
+            context: SceytChatUIKit.shared.database.viewContext)
+        { PollDetails(dto: $0) }
+    }()
+
     public required init(pollResults: PollDetails, messageID: MessageId) {
         self.pollResults = pollResults
         self.messageID = messageID
@@ -71,11 +82,42 @@ open class PollResultsViewModel: NSObject {
             messageID: messageID
         )
     }
+
+    // MARK: - Database Observer
+
+    open func startDatabaseObserver() {
+        pollObserver.onDidChange = { [weak self] _ in
+//            guard let self = self,
+//                  let updatedPoll = self.pollObserver.item(at: .zero),
+//                  updatedPoll.id == self.pollResults.id
+//            else { return }
+//
+//            self.pollResults = updatedPoll
+            self?.event = .reloadData
+        }
+        do {
+            try pollObserver.startObserver()
+        } catch {
+            logger.errorIfNotNil(error, "pollObserver.startObserver")
+        }
+    }
+
+    open func stopDatabaseObserver() {
+        pollObserver.stopObserver()
+    }
+
+    private func handleMessageChanges(_ changes: DBChangeItemPaths) {
+        // If message is deleted, trigger messageDeleted event
+        if !changes.deletes.isEmpty {
+            event = .messageDeleted
+        }
+    }
 }
 
 public extension PollResultsViewModel {
     enum Event {
         case reloadData
         case showOptionDetail(option: PollOption, pollDetails: PollDetails, messageID: MessageId)
+        case messageDeleted
     }
 }

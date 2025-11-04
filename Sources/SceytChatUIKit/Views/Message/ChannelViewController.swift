@@ -239,9 +239,6 @@ open class ChannelViewController: ViewController,
             return viewController
         }
 
-        // Hide poll option for direct chats
-        customInputViewController.shouldHidePollOption = channelViewModel.channel.isDirect
-
         selectingView.onAction = { [weak self] in
             guard let self else { return }
             switch $0 {
@@ -1758,14 +1755,11 @@ open class ChannelViewController: ViewController,
         let isAlreadySelected = optionViewModel.isSelected
 
         if isAlreadySelected {
-            // Option is already selected - remove vote if retracting is allowed
-            if pollViewModel.allowVoteRetract {
-                channelViewModel.deletePollVote(
-                    layoutModel: layoutModel,
-                    pollViewModel: pollViewModel,
-                    optionId: optionViewModel.id
-                )
-            }
+            channelViewModel.deletePollVote(
+                layoutModel: layoutModel,
+                pollViewModel: pollViewModel,
+                optionId: optionViewModel.id
+            )
         } else {
             channelViewModel.addPollVote(
                 layoutModel: layoutModel,
@@ -2365,29 +2359,31 @@ open class ChannelViewController: ViewController,
         
         var isPoll = model.message.poll != nil
         var items: [MenuItem] = []
-        if channelViewModel.canShowInfo(model: model) {
-            items += [
-                .init(
-                    title: L10n.Message.Action.Title.info,
-                    image: .messageActionInfo,
-                    imageRenderingMode: .alwaysTemplate,
-                    action: { [weak self] _ in
-                        self?.info(layoutModel: model)
-                    }
-                )
-            ]
-        }
-        if channelViewModel.canEdit(model: model) {
-            items += [
-                .init(
-                    title: L10n.Message.Action.Title.edit,
-                    image: .messageActionEdit,
-                    imageRenderingMode: .alwaysTemplate,
-                    action: { [weak self] _ in
-                        self?.edit(layoutModel: model)
-                    }
-                )
-            ]
+        if !isPoll {
+            if channelViewModel.canShowInfo(model: model) {
+                items += [
+                    .init(
+                        title: L10n.Message.Action.Title.info,
+                        image: .messageActionInfo,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            self?.info(layoutModel: model)
+                        }
+                    )
+                ]
+            }
+            if channelViewModel.canEdit(model: model) {
+                items += [
+                    .init(
+                        title: L10n.Message.Action.Title.edit,
+                        image: .messageActionEdit,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            self?.edit(layoutModel: model)
+                        }
+                    )
+                ]
+            }
         }
         if !channelViewModel.isReadOnlyChannel {
             items += [
@@ -2402,7 +2398,7 @@ open class ChannelViewController: ViewController,
             ]
         }
         
-        if isPoll {
+        if isPoll && (model.message.poll?.ownVotes.count ?? 0) > 0 {
             let pollViewModel: PollViewModel?
             if let pollDetails = model.message.poll {
                 pollViewModel = PollViewModel(from: pollDetails, isIncmoing: model.message.incoming)
@@ -2416,11 +2412,14 @@ open class ChannelViewController: ViewController,
                     image: .messageActionRetractVote,
                     imageRenderingMode: .alwaysTemplate,
                     action: { [weak self] _ in
-                        guard let pollViewModel = pollViewModel else { return }
-                        self?.channelViewModel.retractPollVote(
+                        guard let pollViewModel, let self else { return }
+                        self.channelViewModel.retractPollVote(
                             layoutModel: model,
                             pollViewModel: pollViewModel
-                        ) { _ in
+                        ) { [weak self] error in
+                            if let error {
+                                self?.showAlert(error: error)
+                            }
                         }
                     }
                 )]
@@ -2438,19 +2437,16 @@ open class ChannelViewController: ViewController,
             }
         }
         
-        items += [
-            .init(
-                title: L10n.Message.Action.Title.forward,
-                image: .messageActionForward,
-                imageRenderingMode: .alwaysTemplate,
-                action: { [weak self] _ in
-                    self?.forward(messages: [model.message])
-                }
-            )]
-        
-        
         if !isPoll {
             items += [
+                .init(
+                    title: L10n.Message.Action.Title.forward,
+                    image: .messageActionForward,
+                    imageRenderingMode: .alwaysTemplate,
+                    action: { [weak self] _ in
+                        self?.forward(messages: [model.message])
+                    }
+                ),
                 .init(
                     title: L10n.Message.Action.Title.copy,
                     image: .messageActionCopy,
