@@ -86,6 +86,8 @@ extension SceytChatUIKit {
 
         public var voterDateFormatter: any DateFormatting = VoterDateFormatter()
 
+        public var pollTypeFormatter: any PollTypeFormatting = PollTypeFormatter()
+
         public init() {}
     }
 }

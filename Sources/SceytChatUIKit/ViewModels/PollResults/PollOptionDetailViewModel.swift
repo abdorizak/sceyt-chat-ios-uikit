@@ -75,7 +75,7 @@ open class PollOptionDetailViewModel: NSObject {
     // MARK: - Public Methods
 
     open func loadNext() {
-        guard votesQuery.hasNext, !votesQuery.loading, !isLoading else { return }
+        guard votesQuery.hasNext, !votesQuery.loading, !isLoading, error == nil else { return }
 
         isLoading = true
 

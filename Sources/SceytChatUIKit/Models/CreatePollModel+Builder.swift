@@ -27,7 +27,7 @@ public extension CreatePollModel {
                                           options: validOptions,
                                           anonymous: self.isAnonymous,
                                           allowMultipleVotes: self.allowMultipleAnswers,
-                                          allowVoteRetract: false)
+                                          allowVoteRetract: true)
     }
 }
 

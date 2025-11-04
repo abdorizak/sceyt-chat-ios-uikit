@@ -175,3 +175,12 @@ public protocol VoteCountFormatting: Formatting {
     /// - Returns: A formatted `String` representing the vote count (e.g., "1 vote", "5 votes").
     func format(_ count: Int) -> String
 }
+
+/// A protocol for formatting poll type information.
+public protocol PollTypeFormatting: Formatting {
+    /// Formats poll information into a descriptive type string.
+    ///
+    /// - Parameter poll: The poll details to format.
+    /// - Returns: A formatted `String` describing the poll type (e.g., "Poll finished", "Anonymous poll", "Public poll").
+    func format(_ poll: (closed: Bool, anonymous: Bool)) -> String
+}
