@@ -1338,6 +1338,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         
         // Create message builder with poll
         let builder = Message.Builder()
+            .type("poll")
             .body(pollModel.question)
             .poll(pollDetails)
 
