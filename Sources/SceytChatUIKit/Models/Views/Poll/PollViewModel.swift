@@ -71,10 +71,19 @@ public struct PollViewModel {
                 // No pending votes available, use ownVotes
                 selected = poll.ownVotes.contains(where: { option.id == $0.optionId })
             }
-            
-            let voters = poll.votes
+
+            var voters = poll.votes
                 .filter( { $0.optionId == option.id })
                 .compactMap (\.user)
+
+            // Append current user if they selected this option and not already in voters array
+            if selected, let currentUserId = currentUserId {
+                let currentUserInVoters = voters.contains(where: { $0.id == currentUserId })
+                if !currentUserInVoters {
+                    let currentUser = ChatUser(user: SceytChatUIKit.shared.chatClient.user)
+                    voters.append(currentUser)
+                }
+            }
 
             let votesCount = poll.votesPerOption[option.id] ?? 0
             let progress = votesCount > 0 ? Float(votesCount) / Float(maxVotes) : 0.0

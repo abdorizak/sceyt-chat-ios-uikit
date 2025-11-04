@@ -95,26 +95,26 @@ extension MessageCell {
             optionLabel.topAnchor.pin(to: topAnchor)
             optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
             optionLabel.trailingAnchor.pin(to: votersContainerView.leadingAnchor, constant: -8.0)
-            
+
             votersContainerView.trailingAnchor.pin(to: trailingAnchor)
             votersContainerView.topAnchor.pin(to: topAnchor)
             votersContainerView.widthAnchor.pin(constant: 80.0)
             votersContainerView.heightAnchor.pin(greaterThanOrEqualToConstant: 20.0)
-            
+
             votersStackView.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
             votersStackView.trailingAnchor.pin(lessThanOrEqualTo: voteCountLabel.leadingAnchor, constant: -1.5)
-            
+
             voteCountLabel.trailingAnchor.pin(to: votersContainerView.trailingAnchor)
             voteCountLabel.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
             voteCountLabel.contentHuggingPriorityH(.required)
-            
+
             progressBar.leadingAnchor.pin(to: optionLabel.leadingAnchor)
-            progressBar.trailingAnchor.pin(to: trailingAnchor, constant: -8)
+            progressBar.trailingAnchor.pin(to: trailingAnchor)
             progressBar.topAnchor.pin(to: optionLabel.bottomAnchor, constant: 8.0)
             progressBar.heightAnchor.pin(constant: 6.0)
             progressBar.bottomAnchor.pin(to: bottomAnchor)
         }
-        
+
         open override func setupAppearance() {
             super.setupAppearance()
             
@@ -249,7 +249,7 @@ extension MessageCell {
 
             let messageApperance = Components.messageCell.appearance
             let borderColor: UIColor = viewModel?.isIncoming == true ? messageApperance.incomingBubbleColor: messageApperance.outgoingBubbleColor
-            for voter in sortedVoters.prefix(avatarCount) {
+            for voter in sortedVoters.suffix(avatarCount) {
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
                 avatarView.backgroundColor = .systemGray4

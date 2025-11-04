@@ -1749,7 +1749,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         }
         
         // Post optimistic UI update notification - mark as closed
-        if let pollUIModel = createOptimisticPollUIModel(
+        if let pollUIModel = createOptimisticPollViewModel(
             messageId: layoutModel.message.id,
             layoutModel: layoutModel,
             currentPollViewModel: pollViewModel,
@@ -1782,7 +1782,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         addOptionId: String?,
         removeOptionId: String?
     ) {
-        if let pollUIModel = createOptimisticPollUIModel(
+        if let pollUIModel = createOptimisticPollViewModel(
             messageId: messageId,
             layoutModel: layoutModel,
             currentPollViewModel: currentPollViewModel,
@@ -1800,7 +1800,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         }
     }
 
-    private func createOptimisticPollUIModel(
+    private func createOptimisticPollViewModel(
         messageId: MessageId,
         layoutModel: MessageLayoutModel,
         currentPollViewModel: PollViewModel,
@@ -1812,6 +1812,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             return nil
         }
 
+        let currentUser = ChatUser(user: SceytChatUIKit.shared.chatClient.user)
         let isSingleSelection = !poll.allowMultipleVotes
         var updatedOptions = currentPollViewModel.options
 
@@ -1821,57 +1822,103 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             if let addOptionId {
                 // Create new options array with updated selection state and vote counts
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
-                    var updatedOption = option
+                    var updatedVoters = option.voters
                     
                     // Find the previously selected option (if different from the new one)
                     let wasPreviouslySelected = option.isSelected && option.id != addOptionId
                     
                     if wasPreviouslySelected {
-                        // Decrease vote count for previously selected option
-                        updatedOption.voteCount = max(0, option.voteCount - 1)
+                        // Remove current user from previously selected option's voters
+                        updatedVoters = option.voters.filter { $0.id != currentUserId }
                     }
                     
                     // Update selection state: only the new option should be selected
-                    updatedOption.isSelected = option.id == addOptionId
+                    let isSelected = option.id == addOptionId
                     
-                    // Increase vote count for the newly selected option
+                    // Increase vote count and add current user for the newly selected option
+                    var voteCount = option.voteCount
                     if option.id == addOptionId {
-                        updatedOption.voteCount = option.voteCount + 1
+                        voteCount = option.voteCount + 1
+                        // Append current user if not already in voters array
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                    } else if wasPreviouslySelected {
+                        voteCount = max(0, option.voteCount - 1)
                     }
                     
-                    return updatedOption
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: voteCount,
+                        progress: option.progress,
+                        selected: isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: updatedVoters
+                    )
                 }
             } else if let removeOptionId {
                 // Removing a vote in single selection means deselecting it
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
                     if option.id == removeOptionId {
-                        var updatedOption = option
-                        updatedOption.isSelected = false
-                        updatedOption.voteCount = max(0, option.voteCount - 1)
-                        return updatedOption
+                        // Remove current user from voters array
+                        let updatedVoters = option.voters.filter { $0.id != currentUserId }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: max(0, option.voteCount - 1),
+                            progress: option.progress,
+                            selected: false,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
                     }
                     return option
                 }
             }
         } else {
-            // For multiple selection: toggle the specific option
             if let addOptionId {
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
                     if option.id == addOptionId {
-                        var updatedOption = option
-                        updatedOption.isSelected = true
-                        updatedOption.voteCount = option.voteCount + 1
-                        return updatedOption
+                        var updatedVoters = option.voters
+                        // Append current user if not already in voters array
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: option.voteCount + 1,
+                            progress: option.progress,
+                            selected: true,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
                     }
                     return option
                 }
             } else if let removeOptionId {
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
                     if option.id == removeOptionId {
-                        var updatedOption = option
-                        updatedOption.isSelected = false
-                        updatedOption.voteCount = max(0, option.voteCount - 1)
-                        return updatedOption
+                        // Remove current user from voters array
+                        let updatedVoters = option.voters.filter { $0.id != currentUserId }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: max(0, option.voteCount - 1),
+                            progress: option.progress,
+                            selected: false,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
                     }
                     return option
                 }
