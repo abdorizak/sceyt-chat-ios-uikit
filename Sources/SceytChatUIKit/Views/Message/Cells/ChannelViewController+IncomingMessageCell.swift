@@ -238,13 +238,8 @@ extension ChannelViewController {
             } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {
                 layoutConstraint += [
                     bubbleView.leadingAnchor.pin(to: avatarView.trailingAnchor, constant: 10),
-                    bubbleView.trailingAnchor.pin(to: infoView.trailingAnchor, constant: 12),
                     bubbleView.topAnchor.pin(to: containerView.topAnchor),
-                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.messageUserTitleSize.width + 24),
-                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.pollViewMeasure.width + 24),
-                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width + 24),
-                    bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.infoViewMeasure.width + 24),
-                    bubbleView.widthAnchor.pin(lessThanOrEqualToConstant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
+                    bubbleView.widthAnchor.pin(constant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
 
                     textLabel.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
@@ -463,17 +458,10 @@ extension ChannelViewController {
                 
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
-                logger.debug("[LINK SIZE] \(model.message.id), \(bubbleSize.height)")
             } else if options.contains(.poll) {
                 let pollSize = model.pollViewMeasure
-                textSize = model.textSize
-                textSize.width = max(textSize.width, model.parentTextSize.width - 70)
-                bubbleSize = textSize
-                bubbleSize.width = max(bubbleSize.width, pollSize.width)
-                bubbleSize.height += pollSize.height
-                // Add padding from user name - matches layout constraint: (isForwarded || showSenderInfo) ? 2 : 8
-                bubbleSize.height += (model.isForwarded || showName) ? 2 : 8
-                bubbleSize.height += 12 //padding
+                bubbleSize = pollSize
+                bubbleSize.height += showName ? 2 : 8
                 if userNameSize == .zero {
                     bubbleSize.height += 18
                 } else {
@@ -482,7 +470,6 @@ extension ChannelViewController {
                 
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
-                logger.debug("[POLL SIZE] \(model.message.id), \(bubbleSize.height)")
             } else {
                 bubbleSize = model.attachmentsContainerSize
                 bubbleSize.width += 4
@@ -493,7 +480,6 @@ extension ChannelViewController {
                 bubbleSize.height += (model.textSize.height > 0 && model.showUserInfo) ? 8 : 2
                 bubbleSize.height += 8//Attachment padding
             }
-            logger.debug("IncomingMessageCell: measure 1 messageId: \(model.message.id), measure: \(bubbleSize)")
             if replySize != .zero {
                 bubbleSize.height += replySize.height
                 bubbleSize.width = max(bubbleSize.width, replySize.width)

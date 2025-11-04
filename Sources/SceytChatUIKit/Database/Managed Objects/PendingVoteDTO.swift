@@ -54,8 +54,11 @@ public class PendingVoteDTO: NSManagedObject {
     ) -> PendingVoteDTO {
         if let vote = fetch(pollId: pollId, optionId: optionId, userId: userId, context: context) {
             // Set poll relationship if not already set
-            if vote.poll == nil {
-                vote.poll = PollDTO.fetch(id: pollId, context: context)
+            if vote.poll == nil, let pollDTO = PollDTO.fetch(id: pollId, context: context) {
+                // Use mutableSetValue to safely add to the inverse relationship
+                let pendingVotesSet = pollDTO.mutableSetValue(forKey: "pendingVotes")
+                pendingVotesSet.add(vote)
+                vote.poll = pollDTO
             }
             return vote
         }
@@ -66,7 +69,14 @@ public class PendingVoteDTO: NSManagedObject {
         mo.messageTid = messageTid
         mo.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
         mo.user = UserDTO.fetchOrCreate(id: userId, context: context)
-        mo.poll = PollDTO.fetch(id: pollId, context: context)
+
+        // Safely set poll relationship using mutable accessor for inverse relationship
+        if let pollDTO = PollDTO.fetch(id: pollId, context: context) {
+            let pendingVotesSet = pollDTO.mutableSetValue(forKey: "pendingVotes")
+            pendingVotesSet.add(mo)
+            mo.poll = pollDTO
+        }
+
         return mo
     }
 }
