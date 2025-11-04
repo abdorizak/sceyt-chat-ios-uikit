@@ -167,15 +167,15 @@ extension MessageCell {
                 configure()
                 return
             }
-            
+
             let oldVoteCount = oldViewModel.voteCount
             let oldIsSelected = oldViewModel.isSelected
-            
+
             // Animate vote count change with smooth transition
             if oldVoteCount != newViewModel.voteCount {
                 let isIncreasing = newViewModel.voteCount > oldVoteCount
                 let translationDistance: CGFloat = 12.0
-                
+
                 let exitTransform = CGAffineTransform(translationX: 0, y: isIncreasing ? -translationDistance : translationDistance)
                 let enterTransform = CGAffineTransform(translationX: 0, y: isIncreasing ? translationDistance : -translationDistance)
 
@@ -197,20 +197,6 @@ extension MessageCell {
             }
 
             progressBar.setProgress(newViewModel.progress, animated: true)
-
-            // Animate checkbox selection with bounce effect
-            if oldIsSelected != newViewModel.isSelected {
-                UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseInOut], animations: {
-                    self.checkboxView.isSelected = newViewModel.isSelected
-                    if newViewModel.isSelected {
-                        self.checkboxView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
-                    }
-                }) { _ in
-                    UIView.animate(withDuration: 0.1) {
-                        self.checkboxView.transform = .identity
-                    }
-                }
-            }
 
             votersStackView.removeArrangedSubviews()
             if !newViewModel.isAnonymous {
