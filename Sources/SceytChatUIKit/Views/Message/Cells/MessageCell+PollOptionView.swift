@@ -18,7 +18,6 @@ extension MessageCell {
         
         open lazy var optionLabel: UILabel = {
             let label = UILabel()
-            label.font = .systemFont(ofSize: 16, weight: .regular)
             label.textColor = .label
             label.numberOfLines = 0
             label.lineBreakMode = .byWordWrapping
@@ -40,7 +39,6 @@ extension MessageCell {
         
         open lazy var voteCountLabel: UILabel = {
             let label = UILabel()
-            label.font = .systemFont(ofSize: 14, weight: .medium)
             label.textColor = .label
             label.textAlignment = .right
             return label.withoutAutoresizingMask
@@ -90,7 +88,7 @@ extension MessageCell {
         open override func setupLayout() {
             checkboxView.leadingAnchor.pin(to: leadingAnchor)
             checkboxView.topAnchor.pin(to: topAnchor)
-            checkboxView.resize(anchors: [.width(20.0), .height(20.0)])
+            checkboxView.resize(anchors: [.width(appearance.checkboxStyle.size), .height(appearance.checkboxStyle.size)])
             
             optionLabel.topAnchor.pin(to: topAnchor)
             optionLabelLeadingConstraint = optionLabel.leadingAnchor.pin(to: checkboxView.trailingAnchor, constant: 8.0)
@@ -98,8 +96,8 @@ extension MessageCell {
 
             votersContainerView.trailingAnchor.pin(to: trailingAnchor)
             votersContainerView.topAnchor.pin(to: topAnchor)
-            votersContainerView.widthAnchor.pin(constant: 80.0)
-            votersContainerView.heightAnchor.pin(greaterThanOrEqualToConstant: 20.0)
+            votersContainerView.widthAnchor.pin(constant: appearance.votersContainerWidth)
+            votersContainerView.heightAnchor.pin(greaterThanOrEqualToConstant: appearance.voterAvatarStyle.size)
 
             votersStackView.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
             votersStackView.trailingAnchor.pin(lessThanOrEqualTo: voteCountLabel.leadingAnchor, constant: -1.5)

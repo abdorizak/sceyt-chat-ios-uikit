@@ -64,7 +64,8 @@ public class PollViewAppearance: AppearanceProviding {
         progressBarHeight: 4,
         progressBarCornerRadius: 2,
         containerCornerRadius: 12,
-        containerInsets: UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        containerInsets: UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12),
+        votersContainerWidth: 50.0
     )
     
     // MARK: - Colors
@@ -128,6 +129,9 @@ public class PollViewAppearance: AppearanceProviding {
     
     @Trackable<PollViewAppearance, UIEdgeInsets>
     public var containerInsets: UIEdgeInsets
+
+    @Trackable<PollViewAppearance, CGFloat>
+    public var votersContainerWidth: CGFloat
     
     // MARK: - Initializers
     
@@ -149,7 +153,8 @@ public class PollViewAppearance: AppearanceProviding {
         progressBarHeight: CGFloat,
         progressBarCornerRadius: CGFloat,
         containerCornerRadius: CGFloat,
-        containerInsets: UIEdgeInsets
+        containerInsets: UIEdgeInsets,
+        votersContainerWidth: CGFloat
     ) {
         self._dividerColor = Trackable(value: dividerColor)
         self._progressBarBackground = Trackable(value: progressBarBackground)
@@ -169,6 +174,7 @@ public class PollViewAppearance: AppearanceProviding {
         self._progressBarCornerRadius = Trackable(value: progressBarCornerRadius)
         self._containerCornerRadius = Trackable(value: containerCornerRadius)
         self._containerInsets = Trackable(value: containerInsets)
+        self._votersContainerWidth = Trackable(value: votersContainerWidth)
     }
     
     public init(
@@ -190,7 +196,8 @@ public class PollViewAppearance: AppearanceProviding {
         progressBarHeight: CGFloat? = nil,
         progressBarCornerRadius: CGFloat? = nil,
         containerCornerRadius: CGFloat? = nil,
-        containerInsets: UIEdgeInsets? = nil
+        containerInsets: UIEdgeInsets? = nil,
+        votersContainerWidth: CGFloat? = nil
     ) {
         self._dividerColor = Trackable(reference: reference, referencePath: \.dividerColor)
         self._progressBarBackground = Trackable(reference: reference, referencePath: \.progressBarBackground)
@@ -210,6 +217,7 @@ public class PollViewAppearance: AppearanceProviding {
         self._progressBarCornerRadius = Trackable(reference: reference, referencePath: \.progressBarCornerRadius)
         self._containerCornerRadius = Trackable(reference: reference, referencePath: \.containerCornerRadius)
         self._containerInsets = Trackable(reference: reference, referencePath: \.containerInsets)
+        self._votersContainerWidth = Trackable(reference: reference, referencePath: \.votersContainerWidth)
         
         if let dividerColor { self.dividerColor = dividerColor }
         if let progressBarBackground { self.progressBarBackground = progressBarBackground }
@@ -229,6 +237,7 @@ public class PollViewAppearance: AppearanceProviding {
         if let progressBarCornerRadius { self.progressBarCornerRadius = progressBarCornerRadius }
         if let containerCornerRadius { self.containerCornerRadius = containerCornerRadius }
         if let containerInsets { self.containerInsets = containerInsets }
+        if let votersContainerWidth { self.votersContainerWidth = votersContainerWidth }
     }
 }
 
