@@ -16,6 +16,7 @@ extension SceytChatUIKit {
         public var senderNameColorProvider: any UserColorProviding = SenderNameColorProvider()
         public var attachmentIconProvider: any AttachmentIconProviding = AttachmentIconProvider()
         public var channelListAttachmentIconProvider: any AttachmentIconProviding = ChannelListAttachmentIconProvider()
+        public var messageTypeIconProvider: any MessageTypeIconProviding = DefaultMessageTypeIconProvider()
         public var connectionStateProvider: any ConnectionStateProviding = ConnectionStateTextProvider()
         public var presenceStateIconProvider: any PresenceStateIconProviding = PresenceStateIconProvider()
         public var defaultMarkerTitleProvider: any DefaultMarkerTitleProviding = DefaultMarkerTitleProvider()

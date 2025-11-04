@@ -36,7 +36,12 @@ open class MenuController: ViewController,
     
     open func reloadData() {
         collectionView.reloadData()
-        collectionHeightConstraint?.constant = CGFloat(dataSource?.menuItems.count ?? 0) * Layouts.cellHeight + Layouts.verticalPadding * 2
+        let menuItems = dataSource?.menuItems.count ?? 0
+        var height: CGFloat = 0
+        if menuItems > 0 {
+            height = CGFloat(menuItems) * Layouts.cellHeight + Layouts.verticalPadding * 2
+        }
+        collectionHeightConstraint?.constant = height
     }
     
     open var cellData: [MenuItem] {

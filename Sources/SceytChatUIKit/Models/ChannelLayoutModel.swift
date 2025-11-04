@@ -151,6 +151,7 @@ open class ChannelLayoutModel {
                     deletedLabelAppearance: appearance.deletedLabelAppearance,
                     attachmentNameFormatter: appearance.attachmentNameFormatter,
                     attachmentIconProvider: appearance.attachmentIconProvider,
+                    messageTypeIconProvider: appearance.messageTypeIconProvider,
                     mentionUserNameFormatter: appearance.mentionUserNameFormatter
                 )
             )
@@ -167,6 +168,7 @@ open class ChannelLayoutModel {
                     deletedLabelAppearance: appearance.deletedLabelAppearance,
                     attachmentNameFormatter: appearance.attachmentNameFormatter,
                     attachmentIconProvider: appearance.attachmentIconProvider,
+                    messageTypeIconProvider: appearance.messageTypeIconProvider,
                     mentionUserNameFormatter: appearance.mentionUserNameFormatter
                 )
             )
