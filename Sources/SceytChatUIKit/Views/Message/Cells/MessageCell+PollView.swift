@@ -46,8 +46,8 @@ extension MessageCell {
 
                 backgroundColor = data.message.incoming ? appearance.incomingBubbleColor : appearance.outgoingBubbleColor
 
-                // Check if message has poll data
-                guard data.message.poll != nil else {
+                // Check if message has poll data and is not deleted
+                guard data.message.poll != nil, data.message.state != .deleted else {
                     isHidden = true
                     return
                 }
@@ -118,7 +118,7 @@ extension MessageCell {
         private func configure(with layoutModel: MessageLayoutModel) {
             let message = layoutModel.message
 
-            guard let poll = message.poll else {
+            guard let poll = message.poll, message.state != .deleted else {
                 isHidden = true
                 return
             }
@@ -202,7 +202,7 @@ extension MessageCell {
             model: MessageLayoutModel,
             appearance: MessageCell.Appearance
         ) -> CGSize {
-            guard let poll = model.message.poll else {
+            guard let poll = model.message.poll, model.message.state != .deleted else {
                 return .zero
             }
 

@@ -208,7 +208,7 @@ open class MessageLayoutModel {
         if hasVoiceAttachments {
             contentOptions.insert(.voice)
         }
-        if message.poll != nil {
+        if message.poll != nil && message.state != .deleted {
             contentOptions.insert(.poll)
         }
         if attachments.isEmpty {
