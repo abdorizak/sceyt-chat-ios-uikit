@@ -194,7 +194,11 @@ extension MessageCell {
                 voteCountLabel.text = String(newViewModel.voteCount)
             }
 
-            progressBar.setProgress(newViewModel.progress, animated: true)
+            // Animate progress bar with custom faster duration
+            UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut]) {
+                self.progressBar.setProgress(newViewModel.progress, animated: false)
+                self.progressBar.layoutIfNeeded()
+            }
 
             votersStackView.removeArrangedSubviews()
             if !newViewModel.isAnonymous {
