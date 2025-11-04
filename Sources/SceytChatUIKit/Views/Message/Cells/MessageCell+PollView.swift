@@ -71,6 +71,8 @@ extension MessageCell {
             viewResultButton.setTitle("View Results", for: .normal)
             viewResultButton.setTitleColor(.systemBlue, for: .normal)
             viewResultButton.addTarget(self, action: #selector(viewResultsButtonTapped), for: .touchUpInside)
+
+            viewResultButton.contentEdgeInsets = UIEdgeInsets(top: 16.0, left: 10.0, bottom: 16.0, right: 10.0)
         }
 
         override open func setupLayout() {
@@ -94,7 +96,6 @@ extension MessageCell {
             separatorView.resize(anchors: [.height(1.0)])
             viewResultButton.topAnchor.pin(to: separatorView.bottomAnchor)
             viewResultButton.pin(to: self, anchors: [.leading, .trailing])
-            viewResultButton.heightAnchor.pin(constant: 40.0)
         }
 
         override open func setupAppearance() {
@@ -204,15 +205,15 @@ extension MessageCell {
             guard let poll = model.message.poll else {
                 return .zero
             }
-            
+
             let pollViewModel = PollViewModel(from: poll, isIncmoing: model.message.incoming)
             let pollAppearance = appearance.pollViewAppearance
             let maxWidth = Components.messageLayoutModel.defaults.messageWidth - 24 // 12pt padding each side
             var height: CGFloat = 0
-            
+
             // Top padding
             height += 8 // questionLabel top padding
-            
+
             // Question height
             let questionConfig = TextSizeMeasure.Config(
                 restrictingWidth: maxWidth - 24, // 12pt leading + 12pt trailing
@@ -222,7 +223,7 @@ extension MessageCell {
             )
             let questionSize = TextSizeMeasure.calculateSize(of: pollViewModel.question, config: questionConfig).textSize
             height += ceil(questionSize.height)
-            
+
             // Type label height + spacing
             height += 4 // spacing between question and type
             let typeConfig = TextSizeMeasure.Config(
@@ -233,13 +234,15 @@ extension MessageCell {
             )
             let typeSize = TextSizeMeasure.calculateSize(of: pollViewModel.pollTypeText, config: typeConfig).textSize
             height += ceil(typeSize.height)
-            
+
             // Options stack top spacing
             height += 16 // spacing between typeLabel and optionsStackView
-            
+
             // Options height
+            // Calculation: maxWidth already has -24 (12pt padding each side)
+            // Inside option view: 20pt checkbox + 8pt spacing + 8pt spacing + 80pt voters container = 116pt
             let optionConfig = TextSizeMeasure.Config(
-                restrictingWidth: maxWidth - 24 - 108, // 12pt*2 padding + 20pt checkbox + 8pt spacing + 80pt voters container
+                restrictingWidth: maxWidth - 116, // 20pt checkbox + 8pt spacing + 8pt spacing + 80pt voters container
                 maximumNumberOfLines: 0,
                 font: pollAppearance.optionTextStyle.font,
                 lastFragmentUsedRect: false
@@ -258,10 +261,11 @@ extension MessageCell {
 
             // Separator + footer (if not anonymous)
             if !pollViewModel.anonymous {
+                height += 20 // separator top spacing
                 height += 1 // separator height
-                height += 40 // button height
+                height += 30 // button height (16pt top + 16pt bottom contentEdgeInsets + ~16pt intrinsic height)
             }
-            
+
             return CGSize(width: maxWidth, height: ceil(height))
         }
     }

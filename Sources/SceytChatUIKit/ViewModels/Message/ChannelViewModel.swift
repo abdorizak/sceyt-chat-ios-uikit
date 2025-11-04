@@ -1816,20 +1816,28 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         let isSingleSelection = !poll.allowMultipleVotes
         var updatedOptions = currentPollViewModel.options
 
+        // Helper function to get voters from poll for a specific option
+        func getVotersFromPoll(for optionId: String) -> [ChatUser] {
+            poll.votes
+                .filter { $0.optionId == optionId }
+                .compactMap(\.user)
+        }
+
         // Handle selection state updates
         if isSingleSelection {
             // For single selection: when adding an option, deselect all others
             if let addOptionId {
                 // Create new options array with updated selection state and vote counts
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
-                    var updatedVoters = option.voters
+                    // Get voters from poll for this option
+                    var updatedVoters = getVotersFromPoll(for: option.id)
                     
                     // Find the previously selected option (if different from the new one)
                     let wasPreviouslySelected = option.isSelected && option.id != addOptionId
                     
                     if wasPreviouslySelected {
                         // Remove current user from previously selected option's voters
-                        updatedVoters = option.voters.filter { $0.id != currentUserId }
+                        updatedVoters = updatedVoters.filter { $0.id != currentUserId }
                     }
                     
                     // Update selection state: only the new option should be selected
@@ -1863,8 +1871,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 // Removing a vote in single selection means deselecting it
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
                     if option.id == removeOptionId {
-                        // Remove current user from voters array
-                        let updatedVoters = option.voters.filter { $0.id != currentUserId }
+                        // Get voters from poll and remove current user
+                        let updatedVoters = getVotersFromPoll(for: option.id)
+                            .filter { $0.id != currentUserId }
                         return PollOptionViewModel(
                             id: option.id,
                             text: option.text,
@@ -1877,14 +1886,27 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                             voters: updatedVoters
                         )
                     }
-                    return option
+                    // For other options, get voters from poll
+                    let voters = getVotersFromPoll(for: option.id)
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
                 }
             }
         } else {
             if let addOptionId {
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
                     if option.id == addOptionId {
-                        var updatedVoters = option.voters
+                        // Get voters from poll and add current user
+                        var updatedVoters = getVotersFromPoll(for: option.id)
                         // Append current user if not already in voters array
                         if !updatedVoters.contains(where: { $0.id == currentUserId }) {
                             updatedVoters.append(currentUser)
@@ -1901,13 +1923,26 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                             voters: updatedVoters
                         )
                     }
-                    return option
+                    // For other options, get voters from poll
+                    let voters = getVotersFromPoll(for: option.id)
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
                 }
             } else if let removeOptionId {
                 updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
                     if option.id == removeOptionId {
-                        // Remove current user from voters array
-                        let updatedVoters = option.voters.filter { $0.id != currentUserId }
+                        // Get voters from poll and remove current user
+                        let updatedVoters = getVotersFromPoll(for: option.id)
+                            .filter { $0.id != currentUserId }
                         return PollOptionViewModel(
                             id: option.id,
                             text: option.text,
@@ -1920,7 +1955,19 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                             voters: updatedVoters
                         )
                     }
-                    return option
+                    // For other options, get voters from poll
+                    let voters = getVotersFromPoll(for: option.id)
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
                 }
             }
         }
