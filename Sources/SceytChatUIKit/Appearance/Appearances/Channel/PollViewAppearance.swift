@@ -30,11 +30,11 @@ public class PollViewAppearance: AppearanceProviding {
         ),
         viewResultsTextStyle: .init(
             foregroundColor: .accent,
-            font: Fonts.regular.withSize(14)
+            font: Fonts.semiBold.withSize(14)
         ),
         viewResultsDisabledTextStyle: .init(
-            foregroundColor: .systemGray3,
-            font: Fonts.regular.withSize(14)
+            foregroundColor: DefaultColors.iconTertiary,
+            font: Fonts.semiBold.withSize(14)
         ),
         optionTextStyle: .init(
             foregroundColor: .label,

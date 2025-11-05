@@ -87,6 +87,8 @@ public class PollDTO: NSManagedObject {
                 dict[key] = value
             }
             votesPerOption = dict as NSDictionary
+        } else {
+            votesPerOption = [:]
         }
         
         return self

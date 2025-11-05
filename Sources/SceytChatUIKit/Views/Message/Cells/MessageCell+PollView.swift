@@ -112,6 +112,7 @@ extension MessageCell {
             separatorView.backgroundColor = appearance.pollViewAppearance.dividerColor
 
             viewResultButton.setTitleColor(appearance.pollViewAppearance.viewResultsTextStyle.foregroundColor, for: .normal)
+            viewResultButton.setTitleColor(appearance.pollViewAppearance.viewResultsDisabledTextStyle.foregroundColor, for: .disabled)
             viewResultButton.titleLabel?.font = appearance.pollViewAppearance.viewResultsTextStyle.font
         }
 
@@ -131,7 +132,9 @@ extension MessageCell {
             typeLabel.text = viewModel.pollTypeText
 
             let isAnonymous = viewModel.anonymous
+            let hasNoVotes = viewModel.totalVotes == 0
             viewResultButton.isHidden = isAnonymous
+            viewResultButton.isEnabled = !hasNoVotes
             separatorView.isHidden = isAnonymous
 
             // Remove existing option views
@@ -173,6 +176,8 @@ extension MessageCell {
         open func updatePoll(poll: PollViewModel) {
             // Update stored PollViewModel
             self.pollViewModel = poll
+            let hasNoVotes = poll.totalVotes == 0
+            viewResultButton.isEnabled = !hasNoVotes
             for (index, option) in poll.options.enumerated() {
                 self.updateOption(with: option, at: index, animated: true)
             }

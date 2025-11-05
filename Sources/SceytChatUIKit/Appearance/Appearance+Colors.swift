@@ -62,7 +62,7 @@ public struct DefaultColors {
     public static let border: UIColor = UIColor(light: UIColor(rgb: 0xE4E6EE), dark: UIColor(rgb: 0x303032))
     public static let iconInactive: UIColor = UIColor(light: UIColor(rgb: 0xA0A1B0), dark: UIColor(rgb: 0x76787A))
     public static let iconSecondary: UIColor = UIColor(light: UIColor(rgb: 0x707388), dark: UIColor(rgb: 0x969A9F))
-    public static let pollIcon: UIColor = UIColor(light: UIColor(rgb: 0x818C99), dark: UIColor(rgb: 0xB1B1B3))
+    public static let iconTertiary: UIColor = UIColor(light: UIColor(rgb: 0x818C99), dark: UIColor(rgb: 0xB1B1B3))
     public static let overlayBackground1: UIColor = UIColor(light: UIColor(rgb: 0x000000, alpha: 0.3), dark: UIColor(rgb: 0x000000, alpha: 0.4))
     public static let overlayBackground2: UIColor = UIColor(light: UIColor(rgb: 0x000000, alpha: 0.3), dark: UIColor(rgb: 0x000000, alpha: 0.3))
     public static let shadowColor: UIColor = UIColor(rgb: 0x111539, alpha: 0.08)

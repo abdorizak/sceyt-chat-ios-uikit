@@ -1990,13 +1990,16 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             }
         }
 
+        // Recalculate total votes based on updated vote counts
+        let totalVotes = updatedOptions.reduce(0) { $0 + $1.voteCount }
+
         // Create new PollViewModel with updated options
         return PollViewModel(
             pollId: currentPollViewModel.pollId,
             question: currentPollViewModel.question,
             pollTypeText: currentPollViewModel.pollTypeText,
             options: updatedOptions,
-            totalVotes: currentPollViewModel.totalVotes,
+            totalVotes: totalVotes,
             closed: currentPollViewModel.closed,
             anonymous: currentPollViewModel.anonymous,
             allowMultipleVotes: currentPollViewModel.allowMultipleVotes,

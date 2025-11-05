@@ -148,7 +148,7 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
                 let finalIcon: UIImage
                 if icon.renderingMode == .alwaysTemplate {
                     // Use specific poll icon color for polls, otherwise use body color
-                    let tintColor = message.poll != nil ? DefaultColors.pollIcon : bodyColor
+                    let tintColor = message.poll != nil ? DefaultColors.iconTertiary : bodyColor
                     finalIcon = icon.withTintColor(tintColor, renderingMode: .alwaysOriginal)
                 } else {
                     finalIcon = icon
