@@ -189,9 +189,12 @@ extension MessageCell {
                         self.voteCountLabel.transform = .identity
                         self.voteCountLabel.alpha = 1.0
                     }
+                    
+                    self.viewModel = newViewModel
                 }
             } else {
                 voteCountLabel.text = String(newViewModel.voteCount)
+                viewModel = newViewModel
             }
 
             // Animate progress bar with custom faster duration
@@ -204,8 +207,6 @@ extension MessageCell {
             if !newViewModel.isAnonymous {
                 createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
             }
-
-            viewModel = newViewModel
         }
 
         private func createVoterAvatars(voters: [ChatUser], appearance: PollViewAppearance) {
