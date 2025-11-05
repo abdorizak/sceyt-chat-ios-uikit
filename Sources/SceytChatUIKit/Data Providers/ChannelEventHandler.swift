@@ -303,6 +303,23 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             logger.debug(error?.localizedDescription ?? "")
         }
     }
+    
+    public func channel(_ channel: Channel, user: User, didChangeVote message: Message, changedVotes: ChangedVotes?) {
+        guard let changedVotes = changedVotes,
+              let pollId = message.poll?.id else {
+            return
+        }
+
+        database.write { context in
+            if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                // Apply changed votes to ownVotes
+                context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+            }
+            context.createOrUpdate(message: message, channelId: channel.id)
+        } completion: { error in
+            logger.debug(error?.localizedDescription ?? "")
+        }
+    }
 
     open func channel(_ channel: Channel, user: User, didAddVote message: Message) {
         updatePollMessage(channel, message, user: user)

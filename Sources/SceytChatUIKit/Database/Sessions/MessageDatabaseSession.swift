@@ -107,6 +107,8 @@ public protocol MessageDatabaseSession {
     
     @discardableResult
     func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO
+
+    func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO)
 }
 
 public extension MessageDatabaseSession {
@@ -1162,5 +1164,39 @@ extension NSManagedObjectContext: MessageDatabaseSession {
 
         dto.poll = pollDTO
         return dto
+    }
+
+    // MARK: Apply Changed Votes
+
+    public func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO) {
+        guard let pollDTO = messageDTO.poll else { return }
+
+        // Get mutable ordered set for ownVotes
+        let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+
+        // Add new votes
+        for vote in changedVotes.addedVotes {
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: pollId,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.ownPollDetails = pollDTO
+        }
+
+        // Remove votes
+        for vote in changedVotes.removedVotes {
+            if let voteDTO = PollVoteDTO.fetch(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: pollId,
+                context: self
+            ) {
+                ownVotesSet.remove(voteDTO)
+                delete(voteDTO)
+            }
+        }
     }
 }

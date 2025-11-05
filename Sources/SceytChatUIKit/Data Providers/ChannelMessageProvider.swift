@@ -8,6 +8,7 @@
 
 import Foundation
 import SceytChat
+import CoreData
 
 open class ChannelMessageProvider: DataProvider {
     
@@ -381,29 +382,37 @@ open class ChannelMessageProvider: DataProvider {
                 messageId: messageId,
                 pollId: pollId,
                 optionIds: optionIds
-            ) { message, error in
-                guard let message = message
-                else {
+            ) { changedVotes, message, error in
+                guard let changedVotes else {
                     completion?(error)
                     return
                 }
-                self.database.write {
+                
+                guard let message = message else {
+                    completion?(error)
+                    return
+                }
+                
+                self.database.write { context in
                     // Remove pending votes after successful vote
-                    if let messageDTO = MessageDTO.fetch(id: message.id, context: $0) {
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
                         for optionId in optionIds {
                             if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
                                 if let pendingVote = PendingVoteDTO.fetch(
                                     pollId: pollId,
                                     optionId: optionId,
                                     userId: userId,
-                                    context: $0
+                                    context: context
                                 ) {
-                                    $0.delete(pendingVote)
+                                    context.delete(pendingVote)
                                 }
                             }
                         }
+
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }
-                    $0.createOrUpdate(
+                    context.createOrUpdate(
                         message: message,
                         channelId: self.channelId
                     )
@@ -456,29 +465,37 @@ open class ChannelMessageProvider: DataProvider {
                 messageId: messageId,
                 pollId: pollId,
                 optionIds: optionIds
-            ) { message, error in
-                guard let message = message
-                else {
+            ) { changedVotes, message, error in
+                guard let changedVotes else {
                     completion?(error)
                     return
                 }
-                self.database.write {
+
+                guard let message = message else {
+                    completion?(error)
+                    return
+                }
+
+                self.database.write { context in
                     // Remove pending votes after successful deletion
-                    if let messageDTO = MessageDTO.fetch(id: message.id, context: $0) {
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
                         for optionId in optionIds {
                             if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
                                 if let pendingVote = PendingVoteDTO.fetch(
                                     pollId: pollId,
                                     optionId: optionId,
                                     userId: userId,
-                                    context: $0
+                                    context: context
                                 ) {
-                                    $0.delete(pendingVote)
+                                    context.delete(pendingVote)
                                 }
                             }
                         }
+
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }
-                    $0.createOrUpdate(
+                    context.createOrUpdate(
                         message: message,
                         channelId: self.channelId
                     )
@@ -509,14 +526,23 @@ open class ChannelMessageProvider: DataProvider {
             self.channelOperator.retractPollVote(
                 messageId: messageId,
                 pollId: pollId
-            ) { message, error in
-                guard let message = message
-                else {
+            ) { changedVotes, message, error in
+                guard let changedVotes else {
                     completion?(error)
                     return
                 }
-                self.database.write {
-                    $0.createOrUpdate(
+
+                guard let message = message else {
+                    completion?(error)
+                    return
+                }
+
+                self.database.write { context in
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                    }
+                    context.createOrUpdate(
                         message: message,
                         channelId: self.channelId
                     )
@@ -535,9 +561,8 @@ open class ChannelMessageProvider: DataProvider {
         channelOperator.closePoll(
             messageId: messageId,
             pollId: pollId
-        ) { message, error in
-            guard let message = message
-            else {
+        ) { voteDetails, message, error in
+            guard let message = message else {
                 completion?(error)
                 return
             }
