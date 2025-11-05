@@ -1171,7 +1171,10 @@ extension NSManagedObjectContext: MessageDatabaseSession {
     public func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO) {
         guard let pollDTO = messageDTO.poll else { return }
 
-        // Get mutable ordered set for ownVotes
+        let currentUserId = SceytChatUIKit.shared.currentUserId
+
+        // Get mutable ordered sets
+        let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
         let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
 
         // Add new votes
@@ -1183,7 +1186,17 @@ extension NSManagedObjectContext: MessageDatabaseSession {
                 context: self
             ).map(vote)
             voteDTO.user = createOrUpdate(user: vote.user)
-            voteDTO.ownPollDetails = pollDTO
+
+            // Check if this is the current user's vote
+            let isOwnVote = vote.user.id == currentUserId
+
+            if isOwnVote {
+                voteDTO.ownPollDetails = pollDTO
+                ownVotesSet.add(voteDTO)
+            } else {
+                voteDTO.pollDetails = pollDTO
+                votesSet.add(voteDTO)
+            }
         }
 
         // Remove votes
@@ -1194,7 +1207,13 @@ extension NSManagedObjectContext: MessageDatabaseSession {
                 pollId: pollId,
                 context: self
             ) {
-                ownVotesSet.remove(voteDTO)
+                let isOwnVote = vote.user.id == currentUserId
+
+                if isOwnVote {
+                    ownVotesSet.remove(voteDTO)
+                } else {
+                    votesSet.remove(voteDTO)
+                }
                 delete(voteDTO)
             }
         }

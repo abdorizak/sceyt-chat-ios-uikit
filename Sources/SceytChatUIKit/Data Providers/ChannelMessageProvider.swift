@@ -412,10 +412,6 @@ open class ChannelMessageProvider: DataProvider {
                         // Apply changed votes to ownVotes
                         context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }
-                    context.createOrUpdate(
-                        message: message,
-                        channelId: self.channelId
-                    )
                 } completion: { _ in
                     completion?(nil)
                 }
@@ -495,10 +491,6 @@ open class ChannelMessageProvider: DataProvider {
                         // Apply changed votes to ownVotes
                         context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }
-                    context.createOrUpdate(
-                        message: message,
-                        channelId: self.channelId
-                    )
                 } completion: { _ in
                     completion?(nil)
                 }
@@ -542,10 +534,6 @@ open class ChannelMessageProvider: DataProvider {
                         // Apply changed votes to ownVotes
                         context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }
-                    context.createOrUpdate(
-                        message: message,
-                        channelId: self.channelId
-                    )
                 } completion: { _ in
                     completion?(nil)
                 }

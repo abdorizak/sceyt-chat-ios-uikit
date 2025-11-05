@@ -93,4 +93,8 @@ public class PollDTO: NSManagedObject {
         
         return self
     }
+    
+    public func convert() -> PollDetails {
+        .init(dto: self)
+    }
 }
