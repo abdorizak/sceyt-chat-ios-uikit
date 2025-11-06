@@ -312,16 +312,19 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
 
         postPollUpdateNotification(channel, user: user, message: message, changedVotes: changedVotes)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.database.write { context in
-                if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
-                    // Apply changed votes to ownVotes
-                    context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            do {
+                try self.database.syncWrite { context in
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                    }
                 }
-            } completion: { error in
-                logger.debug(error?.localizedDescription ?? "")
+            } catch {
+                logger.debug(error.localizedDescription)
             }
-        }
+            
+//        }
     }
 
     func postPollUpdateNotification(_ channel: Channel, user: User, message: Message, changedVotes: ChangedVotes?) {
@@ -332,17 +335,18 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             guard let messageDTO = MessageDTO.fetch(id: message.id, context: context),
                   let pollDTO = messageDTO.poll else { return }
 
-            // Create a temporary context to apply votes without persisting
             let currentUserId = SceytChatUIKit.shared.currentUserId
+
+            // Get current state from database
             var votesPerOption = (pollDTO.votesPerOption as? [String: NSNumber]) ?? [:]
             var ownVotes = (pollDTO.ownVotes?.array as? [PollVoteDTO]) ?? []
             var votes = (pollDTO.votes?.array as? [PollVoteDTO]) ?? []
 
-            // Apply added votes
+            // Apply added votes - matching applyChangedVotes logic
             for vote in changedVotes.addedVotes {
                 let isOwnVote = vote.user.id == currentUserId
 
-                // Create temporary vote DTO for display purposes
+                // Fetch or create vote DTO
                 let voteDTO = PollVoteDTO.fetchOrCreate(
                     optionId: vote.optionId,
                     userId: vote.user.id,
@@ -352,22 +356,23 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
                 voteDTO.user = context.createOrUpdate(user: vote.user)
 
                 if isOwnVote {
-                    // Check if vote already exists to avoid duplicates
+                    // Only add if not already present
                     if !ownVotes.contains(where: { $0.optionId == vote.optionId && $0.id == vote.user.id }) {
                         ownVotes.append(voteDTO)
                     }
                 } else {
+                    // Only add if not already present
                     if !votes.contains(where: { $0.optionId == vote.optionId && $0.id == vote.user.id }) {
                         votes.append(voteDTO)
                     }
                 }
 
-                // Update votesPerOption
+                // Update votesPerOption - increment count for this option
                 let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
                 votesPerOption[vote.optionId] = NSNumber(value: currentCount + 1)
             }
 
-            // Apply removed votes
+            // Apply removed votes - matching applyChangedVotes logic
             for vote in changedVotes.removedVotes {
                 let isOwnVote = vote.user.id == currentUserId
 
@@ -377,15 +382,19 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
                     votes.removeAll { $0.optionId == vote.optionId && $0.id == vote.user.id }
                 }
 
-                // Update votesPerOption
+                // Update votesPerOption - decrement count for this option
                 let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
                 let newCount = max(0, currentCount - 1)
                 if newCount > 0 {
                     votesPerOption[vote.optionId] = NSNumber(value: newCount)
                 } else {
+                    // Remove the option from dictionary if count reaches 0
                     votesPerOption.removeValue(forKey: vote.optionId)
                 }
             }
+
+            // Get pending votes to include in PollDetails
+            let pendingVotes = (pollDTO.pendingVotes?.allObjects as? [PendingVoteDTO])?.map { PendingPollVote(dto: $0) }
 
             // Create PollDetails with updated votes
             let pollDetails = PollDetails(
@@ -400,7 +409,7 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
                 votesPerOption: votesPerOption.mapValues { $0.intValue },
                 votes: votes.map { PollVote(dto: $0) },
                 ownVotes: ownVotes.map { PollVote(dto: $0) },
-                pendingVotes: nil,
+                pendingVotes: pendingVotes,
                 createdAt: pollDTO.createdAt,
                 updatedAt: pollDTO.updatedAt,
                 closedAt: pollDTO.closedAt,
