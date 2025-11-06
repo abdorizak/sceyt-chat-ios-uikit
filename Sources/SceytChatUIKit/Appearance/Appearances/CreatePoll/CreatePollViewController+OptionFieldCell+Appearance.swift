@@ -22,7 +22,7 @@ extension CreatePollViewController.OptionFieldCell: AppearanceProviding {
         placeholderColor: .footnoteText,
         reorderImage: UIImage(systemName: "line.3.horizontal"),
         reorderIconTintColor: .iconInactive,
-        validationPattern: "^[\\s\\S]{1,200}$"
+        validationPattern: "^[\\s\\S]{1,120}$"
     )
 
     public struct Appearance {

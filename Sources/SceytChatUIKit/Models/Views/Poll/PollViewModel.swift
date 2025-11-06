@@ -39,7 +39,7 @@ public struct PollViewModel {
         self.allowVoteRetract = allowVoteRetract
     }
 
-    init(from poll: PollDetails, isIncmoing: Bool) {
+    public init(from poll: PollDetails, isIncmoing: Bool) {
         self.pollId = poll.id
         self.question = poll.name
         self.closed = poll.closed

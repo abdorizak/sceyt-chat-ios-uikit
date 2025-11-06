@@ -559,7 +559,15 @@ open class ChannelViewController: ViewController,
             .store(in: &subscriptions)
         
         inputTextView.attributedText = channelViewModel.draftMessage
-        
+
+        // Listen for poll close notification to force reload collection view
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(didClosePoll(_:)),
+            name: .didClosePoll,
+            object: nil
+        )
+
         ApplicationStateObserver()
             .didBecomeActive { [weak self] _ in
                 self?.isAppActive = true
@@ -915,7 +923,27 @@ open class ChannelViewController: ViewController,
     open func showChannelProfileAction() {
         router.showChannelProfile()
     }
-    
+
+    @objc
+    open func didClosePoll(_ notification: Notification) {
+        // Force reload the collection view when a poll is closed in this channel
+        guard let userInfo = notification.userInfo,
+              let channelId = userInfo["channelId"] as? ChannelId,
+              channelId == channelViewModel.channel.id else {
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            // Invalidate layout to force recalculation of all cell heights
+            self.channelViewModel.invalidateLayout()
+            // Invalidate the collection view layout
+            self.collectionView.collectionViewLayout.invalidateLayout()
+            // Reload all data
+            self.collectionView.reloadData()
+        }
+    }
+
     //MARK: Gesture actions
     @objc
     open func viewTapped(gesture: UITapGestureRecognizer) {
@@ -2398,7 +2426,7 @@ open class ChannelViewController: ViewController,
             ]
         }
         
-        if isPoll && (model.message.poll?.ownVotes.count ?? 0) > 0 {
+        if isPoll {
             let pollViewModel: PollViewModel?
             if let pollDetails = model.message.poll {
                 pollViewModel = PollViewModel(from: pollDetails, isIncmoing: model.message.incoming)
@@ -2406,23 +2434,25 @@ open class ChannelViewController: ViewController,
                 pollViewModel = nil
             }
             
-            items += [
-                .init(
-                    title: "Retract Vote",
-                    image: .messageActionRetractVote,
-                    imageRenderingMode: .alwaysTemplate,
-                    action: { [weak self] _ in
-                        guard let pollViewModel, let self else { return }
-                        self.channelViewModel.retractPollVote(
-                            layoutModel: model,
-                            pollViewModel: pollViewModel
-                        ) { [weak self] error in
-                            if let error {
-                                self?.showAlert(error: error)
+            if (model.message.poll?.ownVotes.count ?? 0) > 0 || (model.message.poll?.pendingVotes?.count ?? 0) > 0 {
+                items += [
+                    .init(
+                        title: "Retract Vote",
+                        image: .messageActionRetractVote,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            guard let pollViewModel, let self else { return }
+                            self.channelViewModel.retractPollVote(
+                                layoutModel: model,
+                                pollViewModel: pollViewModel
+                            ) { [weak self] error in
+                                if let error {
+                                    self?.showAlert(error: error)
+                                }
                             }
                         }
-                    }
-                )]
+                    )]
+            }
             
             if !model.message.incoming && model.message.state != .deleted && model.message.poll?.closed == false {
                 items += [

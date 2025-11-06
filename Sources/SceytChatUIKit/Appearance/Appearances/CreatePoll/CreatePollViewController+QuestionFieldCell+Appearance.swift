@@ -20,7 +20,7 @@ extension CreatePollViewController.QuestionFieldCell: AppearanceProviding {
             font: Fonts.regular.withSize(16)
         ),
         placeholderColor: .footnoteText,
-        validationPattern: "^[\\s\\S]{1,120}$"
+        validationPattern: "^[\\s\\S]{1,200}$"
     )
 
     public struct Appearance {

@@ -557,16 +557,84 @@ open class ChannelMessageProvider: DataProvider {
             messageId: messageId,
             pollId: pollId
         ) { voteDetails, message, error in
+            if let error {
+                completion?(error)
+                return
+            }
             guard let message = message else {
                 completion?(error)
                 return
             }
-            self.database.write {
-                $0.createOrUpdate(
-                    message: message,
-                    channelId: self.channelId
-                )
+            self.database.write { context in
+                guard let messageDTO = MessageDTO.fetch(id: message.id, context: context),
+                      let pollDTO = messageDTO.poll else {
+                    return
+                }
+
+                // Update poll to closed state
+                pollDTO.closed = true
+                if let closedAt = message.poll?.closedAt {
+                    pollDTO.closedAt = Int64(closedAt.timeIntervalSince1970)
+                }
+
+                // Update votes
+                if let votes = voteDetails?.votes {
+                    let voteDTOs = votes.map { vote -> PollVoteDTO in
+                        let voteDTO = PollVoteDTO.fetchOrCreate(
+                            optionId: vote.optionId,
+                            userId: vote.user.id,
+                            pollId: pollId,
+                            context: context
+                        ).map(vote)
+                        voteDTO.user = context.createOrUpdate(user: vote.user)
+                        voteDTO.pollDetails = pollDTO
+                        return voteDTO
+                    }
+
+                    let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+                    votesSet.removeAllObjects()
+                    votesSet.addObjects(from: voteDTOs)
+                }
+
+                // Update ownVotes
+                if let ownVotes = voteDetails?.ownVotes {
+                    let ownVoteDTOs = ownVotes.map { vote -> PollVoteDTO in
+                        let voteDTO = PollVoteDTO.fetchOrCreate(
+                            optionId: vote.optionId,
+                            userId: vote.user.id,
+                            pollId: pollId,
+                            context: context
+                        ).map(vote)
+                        voteDTO.user = context.createOrUpdate(user: vote.user)
+                        voteDTO.ownPollDetails = pollDTO
+                        return voteDTO
+                    }
+
+                    let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+                    ownVotesSet.removeAllObjects()
+                    ownVotesSet.addObjects(from: ownVoteDTOs)
+                }
+
+                // Update votesPerOption
+                if let votesPerOption = voteDetails?.votesPerOption, !votesPerOption.isEmpty {
+                    var dict: [String: NSNumber] = [:]
+                    for (key, value) in votesPerOption {
+                        dict[key] = value
+                    }
+                    pollDTO.votesPerOption = dict as NSDictionary
+                }
+
             } completion: { _ in
+                // Post notification to force UI reload after poll is closed
+                NotificationCenter.default.post(
+                    name: .didClosePoll,
+                    object: nil,
+                    userInfo: [
+                        "messageId": messageId,
+                        "pollId": pollId,
+                        "channelId": self.channelId
+                    ]
+                )
                 completion?(nil)
             }
         }

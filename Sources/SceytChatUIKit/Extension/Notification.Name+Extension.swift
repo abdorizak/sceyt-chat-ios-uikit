@@ -13,4 +13,5 @@ extension Notification.Name {
     static let selectMessage = Notification.Name("selectMessage")
     static let didUpdateLocalCreateChannelOnEventChannelCreate = Notification.Name("didUpdateLocalCreateChannelOnEventChannelCreate")
     static let didUpdateMessagePoll = Notification.Name("didUpdatePoll")
+    static let didClosePoll = Notification.Name("didClosePoll")
 }

@@ -1675,24 +1675,6 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             return
         }
         
-        // Post optimistic UI update notification - mark as closed
-        if let pollUIModel = createOptimisticPollViewModel(
-            messageId: layoutModel.message.id,
-            layoutModel: layoutModel,
-            currentPollViewModel: pollViewModel,
-            addOptionId: nil,
-            removeOptionId: nil,
-            isClosed: true
-        ) {
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(
-                    name: .didUpdateMessagePoll,
-                    object: nil,
-                    userInfo: ["pollUIModel": pollUIModel]
-                )
-            }
-        }
-        
         provider.closePoll(
             messageId: layoutModel.message.id,
             pollId: poll.id,
