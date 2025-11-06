@@ -153,6 +153,7 @@ open class ChannelViewController: ViewController,
     private var shouldAnimateEditing: Bool = false
     private var lastAnimatedIndexPath: IndexPath? = nil
     private var selectMessageId: MessageId?
+    private let impactFeedbackGenerator = UIImpactFeedbackGenerator(style: .light)
     
     override open func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -226,7 +227,8 @@ open class ChannelViewController: ViewController,
     
     override open func setup() {
         super.setup()
-                
+
+        impactFeedbackGenerator.prepare()
         contextMenu = ContextMenu(parent: self)
         contextMenu.dataSource = self
         contextMenu.delegate = self
@@ -1777,6 +1779,7 @@ open class ChannelViewController: ViewController,
             return
         }
 
+        impactFeedbackGenerator.impactOccurred()
         // Get the option from PollViewModel which reflects the current selection state
         // (including pending votes)
         let optionViewModel = pollViewModel.options[optionIndex]

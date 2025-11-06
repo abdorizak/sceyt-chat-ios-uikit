@@ -320,16 +320,12 @@ extension MessageCell {
             )
             let optionTextSize = TextSizeMeasure.calculateSize(of: option.text, config: optionConfig).textSize
             let textHeight = ceil(optionTextSize.height)
-            
+
             // Total option height: max of checkbox height or text height, plus spacing and progress bar
-            let spacingBetweenTextAndProgress: CGFloat = 8.0
+            let spacingBetweenTextAndProgress: CGFloat = textHeight > checkboxWidth ? 8.0 : 4.0
             let progressBarHeight = pollAppearance.progressBarHeight
             let minHeight = max(checkboxWidth > 0 ? pollAppearance.checkboxStyle.size : 0, textHeight) + spacingBetweenTextAndProgress + progressBarHeight
-            
-            // Use appearance optionMinHeight if available
-            let finalHeight = max(minHeight, pollAppearance.optionMinHeight)
-            
-            return CGSize(width: maxWidth, height: finalHeight)
+            return CGSize(width: maxWidth, height: minHeight)
         }
     }
 }
