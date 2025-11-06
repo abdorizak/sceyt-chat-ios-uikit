@@ -238,7 +238,7 @@ extension MessageCell {
 
             let messageApperance = Components.messageCell.appearance
             let borderColor: UIColor = viewModel?.isIncoming == true ? messageApperance.incomingBubbleColor: messageApperance.outgoingBubbleColor
-            for voter in sortedVoters.suffix(avatarCount) {
+            for voter in sortedVoters.suffix(avatarCount).reversed() {
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
                 avatarView.backgroundColor = .systemGray4
