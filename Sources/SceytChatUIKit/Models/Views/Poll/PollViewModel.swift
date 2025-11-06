@@ -46,10 +46,38 @@ public struct PollViewModel {
         self.anonymous = poll.anonymous
         self.allowMultipleVotes = poll.allowMultipleVotes
         self.allowVoteRetract = poll.allowVoteRetract
-        self.totalVotes = poll.votesPerOption.values.reduce(0, +)
-
-        let maxVotes = poll.votesPerOption.values.max() ?? 0
+        
         let currentUserId = SceytChatUIKit.shared.currentUserId
+        
+        // Calculate adjusted votes per option considering pending votes
+        var adjustedVotesPerOption = poll.votesPerOption
+        
+        // Apply pending vote adjustments for optimistic UI
+        if let pendingVotes = poll.pendingVotes, let userId = currentUserId {
+            for option in poll.options {
+                // Get latest pending vote for this option and current user
+                let relevantPendingVotes = pendingVotes
+                    .filter { $0.optionId == option.id && $0.userId == userId }
+                    .sorted { $0.createdAt > $1.createdAt }
+                
+                if let latestPendingVote = relevantPendingVotes.first {
+                    let wasVotedInServer = poll.ownVotes.contains(where: { $0.optionId == option.id })
+                    let currentCount = poll.votesPerOption[option.id] ?? 0
+                    
+                    if latestPendingVote.isAdd && !wasVotedInServer {
+                        // Adding a vote that server doesn't know about yet
+                        adjustedVotesPerOption[option.id] = currentCount + 1
+                    } else if !latestPendingVote.isAdd && wasVotedInServer {
+                        // Removing a vote that server still has
+                        adjustedVotesPerOption[option.id] = max(0, currentCount - 1)
+                    }
+                }
+            }
+        }
+        
+        self.totalVotes = adjustedVotesPerOption.values.reduce(0, +)
+        let maxVotes = adjustedVotesPerOption.values.max() ?? 0
+        
         self.options = poll.options.map { option in
             // Priority 1: Check pending votes first (optimistic UI)
             let selected: Bool
@@ -76,22 +104,25 @@ public struct PollViewModel {
                 .filter( { $0.optionId == option.id })
                 .compactMap (\.user)
 
-            // Append current user if they selected this option and not already in voters array
+            // Append current user if they selected this option (considering pending votes) and not already in voters array
             if selected, let currentUserId = currentUserId {
                 let currentUserInVoters = voters.contains(where: { $0.id == currentUserId })
                 if !currentUserInVoters {
                     let currentUser = ChatUser(user: SceytChatUIKit.shared.chatClient.user)
                     voters.append(currentUser)
                 }
+            } else if !selected, let currentUserId = currentUserId {
+                // Remove current user from voters if they unvoted (pending removal)
+                voters.removeAll(where: { $0.id == currentUserId })
             }
 
-            let votesCount = poll.votesPerOption[option.id] ?? 0
+            let votesCount = adjustedVotesPerOption[option.id] ?? 0
             let progress = votesCount > 0 ? Float(votesCount) / Float(maxVotes) : 0.0
 
             return PollOptionViewModel(
                 id: option.id,
                 text: option.text,
-                voteCount: votesCount ,
+                voteCount: votesCount,
                 progress: progress,
                 selected: selected,
                 isAnonymous: poll.anonymous,

@@ -1762,6 +1762,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                         }
                     } else if wasPreviouslySelected {
                         voteCount = max(0, option.voteCount - 1)
+                    } else if option.isSelected {
+                        // For other options that remain selected, ensure current user is in voters
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
                     }
                     
                     return PollOptionViewModel(
@@ -1796,7 +1801,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                         )
                     }
                     // For other options, get voters from poll
-                    let voters = getVotersFromPoll(for: option.id)
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
                     return PollOptionViewModel(
                         id: option.id,
                         text: option.text,
@@ -1833,7 +1842,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                         )
                     }
                     // For other options, get voters from poll
-                    let voters = getVotersFromPoll(for: option.id)
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
                     return PollOptionViewModel(
                         id: option.id,
                         text: option.text,
@@ -1865,7 +1878,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                         )
                     }
                     // For other options, get voters from poll
-                    let voters = getVotersFromPoll(for: option.id)
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
                     return PollOptionViewModel(
                         id: option.id,
                         text: option.text,
