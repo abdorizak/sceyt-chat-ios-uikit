@@ -142,7 +142,7 @@ extension MessageCell {
             progressBar.setProgress(viewModel.progress, animated: false)
             checkboxView.isSelected = viewModel.isSelected
             checkboxView.isHidden = viewModel.isClosed
-            votersContainerView.isHidden = viewModel.isAnonymous
+            votersStackView.isHidden = viewModel.isAnonymous
 
             // Update option label leading constraint when checkbox is hidden
             optionLabelLeadingConstraint?.isActive = false

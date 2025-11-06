@@ -272,6 +272,8 @@ extension MessageCell {
                 let buttonBottomInset: CGFloat = 16.0
                 let buttonIntrinsicHeight: CGFloat = 16.0 // Approximate intrinsic height
                 height += buttonTopInset + buttonBottomInset + buttonIntrinsicHeight
+            } else {
+                height += 20.0
             }
 
             // Bottom padding from container insets
