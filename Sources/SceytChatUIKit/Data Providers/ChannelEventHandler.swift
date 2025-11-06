@@ -315,22 +315,9 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
                 // Apply changed votes to ownVotes
                 context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
             }
-            context.createOrUpdate(message: message, channelId: channel.id)
         } completion: { error in
             logger.debug(error?.localizedDescription ?? "")
         }
-    }
-
-    open func channel(_ channel: Channel, user: User, didAddVote message: Message) {
-        updatePollMessage(channel, message, user: user)
-    }
-
-    open func channel(_ channel: Channel, user: User, didDeleteVote message: Message) {
-        updatePollMessage(channel, message, user: user)
-    }
-
-    open func channel(_ channel: Channel, user: User, didRetractVote message: Message) {
-        updatePollMessage(channel, message, user: user)
     }
 
     open func channel(_ channel: Channel, user: User, didClosePoll message: Message) {

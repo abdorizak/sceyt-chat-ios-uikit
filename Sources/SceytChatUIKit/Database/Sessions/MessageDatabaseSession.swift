@@ -1177,6 +1177,9 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
         let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
 
+        // Get current votesPerOption dictionary or create empty one
+        var votesPerOption = (pollDTO.votesPerOption as? [String: NSNumber]) ?? [:]
+
         // Add new votes
         for vote in changedVotes.addedVotes {
             let voteDTO = PollVoteDTO.fetchOrCreate(
@@ -1197,6 +1200,10 @@ extension NSManagedObjectContext: MessageDatabaseSession {
                 voteDTO.pollDetails = pollDTO
                 votesSet.add(voteDTO)
             }
+
+            // Update votesPerOption - increment count for this option
+            let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+            votesPerOption[vote.optionId] = NSNumber(value: currentCount + 1)
         }
 
         // Remove votes
@@ -1215,7 +1222,20 @@ extension NSManagedObjectContext: MessageDatabaseSession {
                     votesSet.remove(voteDTO)
                 }
                 delete(voteDTO)
+
+                // Update votesPerOption - decrement count for this option
+                let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+                let newCount = max(0, currentCount - 1)
+                if newCount > 0 {
+                    votesPerOption[vote.optionId] = NSNumber(value: newCount)
+                } else {
+                    // Remove the option from dictionary if count reaches 0
+                    votesPerOption.removeValue(forKey: vote.optionId)
+                }
             }
         }
+
+        // Update the pollDTO's votesPerOption
+        pollDTO.votesPerOption = votesPerOption as NSDictionary
     }
 }
