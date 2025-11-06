@@ -343,7 +343,7 @@ open class ChannelMessageProvider: DataProvider {
     open func addPollVote(
         messageId: MessageId,
         pollId: String,
-        optionIds: [String],
+        optionId: String,
         storeForResend: Bool = true,
         completion: ((Error?) -> Void)? = nil
     ) {
@@ -351,29 +351,27 @@ open class ChannelMessageProvider: DataProvider {
             if storeForResend {
                 // Store pending votes for each option
                 if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
-                    for optionId in optionIds {
-                        if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
-                            // Cancel any existing pending vote for the same option
-                            if let existingPendingVote = PendingVoteDTO.fetch(
-                                pollId: pollId,
-                                optionId: optionId,
-                                userId: userId,
-                                context: $0
-                            ) {
-                                $0.delete(existingPendingVote)
-                            }
-                            
-                            // Create fresh pending vote
-                            let pendingVote = PendingVoteDTO.fetchOrCreate(
-                                pollId: pollId,
-                                optionId: optionId,
-                                userId: userId,
-                                messageTid: messageDTO.tid,
-                                context: $0
-                            )
-                            pendingVote.isAdd = true
-                            pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
+                    if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                        // Cancel any existing pending vote for the same option
+                        if let existingPendingVote = PendingVoteDTO.fetch(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            context: $0
+                        ) {
+                            $0.delete(existingPendingVote)
                         }
+
+                        // Create fresh pending vote
+                        let pendingVote = PendingVoteDTO.fetchOrCreate(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            messageTid: messageDTO.tid,
+                            context: $0
+                        )
+                        pendingVote.isAdd = true
+                        pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
                     }
                 }
             }
@@ -381,8 +379,19 @@ open class ChannelMessageProvider: DataProvider {
             self.channelOperator.addPollVote(
                 messageId: messageId,
                 pollId: pollId,
-                optionIds: optionIds
+                optionIds: [optionId]
             ) { changedVotes, message, error in
+                if let error {
+                    if error.code == 1301 {
+                        self.database.write { context in
+                            self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
+                        }
+                    }
+
+                    completion?(error)
+                    return
+                }
+
                 guard let changedVotes else {
                     completion?(error)
                     return
@@ -392,23 +401,11 @@ open class ChannelMessageProvider: DataProvider {
                     completion?(error)
                     return
                 }
-                
+
                 self.database.write { context in
                     // Remove pending votes after successful vote
                     if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
-                        for optionId in optionIds {
-                            if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
-                                if let pendingVote = PendingVoteDTO.fetch(
-                                    pollId: pollId,
-                                    optionId: optionId,
-                                    userId: userId,
-                                    context: context
-                                ) {
-                                    context.delete(pendingVote)
-                                }
-                            }
-                        }
-
+                        self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
                         // Apply changed votes to ownVotes
                         context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }
@@ -418,11 +415,24 @@ open class ChannelMessageProvider: DataProvider {
             }
         }
     }
+
+    private func deletePendingVote(pollId: String, optionId: String, context: NSManagedObjectContext) {
+        if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+            if let pendingVote = PendingVoteDTO.fetch(
+                pollId: pollId,
+                optionId: optionId,
+                userId: userId,
+                context: context
+            ) {
+                context.delete(pendingVote)
+            }
+        }
+    }
     
     open func deletePollVote(
         messageId: MessageId,
         pollId: String,
-        optionIds: [String],
+        optionId: String,
         storeForResend: Bool = true,
         completion: ((Error?) -> Void)? = nil
     ) {
@@ -430,29 +440,27 @@ open class ChannelMessageProvider: DataProvider {
             if storeForResend {
                 // Store pending vote removals
                 if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
-                    for optionId in optionIds {
-                        if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
-                            // Cancel any existing pending vote for the same option
-                            if let existingPendingVote = PendingVoteDTO.fetch(
-                                pollId: pollId,
-                                optionId: optionId,
-                                userId: userId,
-                                context: $0
-                            ) {
-                                $0.delete(existingPendingVote)
-                            }
-                            
-                            // Create fresh pending vote removal
-                            let pendingVote = PendingVoteDTO.fetchOrCreate(
-                                pollId: pollId,
-                                optionId: optionId,
-                                userId: userId,
-                                messageTid: messageDTO.tid,
-                                context: $0
-                            )
-                            pendingVote.isAdd = false
-                            pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
+                    if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                        // Cancel any existing pending vote for the same option
+                        if let existingPendingVote = PendingVoteDTO.fetch(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            context: $0
+                        ) {
+                            $0.delete(existingPendingVote)
                         }
+                        
+                        // Create fresh pending vote removal
+                        let pendingVote = PendingVoteDTO.fetchOrCreate(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            messageTid: messageDTO.tid,
+                            context: $0
+                        )
+                        pendingVote.isAdd = false
+                        pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
                     }
                 }
             }
@@ -460,8 +468,19 @@ open class ChannelMessageProvider: DataProvider {
             self.channelOperator.deletePollVote(
                 messageId: messageId,
                 pollId: pollId,
-                optionIds: optionIds
+                optionIds: [optionId]
             ) { changedVotes, message, error in
+                if let error {
+                    if error.code == 1301 {
+                        self.database.write { context in
+                            self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
+                        }
+                    }
+
+                    completion?(error)
+                    return
+                }
+
                 guard let changedVotes else {
                     completion?(error)
                     return
@@ -475,19 +494,7 @@ open class ChannelMessageProvider: DataProvider {
                 self.database.write { context in
                     // Remove pending votes after successful deletion
                     if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
-                        for optionId in optionIds {
-                            if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
-                                if let pendingVote = PendingVoteDTO.fetch(
-                                    pollId: pollId,
-                                    optionId: optionId,
-                                    userId: userId,
-                                    context: context
-                                ) {
-                                    context.delete(pendingVote)
-                                }
-                            }
-                        }
-
+                        self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
                         // Apply changed votes to ownVotes
                         context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                     }

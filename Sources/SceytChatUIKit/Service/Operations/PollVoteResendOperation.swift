@@ -48,7 +48,7 @@ open class PollVoteResendOperation: AsyncOperation {
         provider.addPollVote(
             messageId: messageId,
             pollId: pollId,
-            optionIds: [optionId],
+            optionId: optionId,
             storeForResend: false
         ) { error in
             logger.errorIfNotNil(error, "SyncService: Resending Poll Vote Add with messageId \(self.messageId), pollId: \(self.pollId), optionId: \(self.optionId)")
@@ -61,7 +61,7 @@ open class PollVoteResendOperation: AsyncOperation {
         provider.deletePollVote(
             messageId: messageId,
             pollId: pollId,
-            optionIds: [optionId],
+            optionId: optionId,
             storeForResend: false
         ) { error in
             logger.errorIfNotNil(error, "SyncService: Resending Poll Vote Delete with messageId \(self.messageId), pollId: \(self.pollId), optionId: \(self.optionId)")

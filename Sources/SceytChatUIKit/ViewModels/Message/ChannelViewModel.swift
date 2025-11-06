@@ -1554,47 +1554,13 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         provider.addPollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
-            optionIds: [optionId]
+            optionId: optionId
         ) { [weak self] error in
             // Clear pending state when request completes
             self?.pendingPollVotes[layoutModel.message.id] = false
         }
     }
 
-    open func addPollVotes(
-        layoutModel: MessageLayoutModel,
-        pollViewModel: PollViewModel,
-        optionIds: [String]
-    ) {
-        guard let poll = layoutModel.message.poll, !optionIds.isEmpty else { return }
-
-        // Check if there's already a pending vote for this message
-        if pendingPollVotes[layoutModel.message.id] == true {
-            return
-        }
-
-        // Mark vote as pending
-        pendingPollVotes[layoutModel.message.id] = true
-
-        // Post optimistic UI update notification
-        postOptimisticPollUpdate(
-            messageId: layoutModel.message.id,
-            layoutModel: layoutModel,
-            currentPollViewModel: pollViewModel,
-            addOptionId: optionIds.first,
-            removeOptionId: nil
-        )
-
-        provider.addPollVote(
-            messageId: layoutModel.message.id,
-            pollId: poll.id,
-            optionIds: optionIds
-        ) { [weak self] error in
-            // Clear pending state when request completes
-            self?.pendingPollVotes[layoutModel.message.id] = false
-        }
-    }
-    
     open func deletePollVote(
         layoutModel: MessageLayoutModel,
         pollViewModel: PollViewModel,
@@ -1609,7 +1575,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
 
         // Mark vote as pending
         pendingPollVotes[layoutModel.message.id] = true
-        
+
         // Post optimistic UI update notification
         postOptimisticPollUpdate(
             messageId: layoutModel.message.id,
@@ -1622,50 +1588,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         provider.deletePollVote(
             messageId: layoutModel.message.id,
             pollId: poll.id,
-            optionIds: [optionId]
+            optionId: optionId
         ) { [weak self] error in
             // Clear pending state when request completes
             self?.pendingPollVotes[layoutModel.message.id] = false
-        }
-    }
-
-    open func deletePollVotes(
-        layoutModel: MessageLayoutModel,
-        pollViewModel: PollViewModel,
-        optionIds: [String],
-        completion: ((Error?) -> Void)? = nil
-    ) {
-        guard let poll = layoutModel.message.poll, !optionIds.isEmpty else {
-            completion?(nil)
-            return
-        }
-        
-        // Check if there's already a pending vote for this message
-        if pendingPollVotes[layoutModel.message.id] == true {
-            completion?(nil)
-            return
-        }
-        
-        // Mark vote as pending
-        pendingPollVotes[layoutModel.message.id] = true
-        
-        // Post optimistic UI update notification
-        postOptimisticPollUpdate(
-            messageId: layoutModel.message.id,
-            layoutModel: layoutModel,
-            currentPollViewModel: pollViewModel,
-            addOptionId: nil,
-            removeOptionId: optionIds.first
-        )
-
-        provider.deletePollVote(
-            messageId: layoutModel.message.id,
-            pollId: poll.id,
-            optionIds: optionIds
-        ) { [weak self] error in
-            // Clear pending state when request completes
-            self?.pendingPollVotes[layoutModel.message.id] = false
-            // Post notification to re-enable interaction
         }
     }
 
