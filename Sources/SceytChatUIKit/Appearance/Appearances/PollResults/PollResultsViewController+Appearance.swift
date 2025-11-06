@@ -19,7 +19,7 @@ extension PollResultsViewController: AppearanceProviding {
         closeButtonTintColor: .closeButtonTint,
         closeButtonBackgroundColor: .closeButtonBackground,
         titleText: "Poll Results",
-        showMoreText: "Show More"
+        showMoreText: "Show All"
     )
 
     public struct Appearance {
