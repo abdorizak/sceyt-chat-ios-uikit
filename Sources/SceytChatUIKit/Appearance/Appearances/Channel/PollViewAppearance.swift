@@ -60,7 +60,6 @@ public class PollViewAppearance: AppearanceProviding {
         ),
         questionBottomSpacing: 16.0,
         optionSpacing: 20.0,
-        optionMinHeight: 40,
         progressBarHeight: 6,
         progressBarCornerRadius: 2,
         containerCornerRadius: 12,
@@ -116,9 +115,6 @@ public class PollViewAppearance: AppearanceProviding {
     public var optionSpacing: CGFloat
     
     @Trackable<PollViewAppearance, CGFloat>
-    public var optionMinHeight: CGFloat
-    
-    @Trackable<PollViewAppearance, CGFloat>
     public var progressBarHeight: CGFloat
     
     @Trackable<PollViewAppearance, CGFloat>
@@ -149,7 +145,6 @@ public class PollViewAppearance: AppearanceProviding {
         voterAvatarStyle: AvatarStyle,
         questionBottomSpacing: CGFloat,
         optionSpacing: CGFloat,
-        optionMinHeight: CGFloat,
         progressBarHeight: CGFloat,
         progressBarCornerRadius: CGFloat,
         containerCornerRadius: CGFloat,
@@ -169,7 +164,6 @@ public class PollViewAppearance: AppearanceProviding {
         self._voterAvatarStyle = Trackable(value: voterAvatarStyle)
         self._questionBottomSpacing = Trackable(value: questionBottomSpacing)
         self._optionSpacing = Trackable(value: optionSpacing)
-        self._optionMinHeight = Trackable(value: optionMinHeight)
         self._progressBarHeight = Trackable(value: progressBarHeight)
         self._progressBarCornerRadius = Trackable(value: progressBarCornerRadius)
         self._containerCornerRadius = Trackable(value: containerCornerRadius)
@@ -192,7 +186,6 @@ public class PollViewAppearance: AppearanceProviding {
         voterAvatarStyle: AvatarStyle? = nil,
         questionBottomSpacing: CGFloat? = nil,
         optionSpacing: CGFloat? = nil,
-        optionMinHeight: CGFloat? = nil,
         progressBarHeight: CGFloat? = nil,
         progressBarCornerRadius: CGFloat? = nil,
         containerCornerRadius: CGFloat? = nil,
@@ -212,7 +205,6 @@ public class PollViewAppearance: AppearanceProviding {
         self._voterAvatarStyle = Trackable(reference: reference, referencePath: \.voterAvatarStyle)
         self._questionBottomSpacing = Trackable(reference: reference, referencePath: \.questionBottomSpacing)
         self._optionSpacing = Trackable(reference: reference, referencePath: \.optionSpacing)
-        self._optionMinHeight = Trackable(reference: reference, referencePath: \.optionMinHeight)
         self._progressBarHeight = Trackable(reference: reference, referencePath: \.progressBarHeight)
         self._progressBarCornerRadius = Trackable(reference: reference, referencePath: \.progressBarCornerRadius)
         self._containerCornerRadius = Trackable(reference: reference, referencePath: \.containerCornerRadius)
@@ -232,7 +224,6 @@ public class PollViewAppearance: AppearanceProviding {
         if let voterAvatarStyle { self.voterAvatarStyle = voterAvatarStyle }
         if let questionBottomSpacing { self.questionBottomSpacing = questionBottomSpacing }
         if let optionSpacing { self.optionSpacing = optionSpacing }
-        if let optionMinHeight { self.optionMinHeight = optionMinHeight }
         if let progressBarHeight { self.progressBarHeight = progressBarHeight }
         if let progressBarCornerRadius { self.progressBarCornerRadius = progressBarCornerRadius }
         if let containerCornerRadius { self.containerCornerRadius = containerCornerRadius }

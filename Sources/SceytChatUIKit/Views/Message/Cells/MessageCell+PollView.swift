@@ -72,7 +72,8 @@ extension MessageCell {
             viewResultButton.setTitleColor(.systemBlue, for: .normal)
             viewResultButton.addTarget(self, action: #selector(viewResultsButtonTapped), for: .touchUpInside)
 
-            viewResultButton.contentEdgeInsets = UIEdgeInsets(top: 16.0, left: 10.0, bottom: 16.0, right: 10.0)
+            viewResultButton.contentEdgeInsets.top = 10.0
+            viewResultButton.contentEdgeInsets.bottom = 10.0
         }
 
         override open func setupLayout() {
