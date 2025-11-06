@@ -1237,5 +1237,7 @@ extension NSManagedObjectContext: MessageDatabaseSession {
 
         // Update the pollDTO's votesPerOption
         pollDTO.votesPerOption = votesPerOption as NSDictionary
+
+        messageDTO.poll = pollDTO
     }
 }

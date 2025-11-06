@@ -87,13 +87,13 @@ open class PollResultsViewModel: NSObject {
 
     open func startDatabaseObserver() {
         pollObserver.onDidChange = { [weak self] _ in
-//            guard let self = self,
-//                  let updatedPoll = self.pollObserver.item(at: .zero),
-//                  updatedPoll.id == self.pollResults.id
-//            else { return }
-//
-//            self.pollResults = updatedPoll
-            self?.event = .reloadData
+            guard let self = self,
+                  let updatedPoll = self.pollObserver.item(at: .zero),
+                  updatedPoll.id == self.pollResults.id
+            else { return }
+
+            self.pollResults = updatedPoll
+            self.event = .reloadData
         }
         do {
             try pollObserver.startObserver()

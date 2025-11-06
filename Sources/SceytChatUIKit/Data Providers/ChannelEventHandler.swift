@@ -310,13 +310,109 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             return
         }
 
-        database.write { context in
-            if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
-                // Apply changed votes to ownVotes
-                context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+        postPollUpdateNotification(channel, user: user, message: message, changedVotes: changedVotes)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.database.write { context in
+                if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                    // Apply changed votes to ownVotes
+                    context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                }
+            } completion: { error in
+                logger.debug(error?.localizedDescription ?? "")
             }
-        } completion: { error in
-            logger.debug(error?.localizedDescription ?? "")
+        }
+    }
+
+    func postPollUpdateNotification(_ channel: Channel, user: User, message: Message, changedVotes: ChangedVotes?) {
+        guard let poll = message.poll,
+              let changedVotes = changedVotes else { return }
+
+        self.database.read { context in
+            guard let messageDTO = MessageDTO.fetch(id: message.id, context: context),
+                  let pollDTO = messageDTO.poll else { return }
+
+            // Create a temporary context to apply votes without persisting
+            let currentUserId = SceytChatUIKit.shared.currentUserId
+            var votesPerOption = (pollDTO.votesPerOption as? [String: NSNumber]) ?? [:]
+            var ownVotes = (pollDTO.ownVotes?.array as? [PollVoteDTO]) ?? []
+            var votes = (pollDTO.votes?.array as? [PollVoteDTO]) ?? []
+
+            // Apply added votes
+            for vote in changedVotes.addedVotes {
+                let isOwnVote = vote.user.id == currentUserId
+
+                // Create temporary vote DTO for display purposes
+                let voteDTO = PollVoteDTO.fetchOrCreate(
+                    optionId: vote.optionId,
+                    userId: vote.user.id,
+                    pollId: poll.id,
+                    context: context
+                ).map(vote)
+                voteDTO.user = context.createOrUpdate(user: vote.user)
+
+                if isOwnVote {
+                    // Check if vote already exists to avoid duplicates
+                    if !ownVotes.contains(where: { $0.optionId == vote.optionId && $0.id == vote.user.id }) {
+                        ownVotes.append(voteDTO)
+                    }
+                } else {
+                    if !votes.contains(where: { $0.optionId == vote.optionId && $0.id == vote.user.id }) {
+                        votes.append(voteDTO)
+                    }
+                }
+
+                // Update votesPerOption
+                let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+                votesPerOption[vote.optionId] = NSNumber(value: currentCount + 1)
+            }
+
+            // Apply removed votes
+            for vote in changedVotes.removedVotes {
+                let isOwnVote = vote.user.id == currentUserId
+
+                if isOwnVote {
+                    ownVotes.removeAll { $0.optionId == vote.optionId && $0.id == vote.user.id }
+                } else {
+                    votes.removeAll { $0.optionId == vote.optionId && $0.id == vote.user.id }
+                }
+
+                // Update votesPerOption
+                let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+                let newCount = max(0, currentCount - 1)
+                if newCount > 0 {
+                    votesPerOption[vote.optionId] = NSNumber(value: newCount)
+                } else {
+                    votesPerOption.removeValue(forKey: vote.optionId)
+                }
+            }
+
+            // Create PollDetails with updated votes
+            let pollDetails = PollDetails(
+                id: pollDTO.id,
+                name: pollDTO.name ?? "",
+                messageTid: pollDTO.messageTid,
+                description: pollDTO.pollDescription ?? "",
+                options: (pollDTO.options?.array as? [PollOptionDTO])?.map { PollOption(dto: $0) } ?? [],
+                anonymous: pollDTO.anonymous,
+                allowMultipleVotes: pollDTO.allowMultipleVotes,
+                allowVoteRetract: pollDTO.allowVoteRetract,
+                votesPerOption: votesPerOption.mapValues { $0.intValue },
+                votes: votes.map { PollVote(dto: $0) },
+                ownVotes: ownVotes.map { PollVote(dto: $0) },
+                pendingVotes: nil,
+                createdAt: pollDTO.createdAt,
+                updatedAt: pollDTO.updatedAt,
+                closedAt: pollDTO.closedAt,
+                closed: pollDTO.closed
+            )
+
+            let pollUIModel = PollViewModel(from: pollDetails, isIncmoing: message.incoming)
+            NotificationCenter.default.post(
+                name: .didUpdateMessagePoll,
+                object: nil,
+                userInfo: ["pollUIModel": pollUIModel]
+            )
         }
     }
 
