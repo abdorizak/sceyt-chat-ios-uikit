@@ -18,8 +18,8 @@ extension PollResultsViewController: AppearanceProviding {
         showMoreCellAppearance: ShowMoreCell.appearance,
         closeButtonTintColor: .closeButtonTint,
         closeButtonBackgroundColor: .closeButtonBackground,
-        titleText: "Poll Results",
-        showMoreText: "Show All"
+        titleText: L10n.Poll.Results.title,
+        showMoreText: L10n.Poll.Results.showMore
     )
 
     public struct Appearance {

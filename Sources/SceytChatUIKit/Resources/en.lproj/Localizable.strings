@@ -333,3 +333,24 @@
 
 "channel.self.hint" = "message yourself";
 "channel.self.title" = "Me";
+
+"poll.title" = "Poll";
+"poll.question.header" = "QUESTION";
+"poll.question.placeholder" = "Add question";
+"poll.options.header" = "OPTIONS";
+"poll.option.placeholder" = "Add";
+"poll.option.add" = "Add an option";
+"poll.parameters.header" = "PARAMETERS";
+"poll.multipleVotes" = "Multiple votes";
+"poll.anonymousPoll" = "Anonymous poll";
+"poll.cantRetractVotes" = "Can't retract votes";
+"poll.button.cancel" = "Cancel";
+"poll.button.send" = "Send";
+"poll.discard.alert.message" = "Are you sure you want to discard your poll?";
+"poll.discard.alert.keepEditing" = "Keep Editing";
+"poll.discard.alert.discard" = "Discard Poll";
+
+"poll.results.title" = "Poll Results";
+"poll.results.showMore" = "Show All";
+"poll.optionDetail.title" = "Poll Option";
+"poll.optionDetail.close" = "Close";

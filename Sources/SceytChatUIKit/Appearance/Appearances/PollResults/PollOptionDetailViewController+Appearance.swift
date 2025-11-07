@@ -14,8 +14,8 @@ extension PollOptionDetailViewController: AppearanceProviding {
         separatorColor: .clear,
         voteCountInfoCellAppearance: PollOptionDetailViewController.VoteCountInfoCell.appearance,
         voterCellAppearance: PollResultsViewController.VoterCell.appearance,
-        titleText: "Poll Option",
-        closeText: "Close"
+        titleText: L10n.Poll.OptionDetail.title,
+        closeText: L10n.Poll.OptionDetail.close
     )
 
     public struct Appearance {
