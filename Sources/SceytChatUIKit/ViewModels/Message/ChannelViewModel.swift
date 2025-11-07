@@ -1634,12 +1634,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         // Mark vote as pending
         pendingPollVotes[layoutModel.message.id] = true
         
-        // Optimistically update all selected options: deselect and decrease vote count
+        // Optimistically update all selected options: deselect, decrease vote count, and remove current user from voters
         var updatedOptions = pollViewModel.options.map { option -> PollOptionViewModel in
             if option.isSelected {
                 var updatedOption = option
                 updatedOption.isSelected = false
                 updatedOption.voteCount = max(0, option.voteCount - 1)
+                // Remove current user from voters
+                updatedOption.voters = option.voters.filter { $0.id != SceytChatUIKit.shared.currentUserId }
                 return updatedOption
             }
             return option

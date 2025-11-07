@@ -15,7 +15,7 @@ public struct PollOptionViewModel {
     let isAnonymous: Bool
     let isIncoming: Bool
     var isClosed: Bool
-    let voters: [ChatUser]
+    var voters: [ChatUser]
 
     init(
         id: String,
