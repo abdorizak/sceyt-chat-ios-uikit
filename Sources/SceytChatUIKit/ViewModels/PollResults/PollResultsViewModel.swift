@@ -33,7 +33,9 @@ open class PollResultsViewModel: NSObject {
     }()
 
     public required init(pollResults: PollDetails, messageID: MessageId) {
-        self.pollResults = pollResults
+        self.pollResults = (try? SceytChatUIKit.shared.database.read { context in
+            PollDTO.fetch(id: pollResults.id, context: context)?.convert()
+        }.get()) ?? pollResults
         self.messageID = messageID
         super.init()
     }
