@@ -85,6 +85,8 @@ open class ChannelInviteLinkViewModel: NSObject {
                 } else if let inviteKey = inviteKey {
                     self.channelInviteKey = inviteKey
                     self.showPreviousMessages = inviteKey.accessPriorHistory
+                } else {
+                    self.showPreviousMessages = value
                 }
             }
         }
