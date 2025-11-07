@@ -348,6 +348,19 @@ open class MessageLayoutModel {
             }
             updateOptions.insert(.body)
         }
+        
+        // Handle poll state changes
+        if message.poll != nil && message.state != .deleted {
+            if !contentOptions.contains(.poll) {
+                contentOptions.insert(.poll)
+                updateOptions.insert(.poll)
+            }
+        } else {
+            if contentOptions.contains(.poll) {
+                contentOptions.remove(.poll)
+                updateOptions.insert(.poll)
+            }
+        }
         let title = appearance.senderNameFormatter.format(message.user)
         if !message.incoming ||
             channel.channelType == .direct ||
@@ -832,8 +845,9 @@ public extension MessageLayoutModel {
         public static let reaction              = MessageUpdateOptions(rawValue: 1 << 7)
         public static let link                  = MessageUpdateOptions(rawValue: 1 << 8)
         public static let reload                = MessageUpdateOptions(rawValue: 1 << 9)
+        public static let poll                  = MessageUpdateOptions(rawValue: 1 << 10)
         
-        public static let all: MessageUpdateOptions = [.body, .user, .replyCount, parentMessageUser, .parentMessageBody, .attachment, .link, deliveryStatus]
+        public static let all: MessageUpdateOptions = [.body, .user, .replyCount, parentMessageUser, .parentMessageBody, .attachment, .link, deliveryStatus, .poll]
     }
     
     struct Defaults {
