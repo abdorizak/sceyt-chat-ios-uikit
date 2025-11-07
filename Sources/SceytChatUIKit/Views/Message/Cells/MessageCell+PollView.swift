@@ -171,6 +171,16 @@ extension MessageCell {
             // Check if interaction is disabled (vote in progress)
             guard view.isUserInteractionEnabled else { return }
             let index = view.tag
+
+            // Check if this is a new vote (not unvoting)
+            let optionViewModel = currentPollViewModel.options[index]
+            let isVoting = !optionViewModel.isSelected
+
+            // Trigger animation only when voting
+            if isVoting {
+                pollOptionView.animateProgressBarOnVote()
+            }
+
             onDidTapOption?(index, currentPollViewModel)
         }
 

@@ -104,6 +104,7 @@ extension MessageCell {
 
             voteCountLabel.trailingAnchor.pin(to: votersContainerView.trailingAnchor)
             voteCountLabel.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
+            voteCountLabel.widthAnchor.pin(greaterThanOrEqualToConstant: 10.0)
             voteCountLabel.contentHuggingPriorityH(.required)
 
             progressBar.leadingAnchor.pin(to: optionLabel.leadingAnchor)
@@ -158,6 +159,19 @@ extension MessageCell {
             }
         }
 
+        /// Animate progress bar with a nice scale effect
+        func animateProgressBarOnVote() {
+            // Scale up animation
+            UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut], animations: {
+                self.progressBar.transform = CGAffineTransform(scaleX: 1.0, y: 1.3)
+            }) { _ in
+                // Scale back to normal
+                UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseInOut]) {
+                    self.progressBar.transform = .identity
+                }
+            }
+        }
+
         /// Update view model with animations
         func updateViewModel(_ newViewModel: PollOptionViewModel) {
             guard let oldViewModel = viewModel else {
@@ -203,13 +217,15 @@ extension MessageCell {
                 self.progressBar.layoutIfNeeded()
             }
 
+            // Animate voter avatars only when vote count increases by 1 (0->1, 1->2, etc.)
+            let shouldAnimateAvatars = (newViewModel.voteCount == oldVoteCount + 1) && !newViewModel.isAnonymous
             votersStackView.removeArrangedSubviews()
             if !newViewModel.isAnonymous {
-                createVoterAvatars(voters: newViewModel.voters, appearance: appearance)
+                createVoterAvatars(voters: newViewModel.voters, appearance: appearance, animated: shouldAnimateAvatars)
             }
         }
 
-        private func createVoterAvatars(voters: [ChatUser], appearance: PollViewAppearance) {
+        private func createVoterAvatars(voters: [ChatUser], appearance: PollViewAppearance, animated: Bool = false) {
             votersStackView.spacing = appearance.voterAvatarStyle.spacing
 
             // Sort voters: current user first, then others
@@ -273,8 +289,20 @@ extension MessageCell {
                     defaultImage: defaultImage,
                     size: avatarSize
                 )
-                
                 votersStackView.addArrangedSubview(avatarView)
+
+                // Animate avatar appearance if requested
+                if animated {
+                    // Start with small scale and invisible
+                    avatarView.transform = CGAffineTransform(scaleX: 0.3, y: 0.3)
+                    avatarView.alpha = 0.0
+
+                    // Animate to full size with spring effect
+                    UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseOut]) {
+                        avatarView.transform = .identity
+                        avatarView.alpha = 1.0
+                    }
+                }
             }
         }
         
