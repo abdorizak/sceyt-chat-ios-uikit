@@ -1333,9 +1333,25 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
         }
 
-        // Create poll details from the model
-        let pollDetails = pollModel.toPollDetails()
-        
+        let options = pollModel.options
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map {
+                SceytChat.PollOption.Builder()
+                    .id(UUID().uuidString)
+                    .name($0)
+                    .build()
+            }
+
+        let pollDetails = SceytChat.PollDetails.Builder()
+            .name(pollModel.question)
+            .description("")
+            .options(options)
+            .allowMultipleVotes(pollModel.allowMultipleAnswers)
+            .anonymous(pollModel.isAnonymous)
+            .allowVoteRetract(true)
+            .build()
+
         // Create message builder with poll
         let builder = Message.Builder()
             .type("poll")
