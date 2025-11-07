@@ -11,12 +11,16 @@ import SceytChat
 import CoreData
 
 open class ChannelEventHandler: NSObject, ChannelDelegate {
-    
+
     public static let channelDelegateIdentifier = NSUUID().uuidString
-    
+
     let database: Database
     let chatClient: ChatClient
-    
+
+    // Per-message mutex for didChangeVote operations
+    private let voteChangeLocks = NSMapTable<NSNumber, NSLock>.strongToStrongObjects()
+    private let voteChangeLocksAccessLock = NSLock()
+
     public required init(
         database: Database,
         chatClient: ChatClient
@@ -310,21 +314,34 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
             return
         }
 
+        // Get or create lock for this specific message
+        let messageId = NSNumber(value: message.id)
+        voteChangeLocksAccessLock.lock()
+        let lock: NSLock
+        if let existingLock = voteChangeLocks.object(forKey: messageId) {
+            lock = existingLock
+        } else {
+            lock = NSLock()
+            voteChangeLocks.setObject(lock, forKey: messageId)
+        }
+        voteChangeLocksAccessLock.unlock()
+
+        // Lock for this specific message to ensure synchronous processing
+        lock.lock()
+        defer { lock.unlock() }
+
         postPollUpdateNotification(channel, user: user, message: message, changedVotes: changedVotes)
 
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            do {
-                try self.database.syncWrite { context in
-                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
-                        // Apply changed votes to ownVotes
-                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
-                    }
+        do {
+            try self.database.syncWrite { context in
+                if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                    // Apply changed votes to ownVotes
+                    context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
                 }
-            } catch {
-                logger.debug(error.localizedDescription)
             }
-            
-//        }
+        } catch {
+            logger.debug(error.localizedDescription)
+        }
     }
 
     func postPollUpdateNotification(_ channel: Channel, user: User, message: Message, changedVotes: ChangedVotes?) {
