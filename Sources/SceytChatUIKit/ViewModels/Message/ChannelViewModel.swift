@@ -1343,7 +1343,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                     .build()
             }
 
+        let messageTid = chatClient.generateTId()
+
         let pollDetails = SceytChat.PollDetails.Builder()
+            .pollId(String(messageTid))
             .name(pollModel.question)
             .description("")
             .options(options)
@@ -1354,6 +1357,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
 
         // Create message builder with poll
         let builder = Message.Builder()
+            .tid(messageTid)
             .type("poll")
             .body(pollModel.question)
             .poll(pollDetails)
