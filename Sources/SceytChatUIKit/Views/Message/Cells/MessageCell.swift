@@ -90,6 +90,10 @@ open class MessageCell: CollectionViewCell,
     open lazy var replyIcon = UIImageView(image: appearance.swipeToReplyIcon)
         .withoutAutoresizingMask
     
+    open lazy var bottomActionView = Components.messageCellActionButtonView
+        .init()
+        .withoutAutoresizingMask
+    
     open var highlightMode = HighlightMode.none
         
     public private(set) var contentConstraints: [NSLayoutConstraint]?
@@ -133,11 +137,11 @@ open class MessageCell: CollectionViewCell,
         pollView.onDidTapOption = { [unowned self] index, pollViewModel in
             onAction?(.didTapPollOption(index, pollViewModel))
         }
-        
-        pollView.onDidTapViewResults = { [unowned self] in
-            onAction?(.didTapViewPollResults)
+
+        bottomActionView.onAction = { [unowned self] in
+            onAction?(.didTapBottomAction)
         }
-        
+
         replyView.addTarget(
             self,
             action: #selector(replyViewAction(_:)),
@@ -183,6 +187,7 @@ open class MessageCell: CollectionViewCell,
         bubbleView.addSubview(linkView)
         bubbleView.addSubview(pollView)
         bubbleView.addSubview(infoView)
+        bubbleView.addSubview(bottomActionView)
         bubbleView.addSubview(nameLabel)
         containerView.addSubview(avatarView)
         containerView.addSubview(reactionTotalView)
@@ -210,6 +215,7 @@ open class MessageCell: CollectionViewCell,
         linkView.appearance = appearance
         infoView.appearance = appearance
         reactionTotalView.appearance = appearance
+        bottomActionView.appearance = appearance.bottomActionViewAppearance
         unreadMessagesSeparatorView.appearance = appearance
         checkBoxView.parentAppearance = appearance.selectionCheckboxAppearance
         
@@ -308,6 +314,19 @@ open class MessageCell: CollectionViewCell,
             avatarView.isHidden = true
         }
         forwardView.isHidden = !data.isForwarded
+
+        // Configure actionButtonView visibility and state based on poll data
+        if let poll = message.poll, message.state != .deleted {
+            let pollViewModel = PollViewModel(from: poll, isIncmoing: message.incoming)
+            let isAnonymous = pollViewModel.anonymous
+            let hasNoVotes = pollViewModel.totalVotes == 0
+            bottomActionView.isHidden = isAnonymous
+            bottomActionView.isEnabled = !hasNoVotes
+            bottomActionView.buttonText = L10n.Poll.Results.viewResults
+        } else {
+            bottomActionView.isHidden = true
+        }
+        
         data.updateOptions = []
     }
     
@@ -446,6 +465,10 @@ open class MessageCell: CollectionViewCell,
         }
 
         pollView.updatePoll(poll: pollUIModel)
+
+        // Update actionButtonView state
+        let hasNoVotes = pollUIModel.totalVotes == 0
+        bottomActionView.isEnabled = !hasNoVotes
     }
 
     // MARK: Actions
@@ -463,7 +486,7 @@ open class MessageCell: CollectionViewCell,
     open func reactionTotalViewAction(_ sender: ReactionTotalView) {
         onAction?(.tapReaction)
     }
-    
+
     //MARK: ContextMenuSnapshotProviding
     open func onPrepareSnapshot() {
         textLabel.isHidden = true
@@ -716,7 +739,7 @@ public extension MessageCell {
         case didTapAvatar
         case didSwipe
         case didTapPollOption(Int, PollViewModel)
-        case didTapViewPollResults
+        case didTapBottomAction
     }
     
     enum Measure {

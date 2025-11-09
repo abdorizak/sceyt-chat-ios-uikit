@@ -10,6 +10,15 @@ import UIKit
 
 extension MessageCell {
     open class PollView: View, MessageCellMeasurable {
+        
+        // Layout constants
+        private enum Layout {
+            static let horizontalPadding: CGFloat = 12.0
+            static let topPadding: CGFloat = 8.0
+            static let questionTypeLabelSpacing: CGFloat = 4.0
+            static let typeOptionsSpacing: CGFloat = 16.0
+            static let optionSpacing: CGFloat = 20.0
+        }
 
         open lazy var appearance: MessageCellAppearance = Components.messageCell.appearance {
             didSet {
@@ -30,12 +39,6 @@ extension MessageCell {
         
         // Store the current PollViewModel to pass with actions
         private(set) var pollViewModel: PollViewModel?
-        
-        open lazy var separatorView = UIView()
-            .withoutAutoresizingMask
-
-        open lazy var viewResultButton = UIButton()
-            .withoutAutoresizingMask
 
         open var data: MessageLayoutModel? {
             didSet {
@@ -58,22 +61,14 @@ extension MessageCell {
         }
 
         public var onDidTapOption: ((Int, PollViewModel) -> Void)?
-        public var onDidTapViewResults: (() -> Void)?
         
         override open func setup() {
             super.setup()
 
             layer.cornerRadius = 16
             optionsStackView.axis = .vertical
-            optionsStackView.spacing = appearance.pollViewAppearance.optionSpacing
-            separatorView.backgroundColor = .white
+            optionsStackView.spacing = Layout.optionSpacing
             questionLabel.numberOfLines = 0
-            viewResultButton.setTitle("View Results", for: .normal)
-            viewResultButton.setTitleColor(.systemBlue, for: .normal)
-            viewResultButton.addTarget(self, action: #selector(viewResultsButtonTapped), for: .touchUpInside)
-
-            viewResultButton.contentEdgeInsets.top = 10.0
-            viewResultButton.contentEdgeInsets.bottom = 10.0
         }
 
         override open func setupLayout() {
@@ -82,21 +77,22 @@ extension MessageCell {
             addSubview(questionLabel)
             addSubview(typeLabel)
             addSubview(optionsStackView)
-            addSubview(separatorView)
-            addSubview(viewResultButton)
 
-            questionLabel.pin(to: self, anchors: [.leading(12.0), .trailing(-12.0), .top(8.0)])
+            questionLabel.pin(
+                to: self,
+                anchors: [
+                    .leading(Layout.horizontalPadding),
+                    .trailing(-Layout.horizontalPadding),
+                    .top(Layout.topPadding)
+                ]
+            )
+
             typeLabel.pin(to: questionLabel, anchors: [.leading, .trailing])
-            typeLabel.topAnchor.pin(to: questionLabel.bottomAnchor, constant: 4.0)
+            typeLabel.topAnchor.pin(to: questionLabel.bottomAnchor, constant: Layout.questionTypeLabelSpacing)
 
-            optionsStackView.pin(to: self, anchors: [.leading(12.0), .trailing(-12.0)])
-            optionsStackView.topAnchor.pin(to: typeLabel.bottomAnchor, constant: 16.0)
-
-            separatorView.topAnchor.pin(to: optionsStackView.bottomAnchor, constant: 20.0)
-            separatorView.pin(to: self, anchors: [.leading(4.0), .trailing(-4.0)])
-            separatorView.resize(anchors: [.height(1.0)])
-            viewResultButton.topAnchor.pin(to: separatorView.bottomAnchor)
-            viewResultButton.pin(to: self, anchors: [.leading, .trailing])
+            optionsStackView.pin(to: self, anchors: [.leading(Layout.horizontalPadding), .trailing(-Layout.horizontalPadding)])
+            optionsStackView.topAnchor.pin(to: typeLabel.bottomAnchor, constant: Layout.typeOptionsSpacing)
+            optionsStackView.bottomAnchor.pin(to: bottomAnchor)
         }
 
         override open func setupAppearance() {
@@ -109,12 +105,6 @@ extension MessageCell {
 
             typeLabel.font = appearance.pollViewAppearance.pollTypeTextStyle.font
             typeLabel.textColor = appearance.pollViewAppearance.pollTypeTextStyle.foregroundColor
-
-            separatorView.backgroundColor = appearance.pollViewAppearance.dividerColor
-
-            viewResultButton.setTitleColor(appearance.pollViewAppearance.viewResultsTextStyle.foregroundColor, for: .normal)
-            viewResultButton.setTitleColor(appearance.pollViewAppearance.viewResultsDisabledTextStyle.foregroundColor, for: .disabled)
-            viewResultButton.titleLabel?.font = appearance.pollViewAppearance.viewResultsTextStyle.font
         }
 
         private func configure(with layoutModel: MessageLayoutModel) {
@@ -131,12 +121,6 @@ extension MessageCell {
             
             questionLabel.text = viewModel.question
             typeLabel.text = viewModel.pollTypeText
-
-            let isAnonymous = viewModel.anonymous
-            let hasNoVotes = viewModel.totalVotes == 0
-            viewResultButton.isHidden = isAnonymous
-            viewResultButton.isEnabled = !hasNoVotes
-            separatorView.isHidden = isAnonymous
 
             // Remove existing option views
             optionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -187,8 +171,6 @@ extension MessageCell {
         open func updatePoll(poll: PollViewModel) {
             // Update stored PollViewModel
             self.pollViewModel = poll
-            let hasNoVotes = poll.totalVotes == 0
-            viewResultButton.isEnabled = !hasNoVotes
             for (index, option) in poll.options.enumerated() {
                 self.updateOption(with: option, at: index, animated: true)
             }
@@ -210,10 +192,6 @@ extension MessageCell {
             }
         }
 
-        @objc private func viewResultsButtonTapped() {
-            onDidTapViewResults?()
-        }
-
         open class func measure(
             model: MessageLayoutModel,
             appearance: MessageCell.Appearance
@@ -225,13 +203,12 @@ extension MessageCell {
             let pollViewModel = PollViewModel(from: poll, isIncmoing: model.message.incoming)
             let pollAppearance = appearance.pollViewAppearance
             
-            // Calculate max width using container insets
-            let containerInsets = pollAppearance.containerInsets
-            let contentMaxWidth = Components.messageLayoutModel.defaults.messageWidth - 24.0 // container left/right paddings
+            // Calculate max width using horizontal padding
+            let contentMaxWidth = Components.messageLayoutModel.defaults.messageWidth - (Layout.horizontalPadding * 2)
             var height: CGFloat = 0
 
-            // Top padding from container insets
-            height += containerInsets.top
+            // Top padding
+            height += Layout.topPadding
 
             // Question height
             let questionConfig = TextSizeMeasure.Config(
@@ -243,9 +220,10 @@ extension MessageCell {
             let questionSize = TextSizeMeasure.calculateSize(of: pollViewModel.question, config: questionConfig).textSize
             height += ceil(questionSize.height)
 
-            // Type label height + spacing (using spacing between question and type)
-            let typeLabelSpacing: CGFloat = 4.0 // Spacing between question and type label
-            height += typeLabelSpacing
+            // Spacing between question and type label
+            height += Layout.questionTypeLabelSpacing
+            
+            // Type label height
             let typeConfig = TextSizeMeasure.Config(
                 restrictingWidth: contentMaxWidth,
                 maximumNumberOfLines: 1,
@@ -255,9 +233,10 @@ extension MessageCell {
             let typeSize = TextSizeMeasure.calculateSize(of: pollViewModel.pollTypeText, config: typeConfig).textSize
             height += ceil(typeSize.height)
 
-            // Options height - use PollOptionView.measure for each option
-            let optionSpacing = pollAppearance.optionSpacing
+            // Spacing before options
+            height += Layout.typeOptionsSpacing
 
+            // Options height
             for (index, option) in pollViewModel.options.enumerated() {
                 let optionSize = PollOptionView.measure(
                     option: option,
@@ -267,27 +246,9 @@ extension MessageCell {
                 )
                 height += optionSize.height
                 if index < pollViewModel.options.count - 1 {
-                    height += optionSpacing
+                    height += Layout.optionSpacing
                 }
             }
-
-            // Separator + footer (if not anonymous)
-            if !pollViewModel.anonymous {
-                let separatorTopSpacing: CGFloat = 20.0 // Spacing before separator
-                height += separatorTopSpacing
-                let separatorHeight: CGFloat = 1.0 // Separator height
-                height += separatorHeight
-                // Button height: contentEdgeInsets (from setup: top: 16.0, bottom: 16.0) + intrinsic height
-                let buttonTopInset: CGFloat = 16.0
-                let buttonBottomInset: CGFloat = 16.0
-                let buttonIntrinsicHeight: CGFloat = 16.0 // Approximate intrinsic height
-                height += buttonTopInset + buttonBottomInset + buttonIntrinsicHeight
-            } else {
-                height += 20.0
-            }
-
-            // Bottom padding from container insets
-            height += containerInsets.bottom
 
             return CGSize(width: Components.messageLayoutModel.defaults.messageWidth, height: ceil(height))
         }

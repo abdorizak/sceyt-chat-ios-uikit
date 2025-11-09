@@ -778,6 +778,8 @@ public enum L10n {
       public static let showMore = L10n.tr("Localizable", "poll.results.showMore", fallback: "Show All")
       /// Poll Results
       public static let title = L10n.tr("Localizable", "poll.results.title", fallback: "Poll Results")
+      /// View Results
+      public static let viewResults = L10n.tr("Localizable", "poll.results.viewResults", fallback: "View Results")
     }
   }
   public enum Previewer {

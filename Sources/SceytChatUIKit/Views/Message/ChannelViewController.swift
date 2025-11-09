@@ -1488,8 +1488,10 @@ open class ChannelViewController: ViewController,
                 self.didSelectPhoneNumber(phoneNumber, layoutModel: model)
             case .didSwipe:
                 self.reply(layoutModel: model, in: false)
-            case .didTapViewPollResults:
-                self.showPollResults(for: model)
+            case .didTapBottomAction:
+                if model.message.poll != nil {
+                    self.showPollResults(for: model)
+                }
             case .didTapPollOption(let optionIndex, let pollViewModel):
                 self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
             }

@@ -152,9 +152,14 @@ extension ChannelViewController {
                 let maxSpace = infoWidth == 0 ? 70 : infoWidth + 12
                 if layout.lastCharRect.maxX + maxSpace <= layout.textSize.width {
                     layoutConstraint += [
-                        textLabel.bottomAnchor.pin(to: infoView.bottomAnchor),
                         textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12)
                     ]
+
+                    if !layout.contentOptions.contains(.poll) {
+                        layoutConstraint += [
+                            textLabel.bottomAnchor.pin(to: infoView.bottomAnchor)
+                        ]
+                    }
                 } else if layout.lastCharRect.maxX + maxSpace <= Components.messageLayoutModel.defaults.messageWidth - 12 * 2 {
                     layoutConstraint += [
                         textLabel.bottomAnchor.pin(to: infoView.bottomAnchor),
@@ -251,9 +256,11 @@ extension ChannelViewController {
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
                     pollView.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
-                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4),
+                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -20.0),
 
-                    infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24)
+                    bottomActionView.topAnchor.pin(to: infoView.bottomAnchor, constant: 8.0),
+                    bottomActionView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 4.0),
+                    bottomActionView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -4.0),
                 ]
                 
             } else {
@@ -296,14 +303,24 @@ extension ChannelViewController {
             if infoView.backgroundView.isHidden {
                 layoutConstraint += [
                     infoView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12),
-                    infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -8)
                 ]
+
+                if !layout.contentOptions.contains(.poll) {
+                    layoutConstraint += [
+                        infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -8)
+                    ]
+                }
             } else {
                 let infoAnchorView = (layout.contentOptions.contains(.link) && layout.attachments.isEmpty) ? linkView : attachmentView
                 layoutConstraint += [
                     infoView.trailingAnchor.pin(to: infoAnchorView.trailingAnchor, constant: -12),
-                    infoView.bottomAnchor.pin(to: infoAnchorView.bottomAnchor, constant: -9)
                 ]
+
+                if !layout.contentOptions.contains(.poll) {
+                    layoutConstraint += [
+                        infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -9)
+                    ]
+                }
             }
             
             if layout.hasReactions {
@@ -467,8 +484,14 @@ extension ChannelViewController {
                     bubbleSize.height += 2
                 }
 
+                bubbleSize.height += 20.0
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
+                bubbleSize.height += 8.0
+                if model.message.poll?.anonymous == false {
+                    let actionButtonSize = BottomActionView.measure(model: model, appearance: appearance)
+                    bubbleSize.height += actionButtonSize.height
+                }
             } else {
                 bubbleSize = model.attachmentsContainerSize
                 bubbleSize.width += 4

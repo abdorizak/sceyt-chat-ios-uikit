@@ -204,7 +204,11 @@ extension ChannelViewController {
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
                     pollView.topAnchor.pin(to: bubbleView.topAnchor),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
-                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4)
+                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -20.0),
+
+                    bottomActionView.topAnchor.pin(to: infoView.bottomAnchor, constant: 8.0),
+                    bottomActionView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 4.0),
+                    bottomActionView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -4.0),
                 ]
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
@@ -248,8 +252,13 @@ extension ChannelViewController {
             if infoView.backgroundView.isHidden {
                 layoutConstraint += [
                     infoView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -10),
-                    infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -8)
                 ]
+
+                if !layout.contentOptions.contains(.poll) {
+                    layoutConstraint += [
+                        infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -8)
+                    ]
+                }
             } else {
                 layoutConstraint += [
                     infoView.trailingAnchor.pin(to: attachmentView.trailingAnchor, constant: -12),
@@ -390,9 +399,15 @@ extension ChannelViewController {
                 let pollSize = model.pollViewMeasure
                 bubbleSize = pollSize
                 bubbleSize.height += (model.hasReply ? 8 : model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)
-                bubbleSize.height += 12 //padding
+
+                bubbleSize.height += 20.0
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
+                bubbleSize.height += 8.0
+                if model.message.poll?.anonymous == false {
+                    let actionButtonSize = BottomActionView.measure(model: model, appearance: appearance)
+                    bubbleSize.height += actionButtonSize.height
+                }
             } else {
                 shouldShowDateTickBackground = false
                 bubbleSize = model.attachmentsContainerSize

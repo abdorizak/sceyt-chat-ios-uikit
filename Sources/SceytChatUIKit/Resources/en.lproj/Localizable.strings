@@ -352,5 +352,6 @@
 
 "poll.results.title" = "Poll Results";
 "poll.results.showMore" = "Show All";
+"poll.results.viewResults" = "View Results";
 "poll.optionDetail.title" = "Poll Option";
 "poll.optionDetail.close" = "Close";

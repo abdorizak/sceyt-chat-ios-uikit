@@ -52,6 +52,7 @@ extension MessageCell {
         }()
         
         private var optionLabelLeadingConstraint: NSLayoutConstraint?
+        private var avatarViews: [UIView] = []
         
         open var viewModel: PollOptionViewModel? {
             didSet {
@@ -65,6 +66,11 @@ extension MessageCell {
             }
         }
         
+        private var currentBorderColor: UIColor {
+            let messageApperance = Components.messageCell.appearance
+            return viewModel?.isIncoming == true ? messageApperance.incomingBubbleColor : messageApperance.outgoingBubbleColor
+        }
+        
         // MARK: Setup
         
         open override func setup() {
@@ -76,11 +82,11 @@ extension MessageCell {
             votersContainerView.addSubview(voteCountLabel)
             addSubview(progressBar)
             
-            let cornerRadius = appearance.progressBarCornerRadius
-            progressBar.layer.cornerRadius = cornerRadius
+//            let cornerRadius = appearance.progressBarCornerRadius
+            progressBar.layer.cornerRadius = 3.0
             progressBar.clipsToBounds = true
             progressBar.subviews.forEach { subview in
-                subview.layer.cornerRadius = cornerRadius
+//                subview.layer.cornerRadius = cornerRadius
                 subview.clipsToBounds = true
             }
         }
@@ -96,7 +102,7 @@ extension MessageCell {
 
             votersContainerView.trailingAnchor.pin(to: trailingAnchor)
             votersContainerView.topAnchor.pin(to: topAnchor)
-            votersContainerView.widthAnchor.pin(constant: appearance.votersContainerWidth)
+            votersContainerView.widthAnchor.pin(constant: 50.0)
             votersContainerView.heightAnchor.pin(greaterThanOrEqualToConstant: appearance.voterAvatarStyle.size)
 
             votersStackView.centerYAnchor.pin(to: votersContainerView.centerYAnchor)
@@ -110,7 +116,7 @@ extension MessageCell {
             progressBar.leadingAnchor.pin(to: optionLabel.leadingAnchor)
             progressBar.trailingAnchor.pin(to: trailingAnchor)
             progressBar.topAnchor.pin(to: optionLabel.bottomAnchor, constant: 8.0)
-            progressBar.heightAnchor.pin(constant: appearance.progressBarHeight)
+            progressBar.heightAnchor.pin(constant: 6.0)
             progressBar.bottomAnchor.pin(to: bottomAnchor)
         }
 
@@ -128,6 +134,22 @@ extension MessageCell {
 
             progressBar.trackTintColor = appearance.progressBarForeground
             progressBar.progressTintColor = appearance.progressBarBackground
+        }
+        
+        open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+            super.traitCollectionDidChange(previousTraitCollection)
+            
+            // Update avatar border colors when appearance changes (light/dark mode)
+            if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+                updateAvatarBorderColors()
+            }
+        }
+        
+        private func updateAvatarBorderColors() {
+            let borderColor = currentBorderColor
+            avatarViews.forEach { avatarView in
+                avatarView.layer.borderColor = borderColor.cgColor
+            }
         }
         
         
@@ -154,6 +176,7 @@ extension MessageCell {
             }
 
             votersStackView.removeArrangedSubviews()
+            avatarViews.removeAll()
             if !viewModel.isAnonymous {
                 createVoterAvatars(voters: viewModel.voters, appearance: appearance)
             }
@@ -220,6 +243,7 @@ extension MessageCell {
             // Animate voter avatars only when vote count increases by 1 (0->1, 1->2, etc.)
             let shouldAnimateAvatars = (newViewModel.voteCount == oldVoteCount + 1) && !newViewModel.isAnonymous
             votersStackView.removeArrangedSubviews()
+            avatarViews.removeAll()
             if !newViewModel.isAnonymous {
                 createVoterAvatars(voters: newViewModel.voters, appearance: appearance, animated: shouldAnimateAvatars)
             }
@@ -252,8 +276,7 @@ extension MessageCell {
                 height: appearance.voterAvatarStyle.size * scale
             )
 
-            let messageApperance = Components.messageCell.appearance
-            let borderColor: UIColor = viewModel?.isIncoming == true ? messageApperance.incomingBubbleColor: messageApperance.outgoingBubbleColor
+            let borderColor = currentBorderColor
             for voter in sortedVoters.suffix(avatarCount).reversed() {
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
@@ -290,6 +313,7 @@ extension MessageCell {
                     size: avatarSize
                 )
                 votersStackView.addArrangedSubview(avatarView)
+                avatarViews.append(avatarView)
 
                 // Animate avatar appearance if requested
                 if animated {
@@ -325,20 +349,20 @@ extension MessageCell {
         ) -> CGSize {
             let pollAppearance = appearance
             var height: CGFloat = 0
-            
+
             // Checkbox height (if not closed)
             if !isClosed {
                 height = max(height, pollAppearance.checkboxStyle.size)
             }
-            
+
             // Calculate option text width
             // Available width: maxWidth - checkbox (if visible) - spacing - spacing - voters container
             let checkboxWidth: CGFloat = isClosed ? 0 : pollAppearance.checkboxStyle.size
             let spacingAfterCheckbox: CGFloat = 8.0
             let spacingBeforeVoters: CGFloat = 8.0
-            let votersContainerWidth = pollAppearance.votersContainerWidth
+            let votersContainerWidth = 50.0
             let availableTextWidth = maxWidth - checkboxWidth - spacingAfterCheckbox - spacingBeforeVoters - votersContainerWidth
-            
+
             // Option text height
             let optionConfig = TextSizeMeasure.Config(
                 restrictingWidth: availableTextWidth,
@@ -346,12 +370,13 @@ extension MessageCell {
                 font: pollAppearance.optionTextStyle.font,
                 lastFragmentUsedRect: false
             )
+
             let optionTextSize = TextSizeMeasure.calculateSize(of: option.text, config: optionConfig).textSize
             let textHeight = ceil(optionTextSize.height)
 
             // Total option height: max of checkbox height or text height, plus spacing and progress bar
             let spacingBetweenTextAndProgress: CGFloat = textHeight > checkboxWidth ? 8.0 : 4.0
-            let progressBarHeight = pollAppearance.progressBarHeight
+            let progressBarHeight: CGFloat = 6
             let minHeight = max(checkboxWidth > 0 ? pollAppearance.checkboxStyle.size : 0, textHeight) + spacingBetweenTextAndProgress + progressBarHeight
             return CGSize(width: maxWidth, height: minHeight)
         }
