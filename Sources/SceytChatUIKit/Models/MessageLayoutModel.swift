@@ -851,7 +851,7 @@ public extension MessageLayoutModel {
     }
     
     struct Defaults {
-        public var messageWidthRatio: CGFloat = 0.75
+        public var messageWidthRatio: CGFloat = 0.72
         public internal(set) lazy var messageWidth: CGFloat = floor(messageWidthRatio * UIScreen.main.bounds.width)
         public var messageSenderNameWidth = CGFloat(170)
         public var imageAttachmentSize  = CGSize(width: 260, height: 200)

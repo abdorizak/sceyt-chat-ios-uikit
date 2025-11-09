@@ -779,7 +779,7 @@ extension MessageCell {
 public extension MessageCell {
     enum Layouts {
         public static var checkBoxSize: CGFloat = 24
-        public static var checkBoxPadding: CGFloat = 12
+        public static var checkBoxPadding: CGFloat = 10
         public static var horizontalPadding: CGFloat = 12
         public static var attachmentIconSize: CGFloat = 40
         public static var cornerRadius: CGFloat = 8
