@@ -394,9 +394,9 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
                 let isOwnVote = vote.user.id == currentUserId
 
                 if isOwnVote {
-                    ownVotes.removeAll { $0.optionId == vote.optionId && $0.id == vote.user.id }
+                    ownVotes.removeAll { $0.optionId == vote.optionId && $0.user?.id == vote.user.id }
                 } else {
-                    votes.removeAll { $0.optionId == vote.optionId && $0.id == vote.user.id }
+                    votes.removeAll { $0.optionId == vote.optionId && $0.user?.id == vote.user.id }
                 }
 
                 // Update votesPerOption - decrement count for this option
