@@ -1162,6 +1162,9 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         ownVotesSet.removeAllObjects()
         ownVotesSet.addObjects(from: ownVoteDTOs)
 
+        var votesPerOption = (poll.votesPerOption as? [String: NSNumber]) ?? [:]
+        pollDTO.votesPerOption = votesPerOption as NSDictionary
+        
         dto.poll = pollDTO
         return dto
     }

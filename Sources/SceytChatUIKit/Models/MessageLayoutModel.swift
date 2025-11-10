@@ -355,6 +355,15 @@ open class MessageLayoutModel {
                 contentOptions.insert(.poll)
                 updateOptions.insert(.poll)
             }
+            // Check if poll data changed (votes, votesPerOption, closed state)
+            if let currentPoll = self.message.poll, let newPoll = message.poll {
+                if currentPoll.votesPerOption != newPoll.votesPerOption ||
+                   currentPoll.votes.count != newPoll.votes.count ||
+                   currentPoll.ownVotes.count != newPoll.ownVotes.count ||
+                   currentPoll.closed != newPoll.closed {
+                    updateOptions.insert(.poll)
+                }
+            }
         } else {
             if contentOptions.contains(.poll) {
                 contentOptions.remove(.poll)
