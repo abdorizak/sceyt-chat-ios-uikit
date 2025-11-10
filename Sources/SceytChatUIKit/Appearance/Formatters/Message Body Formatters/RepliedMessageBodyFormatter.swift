@@ -64,6 +64,11 @@ open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
                 .foregroundColor: messageBodyAttributes.deletedLabelAppearance.foregroundColor
             ])
         default:
+            // Check if message is unsupported
+            if MessageLayoutModel.isMessageUnsupported(message) {
+                return SceytChatUIKit.shared.formatters.unsupportedMessageShortFormatter.format(message)
+            }
+            
             if body.isEmpty,
                let attachment = message.attachments?.first {
                 switch MessageLayoutModel.AttachmentLayout.AttachmentType(rawValue: attachment.type) {

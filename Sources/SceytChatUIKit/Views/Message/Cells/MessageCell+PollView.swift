@@ -50,7 +50,7 @@ extension MessageCell {
                 backgroundColor = data.message.incoming ? appearance.incomingBubbleColor : appearance.outgoingBubbleColor
 
                 // Check if message has poll data and is not deleted
-                guard data.message.poll != nil, data.message.state != .deleted else {
+                guard data.contentOptions.contains(.poll), data.message.state != .deleted else {
                     isHidden = true
                     return
                 }

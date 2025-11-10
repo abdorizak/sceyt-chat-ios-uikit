@@ -2364,12 +2364,24 @@ open class ChannelViewController: ViewController,
         guard let model = identifier.value as? MessageLayoutModel,
               model.message.state != .deleted
         else { return false }
+        
+        // Disable context menu for unsupported messages
+        if model.contentOptions.contains(.unsupported) {
+            return false
+        }
+        
         return true
     }
     
     open func canShowEmojis(contextMenu: ContextMenu, identifier: Identifier) -> (canShowEmojis: Bool, emojisViewAppearance: ReactionPickerViewController.Appearance) {
         guard let model = identifier.value as? MessageLayoutModel
         else { return (false, appearance.reactionPickerAppearance) }
+        
+        // Disable emojis for unsupported messages
+        if model.contentOptions.contains(.unsupported) {
+            return (false, appearance.reactionPickerAppearance)
+        }
+        
         return (![.pending, .failed].contains(model.message.deliveryStatus), appearance.reactionPickerAppearance)
     }
     
@@ -2389,6 +2401,11 @@ open class ChannelViewController: ViewController,
         guard let model = identifier.value as? MessageLayoutModel,
               model.message.state != .deleted
         else { return [] }
+        
+        // Disable context menu for unsupported messages
+        if model.contentOptions.contains(.unsupported) {
+            return []
+        }
         
         var isPoll = model.message.poll != nil
         var items: [MenuItem] = []

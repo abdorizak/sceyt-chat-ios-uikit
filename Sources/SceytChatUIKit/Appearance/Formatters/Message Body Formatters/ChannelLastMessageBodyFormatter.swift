@@ -25,6 +25,11 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
                 ]
             )
         default:
+            // Check if message is unsupported
+            if MessageLayoutModel.isMessageUnsupported(message) {
+                return SceytChatUIKit.shared.formatters.unsupportedMessageShortFormatter.format(message)
+            }
+
             let bodyFont = messageBodyAttributes.bodyLabelAppearance.font
             let bodyColor = messageBodyAttributes.bodyLabelAppearance.foregroundColor
             let mentionFont = messageBodyAttributes.mentionLabelAppearance.font

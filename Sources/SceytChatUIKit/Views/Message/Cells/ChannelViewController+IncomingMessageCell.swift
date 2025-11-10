@@ -262,6 +262,26 @@ extension ChannelViewController {
                     bottomActionView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 4.0),
                     bottomActionView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -4.0),
                 ]
+            } else if layout.contentOptions.contains(.unsupported), layout.attachments.isEmpty {
+                layoutConstraint += [
+                    bubbleView.leadingAnchor.pin(to: avatarView.trailingAnchor, constant: 10),
+                    bubbleView.topAnchor.pin(to: containerView.topAnchor),
+                    bubbleView.widthAnchor.pin(constant: layout.unsupportedViewMeasure.width).priority(.required),
+
+                    textLabel.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
+                    textLabel.widthAnchor.pin(constant: 0),
+                    textLabel.heightAnchor.pin(constant: 0),
+                    textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
+
+                    infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
+
+                    unsupportedView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
+                    unsupportedView.topAnchor.pin(to: contentTopAnchor, constant: 4.0),
+                    unsupportedView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
+                    unsupportedView.bottomAnchor.pin(to: infoView.topAnchor),
+
+                    infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24.0)
+                ]
                 
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
@@ -492,6 +512,17 @@ extension ChannelViewController {
                     let actionButtonSize = BottomActionView.measure(model: model, appearance: appearance)
                     bubbleSize.height += actionButtonSize.height
                 }
+            } else if options.contains(.unsupported) {
+                let unsupportedSize = model.unsupportedViewMeasure
+                bubbleSize = unsupportedSize
+                if userNameSize == .zero {
+                    bubbleSize.height += 18
+                } else {
+                    bubbleSize.height += 2
+                }
+
+                let infoViewSize = InfoView.measure(model: model, appearance: appearance)
+                bubbleSize.height += infoViewSize.height
             } else {
                 bubbleSize = model.attachmentsContainerSize
                 bubbleSize.width += 4

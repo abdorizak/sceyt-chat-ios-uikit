@@ -67,6 +67,10 @@ open class MessageCell: CollectionViewCell,
         .init()
         .withoutAutoresizingMask
     
+    open lazy var unsupportedView = Components.messageCellUnsupportedMessageView
+        .init()
+        .withoutAutoresizingMask
+    
     open lazy var reactionTotalView = Components.messageCellReactionTotalView
         .init()
         .withoutAutoresizingMask
@@ -186,6 +190,7 @@ open class MessageCell: CollectionViewCell,
         bubbleView.addSubview(attachmentView)
         bubbleView.addSubview(linkView)
         bubbleView.addSubview(pollView)
+        bubbleView.addSubview(unsupportedView)
         bubbleView.addSubview(infoView)
         bubbleView.addSubview(bottomActionView)
         bubbleView.addSubview(nameLabel)
@@ -213,6 +218,7 @@ open class MessageCell: CollectionViewCell,
         forwardView.appearance = appearance
         attachmentView.appearance = appearance
         linkView.appearance = appearance
+        pollView.appearance = appearance
         infoView.appearance = appearance
         reactionTotalView.appearance = appearance
         bottomActionView.appearance = appearance.bottomActionViewAppearance
@@ -280,6 +286,7 @@ open class MessageCell: CollectionViewCell,
         attachmentView.data = data
         linkView.data = data
         pollView.data = data
+        unsupportedView.data = data
         reactionTotalView.data = data
         reactionTotalView.isHidden = (data.reactions?.isEmpty ?? true)
         replyView.data = message.repliedInThread ? nil : data.replyLayout
@@ -316,7 +323,7 @@ open class MessageCell: CollectionViewCell,
         forwardView.isHidden = !data.isForwarded
 
         // Configure actionButtonView visibility and state based on poll data
-        if let poll = message.poll, message.state != .deleted {
+        if let poll = message.poll, data.contentOptions.contains(.poll), message.state != .deleted {
             let pollViewModel = PollViewModel(from: poll, isIncmoing: message.incoming)
             let isAnonymous = pollViewModel.anonymous
             let hasNoVotes = pollViewModel.totalVotes == 0
@@ -454,9 +461,13 @@ open class MessageCell: CollectionViewCell,
             highlightMode = .none
         }
     }
-    
+
     @objc
     func didUpdateMessagePoll(_ notification: Notification) {
+        guard data.hasPoll else {
+            return
+        }
+ 
         guard let data,
               let userInfo = notification.userInfo,
               let pollUIModel = userInfo["pollUIModel"] as? PollViewModel,
@@ -741,7 +752,7 @@ public extension MessageCell {
         case didTapPollOption(Int, PollViewModel)
         case didTapBottomAction
     }
-    
+
     enum Measure {
         
     }

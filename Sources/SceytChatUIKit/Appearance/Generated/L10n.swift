@@ -697,6 +697,10 @@ public enum L10n {
         return L10n.tr("Localizable", "message.reply.count", p1, fallback: "%d Replies")
       }
     }
+    public enum Unsupported {
+      /// This message is not supported.
+      public static let text = L10n.tr("Localizable", "message.unsupported.text", fallback: "This message is not supported.")
+    }
   }
   public enum Nav {
     public enum Bar {
