@@ -349,7 +349,6 @@
 "poll.discard.alert.message" = "Are you sure you want to discard your poll?";
 "poll.discard.alert.keepEditing" = "Keep Editing";
 "poll.discard.alert.discard" = "Discard Poll";
-
 "poll.results.title" = "Poll Results";
 "poll.results.showMore" = "Show All";
 "poll.results.viewResults" = "View Results";
@@ -359,3 +358,4 @@
 "poll.types.anonymous" = "Anonymous poll";
 "poll.types.singleVote" = "Single Vote";
 "poll.types.multipleVotes" = "Multiple Votes";
+"message.unsupported.text" = "This message is not supported.";

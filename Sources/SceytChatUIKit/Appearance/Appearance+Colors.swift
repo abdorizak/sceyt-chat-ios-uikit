@@ -96,8 +96,9 @@ public struct DefaultColors {
                                                                    dark: .accent.dark.withAlphaComponent(0.30).blend(with: .background.dark))
     public static var bubbleOutgoingHighlightedSecondary: UIColor = UIColor(light: .accent.light.withAlphaComponent(0.34).blend(with: .background.light),
                                                                             dark: .accent.dark.withAlphaComponent(0.34).blend(with: .background.dark))
-    
-    
+
+    public static var unsupprotedMessageText: UIColor = UIColor(light: 0x757D8B, dark: 0xB1B1B3)
+
     public static func initial(title: String) -> UIColor {
         let initialColors = SceytChatUIKit.shared.config.defaultAvatarBackgroundColors
         return initialColors[abs(title.hash) % initialColors.count]

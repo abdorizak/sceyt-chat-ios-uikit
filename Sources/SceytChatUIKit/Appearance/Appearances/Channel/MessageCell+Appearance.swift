@@ -111,7 +111,7 @@ extension MessageCell: AppearanceProviding {
             foregroundColor: .secondaryText,
             font: Fonts.regular.withSize(12)
         ),
-        
+
         // Icons
         messageDeliveryStatusIcons: MessageDeliveryStatusIcons(),
         viewCountIcon: .eye,
@@ -162,7 +162,8 @@ extension MessageCell: AppearanceProviding {
         messageDateFormatter: SceytChatUIKit.shared.formatters.messageDateFormatter,
         mentionUserNameFormatter: SceytChatUIKit.shared.formatters.mentionUserNameFormatter,
         userDefaultAvatarProvider: SceytChatUIKit.shared.visualProviders.userAvatarProvider,
-        messageBodyFormatter: SceytChatUIKit.shared.formatters.messageBodyFormatter
+        messageBodyFormatter: SceytChatUIKit.shared.formatters.messageBodyFormatter,
+        unsupportedMessageFormatter: SceytChatUIKit.shared.formatters.unsupportedMessageFormatter
     )
     
     public struct Appearance {
@@ -281,7 +282,7 @@ extension MessageCell: AppearanceProviding {
         
         @Trackable<Appearance, LabelAppearance>
         public var attachmentFileSizeLabelAppearance: LabelAppearance
-        
+
         // Icons
         @Trackable<Appearance, MessageDeliveryStatusIcons>
         public var messageDeliveryStatusIcons: MessageDeliveryStatusIcons
@@ -367,6 +368,9 @@ extension MessageCell: AppearanceProviding {
         @Trackable<Appearance, any MessageBodyFormatting>
         public var messageBodyFormatter: any MessageBodyFormatting
         
+        @Trackable<Appearance, any UnsupportedMessageFormatting>
+        public var unsupportedMessageFormatter: any UnsupportedMessageFormatting
+        
         // Initializer with all parameters
         public init(
             // Colors
@@ -444,7 +448,8 @@ extension MessageCell: AppearanceProviding {
             messageDateFormatter: any DateFormatting,
             mentionUserNameFormatter: any UserFormatting,
             userDefaultAvatarProvider: any UserAvatarProviding,
-            messageBodyFormatter: any MessageBodyFormatting
+            messageBodyFormatter: any MessageBodyFormatting,
+            unsupportedMessageFormatter: any UnsupportedMessageFormatting
         ) {
             // Colors
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -522,6 +527,7 @@ extension MessageCell: AppearanceProviding {
             self._mentionUserNameFormatter = Trackable(value: mentionUserNameFormatter)
             self._userDefaultAvatarProvider = Trackable(value: userDefaultAvatarProvider)
             self._messageBodyFormatter = Trackable(value: messageBodyFormatter)
+            self._unsupportedMessageFormatter = Trackable(value: unsupportedMessageFormatter)
         }
         
         // Initializer with optional parameters
@@ -602,7 +608,8 @@ extension MessageCell: AppearanceProviding {
             messageDateFormatter: (any DateFormatting)? = nil,
             mentionUserNameFormatter: (any UserFormatting)? = nil,
             userDefaultAvatarProvider: (any UserAvatarProviding)? = nil,
-            messageBodyFormatter: (any MessageBodyFormatting)? = nil
+            messageBodyFormatter: (any MessageBodyFormatting)? = nil,
+            unsupportedMessageFormatter: (any UnsupportedMessageFormatting)? = nil
         ) {
             // Colors
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
@@ -670,7 +677,8 @@ extension MessageCell: AppearanceProviding {
             self._mentionUserNameFormatter = Trackable(reference: reference, referencePath: \.mentionUserNameFormatter)
             self._userDefaultAvatarProvider = Trackable(reference: reference, referencePath: \.userDefaultAvatarProvider)
             self._messageBodyFormatter = Trackable(reference: reference, referencePath: \.messageBodyFormatter)
-            
+            self._unsupportedMessageFormatter = Trackable(reference: reference, referencePath: \.unsupportedMessageFormatter)
+
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let incomingBubbleColor { self.incomingBubbleColor = incomingBubbleColor }
             if let outgoingBubbleColor { self.outgoingBubbleColor = outgoingBubbleColor }
@@ -736,6 +744,7 @@ extension MessageCell: AppearanceProviding {
             if let mentionUserNameFormatter { self.mentionUserNameFormatter = mentionUserNameFormatter }
             if let userDefaultAvatarProvider { self.userDefaultAvatarProvider = userDefaultAvatarProvider }
             if let messageBodyFormatter { self.messageBodyFormatter = messageBodyFormatter }
+            if let unsupportedMessageFormatter { self.unsupportedMessageFormatter = unsupportedMessageFormatter}
         }
     }
 }

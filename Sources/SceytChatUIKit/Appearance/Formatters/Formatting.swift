@@ -184,3 +184,22 @@ public protocol PollTypeFormatting: Formatting {
     /// - Returns: A formatted `String` describing the poll type (e.g., "Poll finished", "Anonymous poll • Single Vote", "Public poll • Multiple Votes").
     func format(_ poll: (closed: Bool, anonymous: Bool, isSingle: Bool)) -> String
 }
+
+/// A protocol that defines formatting behavior for unsupported message bodies.
+public protocol UnsupportedMessageFormatting: Formatting {
+    /// Formats an unsupported message into an attributed string.
+    ///
+    /// - Parameter attributes: The `ChatMessage` instance containing the attributes needed for formatting.
+    /// - Returns: An `NSAttributedString` representing the formatted unsupported message.
+    func format(_ attributes: ChatMessage) -> NSAttributedString
+}
+
+/// A protocol that defines formatting behavior for unsupported messages in short form (e.g., for channel list).
+public protocol UnsupportedMessageShortFormatting: Formatting {
+    /// Formats an unsupported message into a short attributed string.
+    ///
+    /// - Parameter message: The `ChatMessage` instance to format.
+    /// - Parameter appearance: The label appearance to use for formatting.
+    /// - Returns: An `NSAttributedString` representing the short formatted unsupported message.
+    func format(_ message: ChatMessage) -> NSAttributedString
+}

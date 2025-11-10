@@ -49,6 +49,10 @@ open class MessageLayoutModel {
         return true
     }
     
+    open var hasPoll: Bool {
+        return message.poll != nil && message.type == "poll" && message.state != .deleted
+    }
+    
     public private(set) var hasMediaAttachments: Bool = false
     public private(set) var hasFileAttachments: Bool = false
     public private(set) var hasVoiceAttachments: Bool = false
@@ -60,6 +64,7 @@ open class MessageLayoutModel {
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
     public private(set) var pollViewMeasure: CGSize = .zero
+    public private(set) var unsupportedViewMeasure: CGSize = .zero
     public private(set) var lastCharRect: CGRect
     public private(set) var replyCount = 0
     public              var contentInsets: UIEdgeInsets = .zero
@@ -208,18 +213,31 @@ open class MessageLayoutModel {
         if hasVoiceAttachments {
             contentOptions.insert(.voice)
         }
-        if message.poll != nil && message.state != .deleted {
+        if hasPoll {
             contentOptions.insert(.poll)
         }
+
+        // Check if message is unsupported
+        if Self.isMessageUnsupported(message) && message.state != .deleted {
+            contentOptions.insert(.unsupported)
+            contentOptions.remove(.text)
+            contentOptions.remove(.image)
+            contentOptions.remove(.file)
+            contentOptions.remove(.voice)
+            contentOptions.remove(.link)
+            contentOptions.remove(.poll)
+            textSize = .zero
+        }
+
         if attachments.isEmpty {
             for link in Self.createLinkPreviews(message: message, linkAttachments: linkAttachments) {
                 addLinkPreview(linkMetadata: link)
             }
         }
-        
+
         reactions = createReactions(message: message)
         attachmentsContainerSize = calculateAttachmentsContainerSize()
-        if !isForwarded {
+        if !isForwarded && !contentOptions.contains(.unsupported) {
             if contentOptions.isEmpty || contentOptions == [.name] {
                 let size = Self.textSizeMeasure
                     .calculateSize(
@@ -232,7 +250,7 @@ open class MessageLayoutModel {
         //        updateOptions.insert(.reload)
         measureSize = measure()
     }
-    
+
     @discardableResult
     open func update(
         channel: ChatChannel,
@@ -348,9 +366,9 @@ open class MessageLayoutModel {
             }
             updateOptions.insert(.body)
         }
-        
+
         // Handle poll state changes
-        if message.poll != nil && message.state != .deleted {
+        if hasPoll {
             if !contentOptions.contains(.poll) {
                 contentOptions.insert(.poll)
                 updateOptions.insert(.poll)
@@ -790,11 +808,20 @@ open class MessageLayoutModel {
     open func updateThreadReplyCount(message: Message) {
         replyCount = message.replyCount
     }
-    
+
+    /// Determines if a message is unsupported by the current app version
+    /// Override this method to customize the logic for detecting unsupported messages
+    /// By default, uses the `messageTypeSupportProvider` from `SceytChatUIKit.shared.visualProviders`
+    /// to determine if a message type is supported
+    open class func isMessageUnsupported(_ message: ChatMessage) -> Bool {
+        return !SceytChatUIKit.shared.visualProviders.messageTypeSupportProvider.provideVisual(for: message)
+    }
+
     open func measure() -> CGSize {
         infoViewMeasure = Components.messageCellInfoView.measure(model: self, appearance: appearance)
         linkViewMeasure = Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
         pollViewMeasure = Components.messageCellPollView.measure(model: self, appearance: appearance)
+        unsupportedViewMeasure = Components.messageCellUnsupportedMessageView.measure(model: self, appearance: appearance)
         if message.incoming {
             return Components.channelIncomingMessageCell.measure(model: self, appearance: appearance)
         } else {
@@ -832,9 +859,10 @@ public extension MessageLayoutModel {
         public static let link     = MessageContentOptions(rawValue: 1 << 4)
         public static let voice    = MessageContentOptions(rawValue: 1 << 5)
         public static let poll     = MessageContentOptions(rawValue: 1 << 6)
-        
+        public static let unsupported = MessageContentOptions(rawValue: 1 << 7)
+
         public static let attachment: MessageContentOptions = [.image, .file, .voice]
-        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice, .poll]
+        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice, .poll, .unsupported]
     }
     
     struct MessageUpdateOptions: OptionSet {

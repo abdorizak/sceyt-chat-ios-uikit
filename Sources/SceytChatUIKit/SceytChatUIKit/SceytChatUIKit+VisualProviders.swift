@@ -20,5 +20,6 @@ extension SceytChatUIKit {
         public var connectionStateProvider: any ConnectionStateProviding = ConnectionStateTextProvider()
         public var presenceStateIconProvider: any PresenceStateIconProviding = PresenceStateIconProvider()
         public var defaultMarkerTitleProvider: any DefaultMarkerTitleProviding = DefaultMarkerTitleProvider()
+        public var messageTypeSupportProvider: any MessageTypeSupportProviding = MessageTypeSupportProvider()
     }
 }

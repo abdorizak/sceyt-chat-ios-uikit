@@ -2425,7 +2425,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func canReply(model: MessageLayoutModel) -> Bool {
-        model.message.state != .deleted
+        model.message.state != .deleted && !model.contentOptions.contains(.unsupported)
     }
     
     // MARK: view titles
