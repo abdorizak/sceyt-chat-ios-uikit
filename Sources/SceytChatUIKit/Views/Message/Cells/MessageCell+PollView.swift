@@ -61,6 +61,7 @@ extension MessageCell {
         }
 
         public var onDidTapOption: ((Int, PollViewModel) -> Void)?
+        public var onDidTapAvatars: (() -> Void)?
         
         override open func setup() {
             super.setup()
@@ -144,6 +145,24 @@ extension MessageCell {
             optionView.viewModel = option
             optionView.addGestureRecognizer(tapGesture)
             optionView.tag = index
+            optionView.onAvatarsTapped = { [weak self] in
+                self?.onDidTapAvatars?()
+            }
+            optionView.onOptionTapped = { [weak self] in
+                guard let self = self,
+                      let currentPollViewModel = self.pollViewModel,
+                      !currentPollViewModel.closed,
+                      optionView.isUserInteractionEnabled else { return }
+
+                let optionViewModel = currentPollViewModel.options[index]
+                let isVoting = !optionViewModel.isSelected
+
+                if isVoting {
+                    optionView.animateProgressBarOnVote()
+                }
+
+                self.onDidTapOption?(index, currentPollViewModel)
+            }
             return optionView
         }
 

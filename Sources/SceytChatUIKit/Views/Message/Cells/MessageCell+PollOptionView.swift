@@ -26,6 +26,7 @@ extension MessageCell {
         
         open lazy var votersContainerView: UIView = {
             let view = UIView()
+            view.isUserInteractionEnabled = true
             return view.withoutAutoresizingMask
         }()
         
@@ -53,7 +54,10 @@ extension MessageCell {
         
         private var optionLabelLeadingConstraint: NSLayoutConstraint?
         private var avatarViews: [UIView] = []
-        
+
+        open var onAvatarsTapped: (() -> Void)?
+        open var onOptionTapped: (() -> Void)?
+
         open var viewModel: PollOptionViewModel? {
             didSet {
                 configure()
@@ -89,6 +93,10 @@ extension MessageCell {
 //                subview.layer.cornerRadius = cornerRadius
                 subview.clipsToBounds = true
             }
+
+            // Add tap gesture to voters container view
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(avatarsTapped(_:)))
+            votersContainerView.addGestureRecognizer(tapGesture)
         }
         
         open override func setupLayout() {
@@ -152,9 +160,21 @@ extension MessageCell {
             }
         }
         
-        
+        @objc private func avatarsTapped(_ sender: UITapGestureRecognizer) {
+            guard let viewModel = viewModel else {
+                return
+            }
+
+            if viewModel.isAnonymous {
+                // For anonymous polls, treat avatar tap like option tap (vote/unvote)
+                onOptionTapped?()
+            } else {
+                // For non-anonymous polls, show results
+                onAvatarsTapped?()
+            }
+        }
+
         // MARK: Configuration
-        
         func configure() {
             guard let viewModel else {
                 return
