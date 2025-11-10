@@ -1260,6 +1260,14 @@ extension MessageLayoutModel {
         }
                 
         open func makeIcon() -> UIImage? {
+            // Check for poll first
+            if message.poll != nil {
+                let pollIcon = UIImage.chatActionPoll
+                let targetSize = CGSize(width: 16, height: 16)
+                let resizedIcon = resizeImage(pollIcon, to: targetSize)
+                return resizedIcon?.withRenderingMode(.alwaysTemplate)
+            }
+
             if let attachment = message.attachments?.first {
                 switch attachment.type {
                 case "voice":
@@ -1269,7 +1277,14 @@ extension MessageLayoutModel {
                 }
             }
             return nil
-            
+
+        }
+
+        private func resizeImage(_ image: UIImage, to size: CGSize) -> UIImage? {
+            UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+            defer { UIGraphicsEndImageContext() }
+            image.draw(in: CGRect(origin: .zero, size: size))
+            return UIGraphicsGetImageFromCurrentImageContext()
         }
     }
 }

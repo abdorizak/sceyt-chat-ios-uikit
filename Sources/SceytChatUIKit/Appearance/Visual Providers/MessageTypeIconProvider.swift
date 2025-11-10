@@ -22,6 +22,7 @@ public struct DefaultMessageTypeIconProvider: MessageTypeIconProviding {
     public init() {}
 
     public func provideVisual(for message: ChatMessage) -> UIImage? {
+        // TODO: Update this message have hasPoll
         // Check for poll first
         if message.poll != nil {
             // Resize and recolor poll icon to match attachment icons
