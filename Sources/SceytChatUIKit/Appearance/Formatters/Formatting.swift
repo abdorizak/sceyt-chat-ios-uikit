@@ -181,8 +181,8 @@ public protocol PollTypeFormatting: Formatting {
     /// Formats poll information into a descriptive type string.
     ///
     /// - Parameter poll: The poll details to format.
-    /// - Returns: A formatted `String` describing the poll type (e.g., "Poll finished", "Anonymous poll", "Public poll").
-    func format(_ poll: (closed: Bool, anonymous: Bool)) -> String
+    /// - Returns: A formatted `String` describing the poll type (e.g., "Poll finished", "Anonymous poll • Single Vote", "Public poll • Multiple Votes").
+    func format(_ poll: (closed: Bool, anonymous: Bool, isSingle: Bool)) -> String
 }
 
 /// A protocol that defines formatting behavior for unsupported message bodies.

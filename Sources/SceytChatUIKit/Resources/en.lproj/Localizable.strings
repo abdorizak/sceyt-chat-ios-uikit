@@ -354,4 +354,8 @@
 "poll.results.viewResults" = "View Results";
 "poll.optionDetail.title" = "Poll Option";
 "poll.optionDetail.close" = "Close";
+"poll.types.finished" = "Poll finished";
+"poll.types.anonymous" = "Anonymous poll";
+"poll.types.singleVote" = "Single Vote";
+"poll.types.multipleVotes" = "Multiple Votes";
 "message.unsupported.text" = "This message is not supported.";

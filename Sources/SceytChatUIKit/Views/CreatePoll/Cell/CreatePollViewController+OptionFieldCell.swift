@@ -119,6 +119,39 @@ extension CreatePollViewController.OptionFieldCell: UITextViewDelegate {
         }
 
         let matches = regex.matches(in: updatedText, options: [], range: NSRange(location: 0, length: updatedText.utf16.count))
+
+        // If validation fails, try to truncate the text to fit the max length from validation pattern
+        if matches.isEmpty {
+            // Extract max length from validation pattern (e.g., "^[\\s\\S]{1,120}$" -> 120)
+            let pattern = validationPattern
+            if let maxLengthMatch = try? NSRegularExpression(pattern: "\\{\\d+,(\\d+)\\}", options: [])
+                .firstMatch(in: pattern, options: [], range: NSRange(location: 0, length: pattern.utf16.count)),
+               let maxLengthRange = Range(maxLengthMatch.range(at: 1), in: pattern),
+               let maxLength = Int(pattern[maxLengthRange]) {
+
+                let remainingLength = maxLength - (currentText.count - range.length)
+
+                if remainingLength > 0 && text.count > remainingLength {
+                    // Truncate the replacement text to fit within the limit
+                    let truncatedText = String(text.prefix(remainingLength))
+                    let truncatedUpdatedText = currentText.replacingCharacters(in: stringRange, with: truncatedText)
+
+                    // Update the text view manually
+                    textView.text = truncatedUpdatedText
+
+                    // Set cursor position after the inserted text
+                    if let newPosition = textView.position(from: textView.beginningOfDocument, offset: range.location + truncatedText.count) {
+                        textView.selectedTextRange = textView.textRange(from: newPosition, to: newPosition)
+                    }
+
+                    // Trigger the text changed callback
+                    textViewDidChange(textView)
+
+                    return false
+                }
+            }
+        }
+
         return !matches.isEmpty
     }
 

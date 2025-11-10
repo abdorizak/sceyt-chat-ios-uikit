@@ -132,6 +132,6 @@ public struct PollViewModel {
             )
         }
 
-        self.pollTypeText = SceytChatUIKit.shared.formatters.pollTypeFormatter.format((closed: poll.closed, anonymous: poll.anonymous))
+        self.pollTypeText = SceytChatUIKit.shared.formatters.pollTypeFormatter.format((closed: poll.closed, anonymous: poll.anonymous, isSingle: !poll.allowMultipleVotes))
     }
 }

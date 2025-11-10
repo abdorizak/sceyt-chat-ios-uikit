@@ -142,6 +142,10 @@ open class MessageCell: CollectionViewCell,
             onAction?(.didTapPollOption(index, pollViewModel))
         }
 
+        pollView.onDidTapAvatars = { [unowned self] in
+            onAction?(.didTapBottomAction)
+        }
+
         bottomActionView.onAction = { [unowned self] in
             onAction?(.didTapBottomAction)
         }

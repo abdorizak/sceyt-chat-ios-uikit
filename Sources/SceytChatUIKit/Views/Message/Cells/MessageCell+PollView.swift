@@ -61,6 +61,7 @@ extension MessageCell {
         }
 
         public var onDidTapOption: ((Int, PollViewModel) -> Void)?
+        public var onDidTapAvatars: (() -> Void)?
         
         override open func setup() {
             super.setup()
@@ -69,6 +70,7 @@ extension MessageCell {
             optionsStackView.axis = .vertical
             optionsStackView.spacing = Layout.optionSpacing
             questionLabel.numberOfLines = 0
+            typeLabel.numberOfLines = 0
         }
 
         override open func setupLayout() {
@@ -143,6 +145,24 @@ extension MessageCell {
             optionView.viewModel = option
             optionView.addGestureRecognizer(tapGesture)
             optionView.tag = index
+            optionView.onAvatarsTapped = { [weak self] in
+                self?.onDidTapAvatars?()
+            }
+            optionView.onOptionTapped = { [weak self] in
+                guard let self = self,
+                      let currentPollViewModel = self.pollViewModel,
+                      !currentPollViewModel.closed,
+                      optionView.isUserInteractionEnabled else { return }
+
+                let optionViewModel = currentPollViewModel.options[index]
+                let isVoting = !optionViewModel.isSelected
+
+                if isVoting {
+                    optionView.animateProgressBarOnVote()
+                }
+
+                self.onDidTapOption?(index, currentPollViewModel)
+            }
             return optionView
         }
 
@@ -226,7 +246,7 @@ extension MessageCell {
             // Type label height
             let typeConfig = TextSizeMeasure.Config(
                 restrictingWidth: contentMaxWidth,
-                maximumNumberOfLines: 1,
+                maximumNumberOfLines: 0,
                 font: pollAppearance.pollTypeTextStyle.font,
                 lastFragmentUsedRect: false
             )
