@@ -12,15 +12,22 @@ open class PollTypeFormatter: PollTypeFormatting {
 
     public init() {}
 
-    open func format(_ poll: (closed: Bool, anonymous: Bool)) -> String {
+    open func format(_ poll: (closed: Bool, anonymous: Bool, isSingle: Bool)) -> String {
         if poll.closed {
-            return "Poll finished"
+            return L10n.Poll.Types.finished
         } else {
+            var strings: [String] = []
             if poll.anonymous {
-                return "Anonymous poll"
-            } else {
-                return "Public poll"
+                strings.append(L10n.Poll.Types.anonymous)
             }
+
+            if poll.isSingle {
+                strings.append(L10n.Poll.Types.singleVote)
+            } else {
+                strings.append(L10n.Poll.Types.multipleVotes)
+            }
+
+            return strings.joined(separator: " • ")
         }
     }
 }

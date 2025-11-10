@@ -69,6 +69,7 @@ extension MessageCell {
             optionsStackView.axis = .vertical
             optionsStackView.spacing = Layout.optionSpacing
             questionLabel.numberOfLines = 0
+            typeLabel.numberOfLines = 0
         }
 
         override open func setupLayout() {
@@ -226,7 +227,7 @@ extension MessageCell {
             // Type label height
             let typeConfig = TextSizeMeasure.Config(
                 restrictingWidth: contentMaxWidth,
-                maximumNumberOfLines: 1,
+                maximumNumberOfLines: 0,
                 font: pollAppearance.pollTypeTextStyle.font,
                 lastFragmentUsedRect: false
             )

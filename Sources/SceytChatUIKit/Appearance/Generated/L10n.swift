@@ -781,6 +781,16 @@ public enum L10n {
       /// View Results
       public static let viewResults = L10n.tr("Localizable", "poll.results.viewResults", fallback: "View Results")
     }
+    public enum Types {
+      /// Anonymous poll
+      public static let anonymous = L10n.tr("Localizable", "poll.types.anonymous", fallback: "Anonymous poll")
+      /// Poll finished
+      public static let finished = L10n.tr("Localizable", "poll.types.finished", fallback: "Poll finished")
+      /// Multiple Votes
+      public static let multipleVotes = L10n.tr("Localizable", "poll.types.multipleVotes", fallback: "Multiple Votes")
+      /// Single Vote
+      public static let singleVote = L10n.tr("Localizable", "poll.types.singleVote", fallback: "Single Vote")
+    }
   }
   public enum Previewer {
     /// Forward
