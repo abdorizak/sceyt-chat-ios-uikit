@@ -223,7 +223,7 @@ extension ChannelViewController {
                     textLabel.heightAnchor.pin(constant: 0.0),
 
                     unsupportedView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    unsupportedView.topAnchor.pin(to: bubbleView.topAnchor, constant: 4.0),
+                    unsupportedView.topAnchor.pin(to: bubbleView.topAnchor, constant: 8.0),
                     unsupportedView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
                     unsupportedView.bottomAnchor.pin(to: infoView.topAnchor)
                 ]
@@ -429,6 +429,7 @@ extension ChannelViewController {
                 let unsupportedSize = model.unsupportedViewMeasure
                 bubbleSize = unsupportedSize
                 bubbleSize.height += (model.hasReply ? 8 : model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)
+                bubbleSize.height += 4.0
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
             } else {
