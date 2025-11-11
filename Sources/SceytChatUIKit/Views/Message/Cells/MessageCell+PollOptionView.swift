@@ -143,23 +143,7 @@ extension MessageCell {
             progressBar.trackTintColor = appearance.progressBarForeground
             progressBar.progressTintColor = appearance.progressBarBackground
         }
-        
-        open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-            super.traitCollectionDidChange(previousTraitCollection)
-            
-            // Update avatar border colors when appearance changes (light/dark mode)
-            if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-                updateAvatarBorderColors()
-            }
-        }
-        
-        private func updateAvatarBorderColors() {
-            let borderColor = currentBorderColor
-            avatarViews.forEach { avatarView in
-                avatarView.layer.borderColor = borderColor.cgColor
-            }
-        }
-        
+
         @objc private func avatarsTapped(_ sender: UITapGestureRecognizer) {
             guard let viewModel = viewModel else {
                 return
@@ -298,16 +282,31 @@ extension MessageCell {
 
             let borderColor = currentBorderColor
             for voter in sortedVoters.suffix(avatarCount).reversed() {
+                // Create container view for border effect
+                let containerView = UIView()
+                containerView.backgroundColor = borderColor
+                containerView.layer.cornerRadius = appearance.voterAvatarStyle.size / 2
+                containerView.clipsToBounds = true
+                containerView.translatesAutoresizingMaskIntoConstraints = false
+                containerView.widthAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
+                containerView.heightAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
+                
+                // Create avatar view inside container
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
                 avatarView.backgroundColor = .systemGray4
-                avatarView.layer.cornerRadius = appearance.voterAvatarStyle.size / 2
-                avatarView.layer.borderWidth = appearance.voterAvatarStyle.borderWidth
-                avatarView.layer.borderColor = borderColor.cgColor
                 avatarView.clipsToBounds = true
                 avatarView.translatesAutoresizingMaskIntoConstraints = false
-                avatarView.widthAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
-                avatarView.heightAnchor.constraint(equalToConstant: appearance.voterAvatarStyle.size).isActive = true
+                
+                let avatarInset = appearance.voterAvatarStyle.borderWidth
+                let innerSize = appearance.voterAvatarStyle.size - (avatarInset * 2)
+                avatarView.layer.cornerRadius = innerSize / 2
+                
+                containerView.addSubview(avatarView)
+                avatarView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
+                avatarView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+                avatarView.widthAnchor.constraint(equalToConstant: innerSize).isActive = true
+                avatarView.heightAnchor.constraint(equalToConstant: innerSize).isActive = true
 
                 // Get avatar appearance from user avatar provider
                 let avatarRepresentation = SceytChatUIKit.shared.visualProviders.userAvatarProvider.provideVisual(for: voter)
@@ -332,19 +331,19 @@ extension MessageCell {
                     defaultImage: defaultImage,
                     size: avatarSize
                 )
-                votersStackView.addArrangedSubview(avatarView)
-                avatarViews.append(avatarView)
+                votersStackView.addArrangedSubview(containerView)
+                avatarViews.append(containerView)
 
                 // Animate avatar appearance if requested
                 if animated {
                     // Start with small scale and invisible
-                    avatarView.transform = CGAffineTransform(scaleX: 0.3, y: 0.3)
-                    avatarView.alpha = 0.0
+                    containerView.transform = CGAffineTransform(scaleX: 0.3, y: 0.3)
+                    containerView.alpha = 0.0
 
                     // Animate to full size with spring effect
                     UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0.5, options: [.curveEaseOut]) {
-                        avatarView.transform = .identity
-                        avatarView.alpha = 1.0
+                        containerView.transform = .identity
+                        containerView.alpha = 1.0
                     }
                 }
             }
