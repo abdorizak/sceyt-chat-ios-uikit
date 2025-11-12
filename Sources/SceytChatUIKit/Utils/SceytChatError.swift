@@ -17,6 +17,7 @@ public enum SceytChatError: Int, Error {
     case badMessageAttachmentParam = 1215
     case badMessageParam = 1234
     case markMessageNotfoundMessagesWithIds = 1241
+    case networkConnection = 9904
     
     case queryInProgress = 10008
     

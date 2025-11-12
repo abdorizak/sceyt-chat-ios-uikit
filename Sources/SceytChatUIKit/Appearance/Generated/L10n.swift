@@ -507,6 +507,16 @@ public enum L10n {
     public static let on = L10n.tr("Localizable", "common.on", fallback: "On")
   }
   public enum Connection {
+    /// Try Again
+    public static let tryAgain = L10n.tr("Localizable", "connection.tryAgain", fallback: "Try Again")
+    public enum Error {
+      /// Network Error
+      public static let networkLost = L10n.tr("Localizable", "connection.error.networkLost", fallback: "Network Error")
+      public enum Try {
+        /// We’re unable to complete your request. Please try again.
+        public static let again = L10n.tr("Localizable", "connection.error.try.again", fallback: "We’re unable to complete your request. Please try again.")
+      }
+    }
     public enum State {
       /// Connected
       public static let connected = L10n.tr("Localizable", "connection.state.connected", fallback: "Connected")

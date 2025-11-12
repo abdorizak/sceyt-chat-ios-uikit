@@ -325,14 +325,39 @@ open class JoinGroupViewController: ViewController {
     }
     
     // MARK: Error Handling
-    
+
+    private func isNetworkError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return SceytChatError.networkConnection.rawValue == nsError.code
+    }
+
     private func handleError(_ error: Error) {
-        let cancelAction = SheetAction.init(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
-            if self?.joinGroupViewModel.shouldDismissOnError == true {
+        if isNetworkError(error) {
+            // Show network error alert with Try Again option
+            let cancelAction = SheetAction(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
                 self?.dismiss(animated: true)
             }
+
+            let tryAgainAction = SheetAction(title: L10n.Connection.tryAgain, icon: nil, style: .default) { [weak self] in
+                self?.joinGroupViewModel.joinChannel()
+            }
+
+            showAlert(
+                title: L10n.Connection.Error.networkLost,
+                message: L10n.Connection.Error.Try.again,
+                actions: [cancelAction, tryAgainAction],
+                preferredActionIndex: 1,
+                completion: nil
+            )
+        } else {
+            // Show default error alert
+            let cancelAction = SheetAction(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
+                if self?.joinGroupViewModel.shouldDismissOnError == true {
+                    self?.dismiss(animated: true)
+                }
+            }
+            showAlert(title: L10n.Alert.Error.title, message: error.localizedDescription, actions: [cancelAction], preferredActionIndex: 0, completion: nil)
         }
-        showAlert(title: L10n.Alert.Error.title, message: error.localizedDescription, actions: [cancelAction], preferredActionIndex: 0, completion: nil)
     }
 
     // MARK: ViewModel Events

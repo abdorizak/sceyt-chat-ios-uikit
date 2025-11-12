@@ -81,7 +81,7 @@ open class ChannelInviteLinkViewController: ViewController,
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
-                self?.showAlert(error: error)
+                self?.handleError(error)
             }
             .store(in: &subscriptions)
         
@@ -359,7 +359,37 @@ open class ChannelInviteLinkViewController: ViewController,
     @objc open func resetLink() {
         inviteLinkViewModel.resetLink()
     }
-    
+
+    // MARK: Error Handling
+
+    private func isNetworkError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return SceytChatError.networkConnection.rawValue == nsError.code
+    }
+
+    private func handleError(_ error: Error) {
+        if isNetworkError(error) {
+            // Show network error alert with Try Again option
+            let cancelAction = SheetAction(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel)
+
+            let tryAgainAction = SheetAction(title: L10n.Connection.tryAgain, icon: nil, style: .default) { [weak self] in
+                self?.inviteLinkViewModel.loadInviteLinkData()
+            }
+
+            showAlert(
+                title: L10n.Connection.Error.networkLost,
+                message: L10n.Connection.Error.Try.again,
+                actions: [cancelAction, tryAgainAction],
+                preferredActionIndex: 1,
+                completion: nil
+            )
+        } else {
+            // Show default error alert
+            let cancelAction = SheetAction(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel)
+            showAlert(title: L10n.Alert.Error.title, message: error.localizedDescription, actions: [cancelAction], preferredActionIndex: 0, completion: nil)
+        }
+    }
+
     // MARK: - ViewModel Events
     
     open func onEvent(_ event: ChannelInviteLinkViewModel.Event) {

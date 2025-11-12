@@ -256,6 +256,9 @@
 "connection.state.disconnected" = "Disconnected";
 "connection.state.reconnecting" = "Connecting";
 "connection.state.failed" = "Connection Failed";
+"connection.error.networkLost" = "Network Error";
+"connection.error.try.again" = "We’re unable to complete your request. Please try again.";
+"connection.tryAgain" = "Try Again";
 
 "alert.error.title" = "Error";
 "alert.button.ok" = "Ok";
