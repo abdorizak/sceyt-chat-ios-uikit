@@ -52,6 +52,11 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
     
     @discardableResult
     public func createOrUpdate(channel: Channel) -> ChannelDTO {
+        return createOrUpdate(channel: channel, forceUpdate: false)
+    }
+    
+    @discardableResult
+    public func createOrUpdate(channel: Channel, forceUpdate: Bool) -> ChannelDTO {
         let (channelDTO, created) = ChannelDTO.fetchOrCreate(id: channel.id, context: self)
         let dto = channelDTO.map(channel)
 
@@ -78,7 +83,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
             dto.lastReaction = nil
         }
 
-        if created {
+        if created || forceUpdate {
             if let message = channel.lastMessage {
                 createOrUpdate(message: message, channelId: channel.id)
             }
@@ -178,7 +183,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
     
     @discardableResult
     public func createOrUpdate(channels: [Channel]) -> [ChannelDTO] {
-        channels.map { createOrUpdate(channel: $0) }
+        channels.map { createOrUpdate(channel: $0, forceUpdate: true) }
     }
     
     public func markAsRead(channelId: ChannelId) {
