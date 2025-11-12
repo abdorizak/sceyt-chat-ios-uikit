@@ -313,7 +313,7 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
               let pollId = message.poll?.id else {
             return
         }
-
+        postPollUpdateNotification(channel, user: user, message: message, changedVotes: changedVotes)
         // Get or create lock for this specific message
         let messageId = NSNumber(value: message.id)
         voteChangeLocksAccessLock.lock()
@@ -330,13 +330,13 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
         lock.lock()
         defer { lock.unlock() }
 
-        postPollUpdateNotification(channel, user: user, message: message, changedVotes: changedVotes)
-
         do {
-            try self.database.syncWrite { context in
-                if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
-                    // Apply changed votes to ownVotes
-                    context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                try? self.database.syncWrite { context in
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                    }
                 }
             }
         } catch {
