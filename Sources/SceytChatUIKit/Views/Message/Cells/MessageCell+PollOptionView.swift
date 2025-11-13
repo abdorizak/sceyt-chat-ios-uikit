@@ -294,7 +294,7 @@ extension MessageCell {
                 // Create avatar view inside container
                 let avatarView = SceytImageView()
                 avatarView.contentMode = .scaleAspectFill
-                avatarView.backgroundColor = .systemGray4
+                avatarView.backgroundColor = .clear
                 avatarView.clipsToBounds = true
                 avatarView.translatesAutoresizingMaskIntoConstraints = false
                 
