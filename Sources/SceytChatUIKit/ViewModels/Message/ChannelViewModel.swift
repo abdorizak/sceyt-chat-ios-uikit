@@ -1362,6 +1362,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             .body(pollModel.question)
             .poll(pollDetails)
 
+        // Set reply context if applicable
+        if let (replyMessage, action) = selectedMessageForAction, case .reply = action {
+            builder.parentMessageId(replyMessage.id)
+        }
+
         // Set thread context if applicable
         if isThread, let threadMessage {
             builder.parentMessageId(threadMessage.id)

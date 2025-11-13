@@ -422,6 +422,8 @@ open class ChannelViewController: ViewController,
         customInputViewController.onCreatePoll = { [weak self] poll in
             guard let self else { return }
             channelViewModel.sendPoll(poll)
+            customInputViewController.removeActionView()
+            channelViewModel.removeSelectedMessage()
         }
 
         customInputViewController.$action
