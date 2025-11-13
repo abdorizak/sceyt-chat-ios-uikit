@@ -254,7 +254,7 @@ extension ChannelViewController {
                     infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
 
                     pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    pollView.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
+                    pollView.topAnchor.pin(to: contentTopAnchor),
                     pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
                     pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -20.0),
 
