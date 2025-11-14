@@ -761,6 +761,16 @@ public enum L10n {
         public static let message = L10n.tr("Localizable", "poll.discard.alert.message", fallback: "Are you sure you want to discard your poll?")
       }
     }
+    public enum EndPoll {
+      public enum Alert {
+        /// End
+        public static let end = L10n.tr("Localizable", "poll.endPoll.alert.end", fallback: "End")
+        /// Are you sure you want to end this poll? People will no longer be able to vote.
+        public static let message = L10n.tr("Localizable", "poll.endPoll.alert.message", fallback: "Are you sure you want to end this poll? People will no longer be able to vote.")
+        /// End Poll
+        public static let title = L10n.tr("Localizable", "poll.endPoll.alert.title", fallback: "End Poll")
+      }
+    }
     public enum Option {
       /// Add an option
       public static let add = L10n.tr("Localizable", "poll.option.add", fallback: "Add an option")

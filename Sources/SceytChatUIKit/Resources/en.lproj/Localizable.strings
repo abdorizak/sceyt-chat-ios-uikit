@@ -361,4 +361,7 @@
 "poll.types.anonymous" = "Anonymous poll";
 "poll.types.singleVote" = "Single Vote";
 "poll.types.multipleVotes" = "Multiple Votes";
+"poll.endPoll.alert.title" = "End Poll";
+"poll.endPoll.alert.message" = "Are you sure you want to end this poll? People will no longer be able to vote.";
+"poll.endPoll.alert.end" = "End";
 "message.unsupported.text" = "This message is not supported.";

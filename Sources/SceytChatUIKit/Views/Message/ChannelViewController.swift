@@ -1605,12 +1605,26 @@ open class ChannelViewController: ViewController,
     // MARK: Send message
     
     open func createMessage(shouldClearText: Bool = true) -> UserSendMessage {
+        let messageAction = channelViewModel.selectedMessageForAction
+
+        // Validate link metadata - clear it if no link exists or if it's different from the current link
+        var linkMetadata = customInputViewController.linkMetadata
+        if let metadata = linkMetadata {
+            let currentLink = customInputViewController.getLink()
+            if currentLink == nil || currentLink != metadata.url {
+                // Link metadata is stale - either no link exists or it's different
+                linkMetadata = nil
+            }
+        }
+
         let m = UserSendMessage(
             sendText: shouldClearText ? inputTextView.attributedText : .init(),
             attachments: selectedMediaView.items,
-            linkMetadata: customInputViewController.lastDetectedLinkMetadata
+            linkMetadata: linkMetadata
         )
-        if let ma = channelViewModel.selectedMessageForAction {
+
+        m.didUserDismissLinkPreview = customInputViewController.didUserDismissLinkPreview
+        if let ma = messageAction {
             switch ma {
             case (let message, .reply):
                 m.action = .reply(message)
@@ -2317,13 +2331,13 @@ open class ChannelViewController: ViewController,
     open func showEndPollAlert(for layoutModel: MessageLayoutModel) {
         guard let pollDetails = layoutModel.message.poll else { return }
         let pollViewModel = PollViewModel(from: pollDetails, isIncmoing: layoutModel.message.incoming)
-        
+
         showAlert(
-            title: "End Poll",
-            message: "Are you sure you want to end this poll? People will no longer be able to vote.",
+            title: L10n.Poll.EndPoll.Alert.title,
+            message: L10n.Poll.EndPoll.Alert.message,
             actions: [
                 .init(title: L10n.Alert.Button.cancel, style: .cancel),
-                .init(title: "End", style: .destructive) { [weak self] in
+                .init(title: L10n.Poll.EndPoll.Alert.end, style: .destructive) { [weak self] in
                     self?.channelViewModel.closePoll(
                         layoutModel: layoutModel,
                         pollViewModel: pollViewModel

@@ -671,7 +671,15 @@ open class MessageLayoutModel {
         var linkMetadatas = [LinkMetadata]()
         if let links = message.linkMetadatas, !links.isEmpty {
             linkMetadatas += links.compactMap { data in
-                if message.attachments?.first(where: { $0.url == data.url.absoluteString})?.imageDecodedMetadata?.hideLinkDetails == true {
+                let hasHiddenDetails = message.attachments?.first(where: { attachment in
+                    guard let urlString = attachment.url,
+                          let attachmentURL = URL(string: urlString) else {
+                        return false
+                    }
+                    return attachmentURL.isEqual(url: data.url)
+                })?.imageDecodedMetadata?.hideLinkDetails == true
+
+                if hasHiddenDetails {
                     return nil
                 }
                 var image: UIImage? = nil
@@ -798,8 +806,7 @@ open class MessageLayoutModel {
         } else {
             linkPreviews?.append(preview)
         }
-       
-        if !(contentOptions.contains(.link) || contentOptions.contains(.file) || contentOptions.contains(.image) || contentOptions.contains(.voice)) {
+        if !hasPoll && !(contentOptions.contains(.link) || contentOptions.contains(.file) || contentOptions.contains(.image) || contentOptions.contains(.voice)) {
             contentOptions.insert(.link)
         }
         return true
@@ -819,7 +826,7 @@ open class MessageLayoutModel {
 
     open func measure() -> CGSize {
         infoViewMeasure = Components.messageCellInfoView.measure(model: self, appearance: appearance)
-        linkViewMeasure = Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
+        linkViewMeasure = hasPoll ? .zero : Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
         pollViewMeasure = Components.messageCellPollView.measure(model: self, appearance: appearance)
         unsupportedViewMeasure = Components.messageCellUnsupportedMessageView.measure(model: self, appearance: appearance)
         if message.incoming {
