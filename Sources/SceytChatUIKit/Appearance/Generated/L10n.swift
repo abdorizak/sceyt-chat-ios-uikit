@@ -753,10 +753,10 @@ public enum L10n {
     }
     public enum Discard {
       public enum Alert {
-        /// Discard Poll
-        public static let discard = L10n.tr("Localizable", "poll.discard.alert.discard", fallback: "Discard Poll")
-        /// Keep Editing
-        public static let keepEditing = L10n.tr("Localizable", "poll.discard.alert.keepEditing", fallback: "Keep Editing")
+        /// Discard
+        public static let discard = L10n.tr("Localizable", "poll.discard.alert.discard", fallback: "Discard")
+        /// Cancel
+        public static let keepEditing = L10n.tr("Localizable", "poll.discard.alert.keepEditing", fallback: "Cancel")
         /// Are you sure you want to discard your poll?
         public static let message = L10n.tr("Localizable", "poll.discard.alert.message", fallback: "Are you sure you want to discard your poll?")
       }

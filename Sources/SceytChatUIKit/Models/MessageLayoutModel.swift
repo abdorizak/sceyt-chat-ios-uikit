@@ -368,7 +368,8 @@ open class MessageLayoutModel {
         }
 
         // Handle poll state changes
-        if hasPoll {
+        let hasNewPoll = message.poll != nil && message.type == "poll" && message.state != .deleted
+        if hasNewPoll {
             if !contentOptions.contains(.poll) {
                 contentOptions.insert(.poll)
                 updateOptions.insert(.poll)
@@ -827,7 +828,7 @@ open class MessageLayoutModel {
     open func measure() -> CGSize {
         infoViewMeasure = Components.messageCellInfoView.measure(model: self, appearance: appearance)
         linkViewMeasure = hasPoll ? .zero : Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
-        pollViewMeasure = Components.messageCellPollView.measure(model: self, appearance: appearance)
+        pollViewMeasure = hasPoll ? Components.messageCellPollView.measure(model: self, appearance: appearance) : .zero
         unsupportedViewMeasure = Components.messageCellUnsupportedMessageView.measure(model: self, appearance: appearance)
         if message.incoming {
             return Components.channelIncomingMessageCell.measure(model: self, appearance: appearance)
