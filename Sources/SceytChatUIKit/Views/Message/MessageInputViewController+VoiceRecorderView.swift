@@ -15,6 +15,7 @@ extension MessageInputViewController {
         enum Event {
             case
                 noPermission,
+                recordingUnavailable,
                 recorded(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>),
                 send(URL, ChatMessage.Attachment.Metadata<[Int]>),
                 didStartRecording, didStopRecording
@@ -251,6 +252,11 @@ extension MessageInputViewController {
                         self.recordingState = .idle
                         self.slidingView.stopAnimating()
                         self.onEvent(.noPermission)
+                    case .recordingUnavailable:
+                        self.recordingState = .idle
+                        self.slidingView.stopAnimating()
+                        self.reset()
+                        self.onEvent(.recordingUnavailable)
                     case .start:
                         self.recordingState = .start
                         self.slidingView.startAnimating()

@@ -6,6 +6,7 @@
 //  Copyright © 2022 Sceyt LLC. All rights reserved.
 //
 
+import AVFoundation
 import Combine
 import UIKit
 import CoreText
@@ -56,6 +57,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         switch $0 {
         case .noPermission:
             self.showNoMicrophonePermission()
+        case .recordingUnavailable:
+            self.showRecordingUnavailable()
         case let .recorded(url, metadata):
             self.recordedView.isHidden = false
             self.recordedView.setup(url: url, metadata: metadata)
@@ -533,6 +536,10 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     
     open func showNoMicrophonePermission() {
         showAlert(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureErrorKey: "No permission!"]))
+    }
+
+    open func showRecordingUnavailable() {
+        showAlert(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureErrorKey: "Recording unavailable"]))
     }
     
     @objc
