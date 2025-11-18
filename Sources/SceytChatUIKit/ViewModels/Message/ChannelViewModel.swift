@@ -1510,14 +1510,23 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func deleteAllMessages(
-        forMeOnly: Bool,
-        completion: @escaping (Error?) -> Void
-    ) {
-        channelProvider.deleteAllMessages(
-            forEveryone: !forMeOnly,
-            completion: completion
-        )
-    }
+            forMeOnly: Bool,
+            completion: @escaping (Error?) -> Void
+        ) {
+            channelProvider.deleteAllMessages(
+                forEveryone: !forMeOnly
+            ) { [weak self] error in
+                if error == nil {
+                    DispatchQueue.main.async {
+                        self?.isInitialLoad = true
+                        self?.messageObserver.restartObserver(
+                            fetchPredicate: self?.messageObserver.fetchPredicate ?? NSPredicate(value: true)
+                        ) {}
+                    }
+                }
+                completion(error)
+            }
+        }
     
     open func addReaction(
         layoutModel: MessageLayoutModel,
