@@ -23,7 +23,9 @@ open class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             start,
             reset,
             noPermission,
-            stopped
+            recordingUnavailable,
+            stopped,
+            maxDurationReached
     }
     
     let url: URL
@@ -65,11 +67,13 @@ open class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             onEvent(.durationChanged(0))
         
+            let config = SceytChatUIKit.shared.config.voiceRecorderConfig
             let settings = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 16000,
+                AVSampleRateKey: config.samplingRate,
                 AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
+                AVEncoderBitRateKey: config.bitrate
             ]
             audioRecorder = try AVAudioRecorder(url: url, settings: settings)
             audioRecorder?.delegate = self
@@ -82,7 +86,7 @@ open class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { [weak self] _ in
                 guard let self, let audioRecorder = self.audioRecorder else { return }
                 audioRecorder.updateMeters()
-                
+
                 let level: Float
                 let minDecibels: Float = -80.0
                 let decibels = audioRecorder.averagePower(forChannel: 0)
@@ -102,13 +106,29 @@ open class AudioRecorder: NSObject, AVAudioRecorderDelegate {
                 self.waveformData.append(level * 1000)
                 self.duration = audioRecorder.deviceCurrentTime - startedTime
                 self.onEvent(.durationChanged(self.duration))
+
+                let config = SceytChatUIKit.shared.config.voiceRecorderConfig
+                switch config.maxDuration {
+                case .maxDuration(let maxDurationMs):
+                    let maxDurationSeconds = Double(maxDurationMs) / 1000.0
+                    if self.duration >= maxDurationSeconds {
+                        self.onEvent(.maxDurationReached)
+                    }
+                case .unlimited:
+                    break
+                }
             }
             timer?.fire()
             onEvent(.start)
             UIApplication.shared.isIdleTimerDisabled = true
         } catch {
             stopRecording()
-            onEvent(.noPermission)
+            if Components.audioSession.recordPermission == .granted {
+                onEvent(.recordingUnavailable)
+            } else {
+                onEvent(.noPermission)
+            }
+            
         }
     }
     

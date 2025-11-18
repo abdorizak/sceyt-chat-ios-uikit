@@ -37,6 +37,9 @@ extension UIColor {
     static var stateWarning: UIColor { SceytChatUIKit.shared.theme.colors.stateWarning }
     static var stateSuccess: UIColor { SceytChatUIKit.shared.theme.colors.stateSuccess }
     static var stateAttention: UIColor { SceytChatUIKit.shared.theme.colors.stateAttention }
+    
+    static var closeButtonBackground: UIColor { SceytChatUIKit.shared.theme.colors.closeButtonBackground }
+    static var closeButtonTint: UIColor { SceytChatUIKit.shared.theme.colors.closeButtonTint }
 
 }
 
@@ -59,6 +62,7 @@ public struct DefaultColors {
     public static let border: UIColor = UIColor(light: UIColor(rgb: 0xE4E6EE), dark: UIColor(rgb: 0x303032))
     public static let iconInactive: UIColor = UIColor(light: UIColor(rgb: 0xA0A1B0), dark: UIColor(rgb: 0x76787A))
     public static let iconSecondary: UIColor = UIColor(light: UIColor(rgb: 0x707388), dark: UIColor(rgb: 0x969A9F))
+    public static let iconTertiary: UIColor = UIColor(light: UIColor(rgb: 0x818C99), dark: UIColor(rgb: 0xB1B1B3))
     public static let overlayBackground1: UIColor = UIColor(light: UIColor(rgb: 0x000000, alpha: 0.3), dark: UIColor(rgb: 0x000000, alpha: 0.4))
     public static let overlayBackground2: UIColor = UIColor(light: UIColor(rgb: 0x000000, alpha: 0.3), dark: UIColor(rgb: 0x000000, alpha: 0.3))
     public static let shadowColor: UIColor = UIColor(rgb: 0x111539, alpha: 0.08)
@@ -72,6 +76,9 @@ public struct DefaultColors {
     public static let stateSuccess: UIColor = UIColor(light: UIColor(rgb: 0x24C383), dark: UIColor(rgb: 0x24C383))
     public static let stateAttention: UIColor = UIColor(light: UIColor(rgb: 0xFBB019), dark: UIColor(rgb: 0xFBB019))
     
+    public static let closeButtonBackground: UIColor = UIColor(light: UIColor(rgb: 0xF0F2F5), dark: UIColor(rgb: 0x292B2E))
+    public static let closeButtonTint: UIColor = UIColor(light: UIColor(rgb: 0x757D8B), dark: UIColor(rgb: 0xB1B1B3))
+
     // These colors are not a part of the theme, but they use theme's values by default
     public static var bubbleIncoming: UIColor = UIColor(light: UIColor(rgb: 0xF1F2F6), dark: UIColor(rgb: 0x232324))
     public static var bubbleIncomingSecondary: UIColor = UIColor(light: UIColor(rgb: 0xE4E6EE), dark: UIColor(rgb: 0x303032))
@@ -89,8 +96,9 @@ public struct DefaultColors {
                                                                    dark: .accent.dark.withAlphaComponent(0.30).blend(with: .background.dark))
     public static var bubbleOutgoingHighlightedSecondary: UIColor = UIColor(light: .accent.light.withAlphaComponent(0.34).blend(with: .background.light),
                                                                             dark: .accent.dark.withAlphaComponent(0.34).blend(with: .background.dark))
-    
-    
+
+    public static var unsupprotedMessageText: UIColor = UIColor(light: 0x757D8B, dark: 0xB1B1B3)
+
     public static func initial(title: String) -> UIColor {
         let initialColors = SceytChatUIKit.shared.config.defaultAvatarBackgroundColors
         return initialColors[abs(title.hash) % initialColors.count]

@@ -8,6 +8,7 @@
 
 import UIKit
 import Accelerate
+import CoreImage
 
 open class ImageBuilder {
     
@@ -335,6 +336,21 @@ open class ImageBuilder {
         imageAsset.register(dark, with: darkMode)
         
         return imageAsset.image(with: .current)
+    }
+    
+    open class func qrCode(from string: String, size: CGSize = CGSize(width: 200, height: 200)) -> UIImage? {
+        let data = string.data(using: String.Encoding.ascii)
+        
+        guard let filter = CIFilter(name: "CIQRCodeGenerator") else { return nil }
+        filter.setValue(data, forKey: "inputMessage")
+        
+        let transform = CGAffineTransform(scaleX: 10, y: 10)
+        guard let output = filter.outputImage?.transformed(by: transform) else { return nil }
+        
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(output, from: output.extent) else { return nil }
+        
+        return UIImage(cgImage: cgImage)
     }
 }
 

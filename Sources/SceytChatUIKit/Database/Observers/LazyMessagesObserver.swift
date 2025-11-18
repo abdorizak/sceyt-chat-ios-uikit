@@ -39,6 +39,10 @@ open class LazyMessagesObserver: LazyDatabaseObserver<MessageDTO, ChatMessage> {
                 #keyPath(MessageDTO.parent.state),
                 #keyPath(MessageDTO.bodyAttributes),
                 #keyPath(MessageDTO.linkMetadatas),
+                #keyPath(MessageDTO.poll.votesPerOption),
+                #keyPath(MessageDTO.poll.votes),
+                #keyPath(MessageDTO.poll.ownVotes),
+                #keyPath(MessageDTO.poll.closed)
             ],
             itemCreator: itemCreator
         )

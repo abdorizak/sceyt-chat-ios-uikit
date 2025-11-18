@@ -93,6 +93,15 @@ public protocol DefaultMarkerTitleProviding: VisualProviding {
     func provideVisual(for marker: DefaultMarker) -> String
 }
 
+/// A protocol for determining if a message type is supported.
+public protocol MessageTypeSupportProviding: VisualProviding {
+    /// Determines whether the specified message is supported.
+    ///
+    /// - Parameter message: The message to check for support.
+    /// - Returns: A `Bool` indicating whether the message type is supported.
+    func provideVisual(for message: ChatMessage) -> Bool
+}
+
 
 
 // MARK: - Enums

@@ -33,6 +33,7 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var repliedInThread: Bool
     @NSManaged public var replyCount: Int32
     @NSManaged public var displayCount: Int64
+    @NSManaged public var disableMentionsCount: Bool
     @NSManaged public var replied: Bool
     @NSManaged public var unlisted: Bool
     
@@ -63,6 +64,8 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var forwardUser: UserDTO?
     
     @NSManaged public var bodyAttributes: Set<BodyAttributeDTO>?
+    
+    @NSManaged public var poll: PollDTO?
         
     public override func willSave() {
         super.willSave()
@@ -136,6 +139,7 @@ public class MessageDTO: NSManagedObject {
         repliedInThread = map.repliedInThread
         replyCount = Int32(map.replyCount)
         displayCount = Int64(map.displayCount)
+        disableMentionsCount = map.disableMentionsCount
         
         if deliveryStatus == MessageDeliveryStatus.pending.rawValue {
             deliveryStatus = Int16(map.deliveryStatus.rawValue)
@@ -166,6 +170,7 @@ extension MessageDTO {
         replyCount = 0
         repliedInThread = false
         displayCount = 1
+        disableMentionsCount = false
         let dateFormatter = ISO8601DateFormatter()
         dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
        

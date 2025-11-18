@@ -129,7 +129,7 @@ final class ConnectionService: ClientConnectionHandler {
             SceytChatUIKit.shared.chatClient.setPresence(state: .online, status: "I'm online")
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "userProfileUpdated"), object: nil)
             if let deviceToken {
-                print("Device Token: Setting saved device token and registering for push notifications")
+                print("Device Token: Setting saved device token and registering for push notifications, \(deviceToken).")
                 (UIApplication.shared.delegate as? AppDelegate)?.registerForPushNotifications()
             }
         }

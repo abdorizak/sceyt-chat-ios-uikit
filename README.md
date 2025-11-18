@@ -115,6 +115,13 @@ func application(_ application: UIApplication, didFinishLaunchingWithOptions lau
 
         ...
 
+        // Configure invite link settings
+        SceytChatUIKit.shared.config.channelInviteDeepLinkConfig = SceytChatUIKit.Config.ChannelInviteDeepLinkConfig(
+            scheme: "https",
+            host: "link.sceyt.com",
+            pathPrefix: "/join/"
+        )
+        
         // To change the fonts used in the UIKit, you can use the `Appearance.Fonts` property.
         // For example, to set a custom font:
         Appearance.Fonts.regular = UIFont(name: "CUSTOM_FONT", size: 10)
