@@ -23,6 +23,7 @@ open class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             start,
             reset,
             noPermission,
+            recordingUnavailable,
             stopped,
             maxDurationReached
     }
@@ -122,7 +123,12 @@ open class AudioRecorder: NSObject, AVAudioRecorderDelegate {
             UIApplication.shared.isIdleTimerDisabled = true
         } catch {
             stopRecording()
-            onEvent(.noPermission)
+            if Components.audioSession.recordPermission == .granted {
+                onEvent(.recordingUnavailable)
+            } else {
+                onEvent(.noPermission)
+            }
+            
         }
     }
     

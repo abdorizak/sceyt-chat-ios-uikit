@@ -889,7 +889,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
 
     public func deleteAllMessages(
         channelId: ChannelId,
-        before date: Date? = nil
+        before date: Date? = nil,
+        completion: ((Error?) -> Void)? = nil
     ) throws {
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: MessageDTO.entityName)
         request.sortDescriptor = NSSortDescriptor(keyPath: \MessageDTO.id, ascending: false)
@@ -901,22 +902,27 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             ])
         }
         request.predicate = predicate
-        try batchDelete(fetchRequest: request)
-        try? deleteAllAttachments(channelId: channelId, before: date)
-        if let date,
-           let channel = ChannelDTO.fetch(id: channelId, context: self)
-        {
-            if let lastMessage = channel.lastMessage {
-                if date >= lastMessage.createdAt.bridgeDate {
-                    channel.lastMessage = nil
-//                    channel.messages = nil
+        do {
+            try batchDelete(fetchRequest: request)
+            try? deleteAllAttachments(channelId: channelId, before: date)
+            if let date,
+               let channel = ChannelDTO.fetch(id: channelId, context: self)
+            {
+                if let lastMessage = channel.lastMessage {
+                    if date >= lastMessage.createdAt.bridgeDate {
+                        channel.lastMessage = nil
+    //                    channel.messages = nil
+                        channel.lastReceivedMessageId = 0
+                        channel.lastDisplayedMessageId = 0
+                    }
+                } else {
                     channel.lastReceivedMessageId = 0
                     channel.lastDisplayedMessageId = 0
                 }
-            } else {
-                channel.lastReceivedMessageId = 0
-                channel.lastDisplayedMessageId = 0
             }
+            completion?(nil)
+        } catch {
+            completion?(error)
         }
     }
     

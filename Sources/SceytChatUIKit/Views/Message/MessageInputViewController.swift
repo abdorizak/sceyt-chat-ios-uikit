@@ -6,6 +6,7 @@
 //  Copyright © 2022 Sceyt LLC. All rights reserved.
 //
 
+import AVFoundation
 import Combine
 import UIKit
 import CoreText
@@ -56,6 +57,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         switch $0 {
         case .noPermission:
             self.showNoMicrophonePermission()
+        case .recordingUnavailable:
+            self.showRecordingUnavailable()
         case let .recorded(url, metadata):
             self.recordedView.isHidden = false
             self.recordedView.setup(url: url, metadata: metadata)
@@ -109,7 +112,15 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     @Published public var action: Action?
     
     private var selectedPhotoAssetIdentifiers = Set<String>()
-    public private(set) var lastDetectedLinkMetadata: LinkMetadata?
+    public private(set) var linkMetadata: LinkMetadata?
+    public private(set) var lastDetectedLinkMetadata: LinkMetadata? {
+        willSet {
+            if newValue != nil {
+                linkMetadata = newValue
+            }
+        }
+    }
+    public private(set) var didUserDismissLinkPreview = false
     private var actionViewHeightLayoutConstraint: NSLayoutConstraint!
     private var inputTextViewLeadingConstraint: NSLayoutConstraint?
     
@@ -465,18 +476,18 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         }
     }
     
+    /// Returns the first link found in the input text view, excluding mailto links
+    open func getLink() -> URL? {
+        guard let text = inputTextView.text, !text.isEmpty
+        else {
+            return nil
+        }
+
+        return DataDetector.matches(text: text).first(where: { $0.url?.scheme != "mailto" && $0.url != nil })?.url
+    }
+
     private var findLinkTask: Task<Void, Error>?
     open func findLink() {
-        
-        func getUrl() -> URL? {
-            guard let text = inputTextView.text, !text.isEmpty
-            else {
-                return nil
-            }
-            
-            return DataDetector.matches(text: text).first(where: { $0.url?.scheme != "mailto" && $0.url != nil })?.url
-        }
-        
         guard let text = inputTextView.text, !text.isEmpty
         else {
             if lastDetectedLinkMetadata != nil, self.currentState == nil {
@@ -487,7 +498,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
 //        if let findLinkTask, !findLinkTask.isCancelled {
 //            findLinkTask.cancel()
 //        }
-            
+
         findLinkTask =  Task {[weak self] in
             func removeActionView() async {
                 await MainActor.run { [weak self] in
@@ -498,8 +509,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                     }
                 }
             }
-            if let url = getUrl() {
+            if let url = self?.getLink() {
                 if let last = self?.lastDetectedLinkMetadata, last.url == url {
+                    print("url:\(url) metadataURL:\(last.url)")
                     return
                 }
                 guard let metadata = await try? LinkMetadataProvider.default.fetch(url: url).get()
@@ -507,14 +519,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                     await removeActionView()
                     return
                 }
-                if url != getUrl() {
+                if url != self?.getLink() {
                     return
                 }
                 await MainActor.run { [weak self] in
                     guard let self
                     else { return }
                     self.addOrUpdateLinkPreview(linkDetails: metadata)
-                    
                 }
             } else  {
                 await removeActionView()
@@ -526,12 +537,17 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     open func showNoMicrophonePermission() {
         showAlert(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureErrorKey: "No permission!"]))
     }
+
+    open func showRecordingUnavailable() {
+        showAlert(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureErrorKey: "Recording unavailable"]))
+    }
     
     @objc
     open func actionViewCancelAction() {
         if lastDetectedLinkMetadata != nil {
             cachedMessage = inputTextView.attributedText
         }
+        self.didUserDismissLinkPreview = true
         if case .edit = currentState {
             inputTextView.attributedText = cachedMessage
             cachedMessage = nil
@@ -662,10 +678,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         action = .send(true)
         currentState = nil
         nextState = nil
+        didUserDismissLinkPreview = false
+        lastDetectedLinkMetadata = nil
     }
     
     open func addReply(layoutModel: MessageLayoutModel) {
         self.lastDetectedLinkMetadata = nil
+        didUserDismissLinkPreview = false
         let hasActionView = !actionView.isHidden
         
         if case .edit = currentState {
@@ -843,6 +862,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         let shouldUpdate = lastDetectedLinkMetadata != nil
         
         self.lastDetectedLinkMetadata = linkDetails
+        self.didUserDismissLinkPreview = false
         let message = linkDetails.summary ?? ""
         
         let titleAttributedString = NSMutableAttributedString(

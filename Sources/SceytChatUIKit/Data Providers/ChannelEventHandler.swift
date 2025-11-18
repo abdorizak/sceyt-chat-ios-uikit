@@ -308,6 +308,10 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
         }
     }
     
+    public func channel(_ channel: Channel, user: User, didRetractVote message: Message, changedVotes: ChangedVotes?) {
+        self.channel(channel, user: user, didChangeVote: message, changedVotes: changedVotes)
+    }
+    
     public func channel(_ channel: Channel, user: User, didChangeVote message: Message, changedVotes: ChangedVotes?) {
         guard let changedVotes = changedVotes,
               let pollId = message.poll?.id else {
