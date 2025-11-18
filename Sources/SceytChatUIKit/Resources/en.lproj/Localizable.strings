@@ -256,6 +256,9 @@
 "connection.state.disconnected" = "Disconnected";
 "connection.state.reconnecting" = "Connecting";
 "connection.state.failed" = "Connection Failed";
+"connection.error.networkLost" = "Network Error";
+"connection.error.try.again" = "We’re unable to complete your request. Please try again.";
+"connection.tryAgain" = "Try Again";
 
 "alert.error.title" = "Error";
 "alert.button.ok" = "Ok";
@@ -333,3 +336,29 @@
 
 "channel.self.hint" = "message yourself";
 "channel.self.title" = "Me";
+
+"poll.title" = "Poll";
+"poll.question.header" = "QUESTION";
+"poll.question.placeholder" = "Add question";
+"poll.options.header" = "OPTIONS";
+"poll.option.placeholder" = "Add";
+"poll.option.add" = "Add an option";
+"poll.parameters.header" = "PARAMETERS";
+"poll.multipleVotes" = "Multiple votes";
+"poll.anonymousPoll" = "Anonymous poll";
+"poll.cantRetractVotes" = "Can't retract votes";
+"poll.button.cancel" = "Cancel";
+"poll.button.send" = "Send";
+"poll.discard.alert.message" = "Are you sure you want to discard your poll?";
+"poll.discard.alert.keepEditing" = "Keep Editing";
+"poll.discard.alert.discard" = "Discard Poll";
+"poll.results.title" = "Poll Results";
+"poll.results.showMore" = "Show All";
+"poll.results.viewResults" = "View Results";
+"poll.optionDetail.title" = "Poll Option";
+"poll.optionDetail.close" = "Close";
+"poll.types.finished" = "Poll finished";
+"poll.types.anonymous" = "Anonymous poll";
+"poll.types.singleVote" = "Single Vote";
+"poll.types.multipleVotes" = "Multiple Votes";
+"message.unsupported.text" = "This message is not supported.";

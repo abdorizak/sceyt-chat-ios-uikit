@@ -507,6 +507,16 @@ public enum L10n {
     public static let on = L10n.tr("Localizable", "common.on", fallback: "On")
   }
   public enum Connection {
+    /// Try Again
+    public static let tryAgain = L10n.tr("Localizable", "connection.tryAgain", fallback: "Try Again")
+    public enum Error {
+      /// Network Error
+      public static let networkLost = L10n.tr("Localizable", "connection.error.networkLost", fallback: "Network Error")
+      public enum Try {
+        /// We’re unable to complete your request. Please try again.
+        public static let again = L10n.tr("Localizable", "connection.error.try.again", fallback: "We’re unable to complete your request. Please try again.")
+      }
+    }
     public enum State {
       /// Connected
       public static let connected = L10n.tr("Localizable", "connection.state.connected", fallback: "Connected")
@@ -697,6 +707,10 @@ public enum L10n {
         return L10n.tr("Localizable", "message.reply.count", p1, fallback: "%d Replies")
       }
     }
+    public enum Unsupported {
+      /// This message is not supported.
+      public static let text = L10n.tr("Localizable", "message.unsupported.text", fallback: "This message is not supported.")
+    }
   }
   public enum Nav {
     public enum Bar {
@@ -720,6 +734,76 @@ public enum L10n {
       public static let next = L10n.tr("Localizable", "nav.bar.next", fallback: "Next")
       /// Update
       public static let update = L10n.tr("Localizable", "nav.bar.update", fallback: "Update")
+    }
+  }
+  public enum Poll {
+    /// Anonymous poll
+    public static let anonymousPoll = L10n.tr("Localizable", "poll.anonymousPoll", fallback: "Anonymous poll")
+    /// Can't retract votes
+    public static let cantRetractVotes = L10n.tr("Localizable", "poll.cantRetractVotes", fallback: "Can't retract votes")
+    /// Multiple votes
+    public static let multipleVotes = L10n.tr("Localizable", "poll.multipleVotes", fallback: "Multiple votes")
+    /// Poll
+    public static let title = L10n.tr("Localizable", "poll.title", fallback: "Poll")
+    public enum Button {
+      /// Cancel
+      public static let cancel = L10n.tr("Localizable", "poll.button.cancel", fallback: "Cancel")
+      /// Send
+      public static let send = L10n.tr("Localizable", "poll.button.send", fallback: "Send")
+    }
+    public enum Discard {
+      public enum Alert {
+        /// Discard Poll
+        public static let discard = L10n.tr("Localizable", "poll.discard.alert.discard", fallback: "Discard Poll")
+        /// Keep Editing
+        public static let keepEditing = L10n.tr("Localizable", "poll.discard.alert.keepEditing", fallback: "Keep Editing")
+        /// Are you sure you want to discard your poll?
+        public static let message = L10n.tr("Localizable", "poll.discard.alert.message", fallback: "Are you sure you want to discard your poll?")
+      }
+    }
+    public enum Option {
+      /// Add an option
+      public static let add = L10n.tr("Localizable", "poll.option.add", fallback: "Add an option")
+      /// Add
+      public static let placeholder = L10n.tr("Localizable", "poll.option.placeholder", fallback: "Add")
+    }
+    public enum OptionDetail {
+      /// Close
+      public static let close = L10n.tr("Localizable", "poll.optionDetail.close", fallback: "Close")
+      /// Poll Option
+      public static let title = L10n.tr("Localizable", "poll.optionDetail.title", fallback: "Poll Option")
+    }
+    public enum Options {
+      /// OPTIONS
+      public static let header = L10n.tr("Localizable", "poll.options.header", fallback: "OPTIONS")
+    }
+    public enum Parameters {
+      /// PARAMETERS
+      public static let header = L10n.tr("Localizable", "poll.parameters.header", fallback: "PARAMETERS")
+    }
+    public enum Question {
+      /// QUESTION
+      public static let header = L10n.tr("Localizable", "poll.question.header", fallback: "QUESTION")
+      /// Add question
+      public static let placeholder = L10n.tr("Localizable", "poll.question.placeholder", fallback: "Add question")
+    }
+    public enum Results {
+      /// Show All
+      public static let showMore = L10n.tr("Localizable", "poll.results.showMore", fallback: "Show All")
+      /// Poll Results
+      public static let title = L10n.tr("Localizable", "poll.results.title", fallback: "Poll Results")
+      /// View Results
+      public static let viewResults = L10n.tr("Localizable", "poll.results.viewResults", fallback: "View Results")
+    }
+    public enum Types {
+      /// Anonymous poll
+      public static let anonymous = L10n.tr("Localizable", "poll.types.anonymous", fallback: "Anonymous poll")
+      /// Poll finished
+      public static let finished = L10n.tr("Localizable", "poll.types.finished", fallback: "Poll finished")
+      /// Multiple Votes
+      public static let multipleVotes = L10n.tr("Localizable", "poll.types.multipleVotes", fallback: "Multiple Votes")
+      /// Single Vote
+      public static let singleVote = L10n.tr("Localizable", "poll.types.singleVote", fallback: "Single Vote")
     }
   }
   public enum Previewer {

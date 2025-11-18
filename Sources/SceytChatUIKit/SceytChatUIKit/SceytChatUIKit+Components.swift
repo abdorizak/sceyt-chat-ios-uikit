@@ -30,12 +30,15 @@ extension SceytChatUIKit {
         public static var channelProfileViewModel: ChannelProfileViewModel.Type = ChannelProfileViewModel.self
         public static var channelViewModel: ChannelViewModel.Type = ChannelViewModel.self
         public static var createNewChannelViewModel: CreateNewChannelViewModel.Type = CreateNewChannelViewModel.self
+        public static var createPollViewModel: CreatePollViewModel.Type = CreatePollViewModel.self
         public static var createPrivateChannelViewModel: CreatePrivateChannelViewModel.Type = CreatePrivateChannelViewModel.self
         public static var createPublicChannelViewModel: CreatePublicChannelViewModel.Type = CreatePublicChannelViewModel.self
         public static var emojiListViewModel: EmojiListViewModel.Type = EmojiListViewModel.self
         public static var imageCropperViewModel: ImageCropperViewModel.Type = ImageCropperViewModel.self
         public static var mentioningUserListViewModel: MentioningUserListViewModel.Type = MentioningUserListViewModel.self
         public static var messageInfoViewModel: MessageInfoViewModel.Type = MessageInfoViewModel.self
+        public static var pollResultsViewModel: PollResultsViewModel.Type = PollResultsViewModel.self
+        public static var pollOptionDetailViewModel: PollOptionDetailViewModel.Type = PollOptionDetailViewModel.self
         public static var previewerViewModel: PreviewerViewModel.Type = PreviewerViewModel.self
         public static var reactionScoreViewModel: ReactionScoreViewModel.Type = ReactionScoreViewModel.self
         public static var selectChannelMembersViewModel: SelectChannelMembersViewModel.Type = SelectChannelMembersViewModel.self
@@ -55,6 +58,7 @@ extension SceytChatUIKit {
         public static var channelViewController: ChannelViewController.Type = ChannelViewController.self
         public static var createChannelViewController: CreateChannelViewController.Type = CreateChannelViewController.self
         public static var createGroupViewController: CreateGroupViewController.Type = CreateGroupViewController.self
+        public static var createPollViewController: CreatePollViewController.Type = CreatePollViewController.self
         public static var editChannelViewController: EditChannelViewController.Type = EditChannelViewController.self
         public static var emojiPickerViewController: EmojiPickerViewController.Type = EmojiPickerViewController.self
         public static var forwardViewController: ForwardViewController.Type = ForwardViewController.self
@@ -68,6 +72,8 @@ extension SceytChatUIKit {
         public static var messageInfoViewController: MessageInfoViewController.Type = MessageInfoViewController.self
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self
         public static var navigationController: NavigationController.Type = NavigationController.self
+        public static var pollResultsViewController: PollResultsViewController.Type = PollResultsViewController.self
+        public static var pollOptionDetailViewController: PollOptionDetailViewController.Type = PollOptionDetailViewController.self
         public static var qrCodeViewController: QRCodeViewController.Type = QRCodeViewController.self
         public static var reactionPickerViewController: ReactionPickerViewController.Type = ReactionPickerViewController.self
         public static var reactedUserListViewController: ReactedUserListViewController.Type = ReactedUserListViewController.self
@@ -87,8 +93,10 @@ extension SceytChatUIKit {
         public static var channelProfileRouter: ChannelProfileRouter.Type = ChannelProfileRouter.self
         public static var joinGroupRouter: JoinGroupRouter.Type = JoinGroupRouter.self
         public static var inputRouter: InputRouter.Type = InputRouter.self
+        public static var pollResultsRouter: PollResultsRouter.Type = PollResultsRouter.self
+        public static var pollOptionDetailRouter: PollOptionDetailRouter.Type = PollOptionDetailRouter.self
         public static var previewerRouter: PreviewerRouter.Type = PreviewerRouter.self
-        
+
         // MARK: - Cells
         
         public static var channelAddMemberCell: ChannelMemberListViewController.AddMemberCell.Type = ChannelMemberListViewController.AddMemberCell.self
@@ -117,6 +125,7 @@ extension SceytChatUIKit {
         public static var messageCellAttachmentStackView: MessageCell.AttachmentStackView.Type = MessageCell.AttachmentStackView.self
         public static var messageCellAttachmentVideoView: MessageCell.AttachmentVideoView.Type = MessageCell.AttachmentVideoView.self
         public static var messageCellAttachmentView: MessageCell.AttachmentView.Type = MessageCell.AttachmentView.self
+        public static var messageCellActionButtonView: MessageCell.BottomActionView.Type = MessageCell.BottomActionView.self
         public static var messageCellForwardView: MessageCell.ForwardView.Type = MessageCell.ForwardView.self
         public static var messageCellInfoView: MessageCell.InfoView.Type = MessageCell.InfoView.self
         public static var messageCellLinkPreviewView: MessageCell.LinkPreviewView.Type = MessageCell.LinkPreviewView.self
@@ -126,6 +135,8 @@ extension SceytChatUIKit {
         public static var messageCellReplyArrowView: MessageCell.ReplyArrowView.Type = MessageCell.ReplyArrowView.self
         public static var messageCellReplyCountView: MessageCell.ReplyCountView.Type = MessageCell.ReplyCountView.self
         public static var messageCellReplyView: MessageCell.ReplyView.Type = MessageCell.ReplyView.self
+        public static var messageCellPollView: MessageCell.PollView.Type = MessageCell.PollView.self
+        public static var messageCellUnsupportedMessageView: MessageCell.UnsupportedMessageView.Type = MessageCell.UnsupportedMessageView.self
         public static var messageCellUnreadMessagesSeparatorView: MessageCell.UnreadMessagesSeparatorView.Type = MessageCell.UnreadMessagesSeparatorView.self
         public static var messageInfoMarkerCell: MessageInfoViewController.MarkerCell.Type = MessageInfoViewController.MarkerCell.self
         public static var messageInfoMessageCell: MessageInfoViewController.MessageCell.Type = MessageInfoViewController.MessageCell.self

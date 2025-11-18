@@ -197,6 +197,14 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.actionReport.image,
                                                      renderingMode: .template(.primaryText)))!
         }()
+        public static var messageActionEndPoll: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionEndPoll.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
+        public static var messageActionRetractVote: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionRetractVote.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
         public static var messageSendAction: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.circleBackground34.image,
                                                      renderingMode: .template(.accent)),
@@ -529,7 +537,11 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.chatActionLocation.image,
                                                      renderingMode: .template(.accent)))!
         }()
-        
+        public static var chatActionPoll: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.chatActionPoll.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+
         public static var searchIcon: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.searchIcon.image,
                                                      renderingMode: .template(.iconInactive)))!
@@ -643,6 +655,8 @@ extension UIImage {
     public static var messageActionSelect: UIImage { Images.messageActionSelect }
     public static var messageActionRemove: UIImage { Images.messageActionRemove }
     public static var messageActionReport: UIImage { Images.messageActionReport }
+    public static var messageActionEndPoll: UIImage { Images.messageActionEndPoll }
+    public static var messageActionRetractVote: UIImage { Images.messageActionRetractVote }
     public static var attachmentTransferPause: UIImage { Images.attachmentTransferPause }
     public static var attachmentUpload: UIImage { Images.attachmentUpload }
     public static var attachmentDownload: UIImage { Images.attachmentDownload }
@@ -706,7 +720,8 @@ extension UIImage {
     public static var chatActionFile: UIImage { Images.chatActionFile }
     public static var chatActionContact: UIImage { Images.chatActionContact }
     public static var chatActionLocation: UIImage { Images.chatActionLocation }
-    
+    public static var chatActionPoll: UIImage { Images.chatActionPoll }
+
     public static var searchIcon: UIImage { Images.searchIcon }
     public static var searchFill: UIImage { Images.searchFill }
     

@@ -80,20 +80,42 @@ public class AnyChannelURIValidationMessageProviding: ChannelURIValidationMessag
 /// without exposing their concrete types.
 public class AnyAttachmentIconProviding: AttachmentIconProviding {
     private let _provideVisual: (ChatMessage.Attachment) -> UIImage?
-    
+
     /// Initializes the type-erased wrapper with a specific `AttachmentIconProviding` instance.
     ///
     /// - Parameter provider: The concrete provider to be wrapped.
     public init<P: AttachmentIconProviding>(_ provider: P) {
         self._provideVisual = provider.provideVisual(for:)
     }
-    
+
     /// Provides an icon image for the specified attachment.
     ///
     /// - Parameter attachment: The attachment for which to provide the icon.
     /// - Returns: An optional `UIImage` representing the attachment icon.
     public func provideVisual(for attachment: ChatMessage.Attachment) -> UIImage? {
         return _provideVisual(attachment)
+    }
+}
+
+/// A type-erased wrapper for any `MessageTypeIconProviding` implementation.
+/// This allows instances conforming to `MessageTypeIconProviding` to be used
+/// without exposing their concrete types.
+public class AnyMessageTypeIconProviding: MessageTypeIconProviding {
+    private let _provideVisual: (ChatMessage) -> UIImage?
+
+    /// Initializes the type-erased wrapper with a specific `MessageTypeIconProviding` instance.
+    ///
+    /// - Parameter provider: The concrete provider to be wrapped.
+    public init<P: MessageTypeIconProviding>(_ provider: P) {
+        self._provideVisual = provider.provideVisual(for:)
+    }
+
+    /// Provides an icon image for the specified message.
+    ///
+    /// - Parameter message: The message for which to provide the icon.
+    /// - Returns: An optional `UIImage` representing the message type icon.
+    public func provideVisual(for message: ChatMessage) -> UIImage? {
+        return _provideVisual(message)
     }
 }
 

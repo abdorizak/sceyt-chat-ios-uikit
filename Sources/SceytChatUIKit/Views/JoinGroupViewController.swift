@@ -95,21 +95,26 @@ open class JoinGroupViewController: ViewController {
         super.setup()
         
         setupBindings()
-        loadChannelInfo()
+
+        // Update UI with pre-loaded data if available
+        if let channel = joinGroupViewModel.channel {
+            updateChannelInfo()
+            updateMembersDisplay(members: joinGroupViewModel.members)
+        }
     }
-    
+
     private func setupBindings() {
         // Handle loading state and channel availability
         Publishers.CombineLatest(
             joinGroupViewModel.$isLoading,
-            joinGroupViewModel.$event.map { $0 != nil }
+            joinGroupViewModel.$channel.map { $0 != nil }
         )
         .receive(on: DispatchQueue.main)
         .sink { [weak self] isLoading, hasChannel in
             self?.joinButton.isHidden = isLoading || !hasChannel
         }
         .store(in: &subscriptions)
-        
+
         // Handle joining state
         joinGroupViewModel.$isJoining
             .receive(on: DispatchQueue.main)
@@ -117,7 +122,7 @@ open class JoinGroupViewController: ViewController {
                 self?.updateJoinButtonState(isJoining: isJoining)
             }
             .store(in: &subscriptions)
-        
+
         joinGroupViewModel.$error
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
@@ -125,7 +130,7 @@ open class JoinGroupViewController: ViewController {
                 self?.handleError(error)
             }
             .store(in: &subscriptions)
-        
+
         // Handle view model events
         joinGroupViewModel.$event
             .compactMap { $0 }
@@ -137,15 +142,22 @@ open class JoinGroupViewController: ViewController {
 
         // Handle members update
         joinGroupViewModel.$members
+            .dropFirst() // Skip initial value as we handle it manually in setup()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] members in
                 self?.updateMembersDisplay(members: members)
             }
             .store(in: &subscriptions)
-    }
-    
-    private func loadChannelInfo() {
-        joinGroupViewModel.loadChannelInfo()
+
+        // Handle channel updates
+        joinGroupViewModel.$channel
+            .compactMap { $0 }
+            .dropFirst() // Skip initial value as we handle it manually in setup()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateChannelInfo()
+            }
+            .store(in: &subscriptions)
     }
     
     open override func setupLayout() {
@@ -313,14 +325,39 @@ open class JoinGroupViewController: ViewController {
     }
     
     // MARK: Error Handling
-    
+
+    private func isNetworkError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return SceytChatError.networkConnection.rawValue == nsError.code
+    }
+
     private func handleError(_ error: Error) {
-        let cancelAction = SheetAction.init(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
-            if self?.joinGroupViewModel.shouldDismissOnError == true {
+        if isNetworkError(error) {
+            // Show network error alert with Try Again option
+            let cancelAction = SheetAction(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
                 self?.dismiss(animated: true)
             }
+
+            let tryAgainAction = SheetAction(title: L10n.Connection.tryAgain, icon: nil, style: .default) { [weak self] in
+                self?.joinGroupViewModel.joinChannel()
+            }
+
+            showAlert(
+                title: L10n.Connection.Error.networkLost,
+                message: L10n.Connection.Error.Try.again,
+                actions: [cancelAction, tryAgainAction],
+                preferredActionIndex: 1,
+                completion: nil
+            )
+        } else {
+            // Show default error alert
+            let cancelAction = SheetAction(title: L10n.Alert.Button.cancel, icon: nil, style: .cancel) { [weak self] in
+                if self?.joinGroupViewModel.shouldDismissOnError == true {
+                    self?.dismiss(animated: true)
+                }
+            }
+            showAlert(title: L10n.Alert.Error.title, message: error.localizedDescription, actions: [cancelAction], preferredActionIndex: 0, completion: nil)
         }
-        showAlert(title: L10n.Alert.Error.title, message: error.localizedDescription, actions: [cancelAction], preferredActionIndex: 0, completion: nil)
     }
 
     // MARK: ViewModel Events

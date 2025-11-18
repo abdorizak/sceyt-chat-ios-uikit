@@ -189,19 +189,63 @@ open class ChannelRouter: Router<ChannelViewController> {
     }
     
     open func showJoinGroup(inviteLink: String) {
-        let viewController = Components.joinGroupViewController.init()
-        viewController.joinGroupViewModel = Components.joinGroupViewModel.init(inviteLink: inviteLink)
-        
-        viewController.modalPresentationStyle = .pageSheet
-        
-        if #available(iOS 15.0, *) {
-            if let sheet = viewController.sheetPresentationController {
-                sheet.detents = [.medium()]
-                sheet.prefersGrabberVisible = false
-                sheet.preferredCornerRadius = 10
+        let joinGroupViewModel = Components.joinGroupViewModel.init(inviteLink: inviteLink)
+
+        // Show loading indicator
+        loader.show()
+
+        // Load channel info first
+        joinGroupViewModel.loadChannelInfo { [weak self] result in
+            guard let self = self else { return }
+
+            // Hide loading indicator
+            loader.hide()
+
+            switch result {
+            case .success:
+                // Channel loaded successfully, show the view controller
+                let viewController = Components.joinGroupViewController.init()
+                viewController.joinGroupViewModel = joinGroupViewModel
+
+                viewController.modalPresentationStyle = .pageSheet
+
+                if #available(iOS 15.0, *) {
+                    if let sheet = viewController.sheetPresentationController {
+                        sheet.detents = [.medium()]
+                        sheet.prefersGrabberVisible = false
+                        sheet.preferredCornerRadius = 10
+                    }
+                }
+
+                self.rootViewController.present(viewController, animated: true)
+
+            case .failure(let error):
+                // Show error alert
+                self.showAlert(
+                    title: L10n.Alert.Error.title,
+                    message: error.localizedDescription,
+                    actions: [.init(title: L10n.Alert.Button.ok, style: .default)]
+                )
             }
         }
-        
-        rootViewController.present(viewController, animated: true)
+    }
+
+    open func showCreatePoll(_ handler: @escaping ((CreatePollModel?) -> Void)) {
+        let viewController = Components.createPollViewController.init()
+        viewController.viewModel = Components.createPollViewModel.init()
+        viewController.onPollCreated = { poll in
+            handler(poll)
+        }
+        let nav = Components.navigationController.init()
+        nav.viewControllers = [viewController]
+        rootViewController.present(nav, animated: true)
+    }
+
+    open func showPollResults(pollResults: PollDetails, messageID: MessageId) {
+        let viewController = Components.pollResultsViewController.init()
+        viewController.viewModel = Components.pollResultsViewModel.init(pollResults: pollResults, messageID: messageID)
+        let nav = Components.navigationController.init()
+        nav.viewControllers = [viewController]
+        rootViewController.present(nav, animated: true)
     }
 }

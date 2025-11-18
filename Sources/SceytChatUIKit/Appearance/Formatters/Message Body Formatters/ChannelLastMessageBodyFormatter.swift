@@ -25,6 +25,11 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
                 ]
             )
         default:
+            // Check if message is unsupported
+            if MessageLayoutModel.isMessageUnsupported(message) {
+                return SceytChatUIKit.shared.formatters.unsupportedMessageShortFormatter.format(message)
+            }
+
             let bodyFont = messageBodyAttributes.bodyLabelAppearance.font
             let bodyColor = messageBodyAttributes.bodyLabelAppearance.foregroundColor
             let mentionFont = messageBodyAttributes.mentionLabelAppearance.font
@@ -142,31 +147,33 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
                     }
             }
             
-            if let attachment = message.attachments?.last,
-               let icon = messageBodyAttributes.attachmentIconProvider.provideVisual(for: attachment) {
-                
-                let type = messageBodyAttributes.attachmentNameFormatter.format(attachment)
-                if !type.isEmpty {
-                    let attachment = NSTextAttachment()
-                    attachment.bounds = CGRect(x: 0, y: (bodyFont.capHeight - icon.size.height).rounded() / 2, width: icon.size.width, height: icon.size.height)
-                    attachment.image = icon
-                    let attributedAttachmentMessage = NSMutableAttributedString(attachment: attachment)
-                    attributedAttachmentMessage.append(NSAttributedString(
-                        string: " ",
-                        attributes: [.font: bodyFont]
-                    ))
-                    if text.isEmpty {
-                        attributedAttachmentMessage.append(NSAttributedString(
-                            string: type,
-                            attributes: [
-                                .font: bodyFont,
-                                .foregroundColor: bodyColor
-                            ]
-                        ))
-                        text.append(attributedAttachmentMessage)
-                    } else {
-                        text.insert(attributedAttachmentMessage, at: 0)
-                    }
+            // Use messageTypeIconProvider first to handle polls and other message types
+            if let icon = messageBodyAttributes.messageTypeIconProvider.provideVisual(for: message) {
+                // Apply color to template images (like poll icon)
+                let finalIcon: UIImage
+                if icon.renderingMode == .alwaysTemplate {
+                    // Use specific poll icon color for polls, otherwise use body color
+                    let tintColor = message.poll != nil ? DefaultColors.iconTertiary : bodyColor
+                    finalIcon = icon.withTintColor(tintColor, renderingMode: .alwaysOriginal)
+                } else {
+                    finalIcon = icon
+                }
+
+                let attachment = NSTextAttachment()
+                attachment.bounds = CGRect(x: 0, y: (bodyFont.capHeight - finalIcon.size.height).rounded() / 2, width: finalIcon.size.width, height: finalIcon.size.height)
+                attachment.image = finalIcon
+                let attributedAttachmentMessage = NSMutableAttributedString(attachment: attachment)
+                attributedAttachmentMessage.append(NSAttributedString(
+                    string: " ",
+                    attributes: [.font: bodyFont]
+                ))
+
+                // If there's text, insert the icon at the beginning
+                if !text.isEmpty {
+                    text.insert(attributedAttachmentMessage, at: 0)
+                } else {
+                    // For poll or attachment-only messages, just show the icon
+                    text.append(attributedAttachmentMessage)
                 }
             }
             if let lastReaction = messageBodyAttributes.lastReaction {

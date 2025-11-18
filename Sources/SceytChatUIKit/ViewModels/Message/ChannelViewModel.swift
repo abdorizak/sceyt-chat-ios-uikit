@@ -126,6 +126,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     @Atomic private var lastPendingMarkDisplayedMessageId: MessageId = 0
     @Atomic private var isAppActive: Bool = true
     @Atomic private var isRestartingMessageObserver: DataReloadingType = .none
+    @Atomic private var pendingPollVotes: [MessageId: Bool] = [:]
     
     // MARK: internal properties
     var lastNavigatedIndexPath: IndexPath?
@@ -1232,7 +1233,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         } else {
             messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
         }
-        
+
         if case let .edit(message) = userMessage.action,
            message.body == userMessage.text {
             if let oldBodyAttributes = message.bodyAttributes,
@@ -1257,30 +1258,30 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         default:
             break
         }
-        
+
         if isThread {
             builder.parentMessageId(threadMessage!.id)
             builder.replyInThread(true)
         }
-        
+
         if let metadata = userMessage.metadata {
             builder.metadata(metadata)
         }
-        
+
         if let mentionUsers = userMessage.mentionUsers {
             builder.mentionUserIds(mentionUsers.map { $0.id })
         }
-        
+
         var messages = [Message]()
         var linkAttachment = [Attachment]()
         if let attachment = userMessage.linkAttachments.first?.attachment {
             linkAttachment = [attachment]
         }
-        
+
         if let bodyAttributes = userMessage.bodyAttributes {
             builder.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
         }
-        
+
         if let items = userMessage.attachments, items.count > 0 {
             for (index, item) in items.enumerated() {
                 if index == 0 {
@@ -1297,7 +1298,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             messages.append(builder.build())
         }
         guard !messages.isEmpty else { return }
-        
+
         let first = messages.remove(at: 0)
         sendUserMessage(first, action: userMessage.action)
         if let linkMetadata = userMessage.linkMetadata {
@@ -1311,6 +1312,71 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                     self.sendUserMessage(messages[index], action: userMessage.action)
                 }
         }
+    }
+
+    /// Sends a poll message to the channel.
+    /// - Parameter pollModel: The poll model containing question, options, and settings.
+    open func sendPoll(_ pollModel: CreatePollModel) {
+        if isTyping {
+            isTyping = false
+        }
+        scrollToRepliedMessageId = 0
+        scrollToMessageIdIfSearching = 0
+
+        // Ensure observer is up to date
+        if let lastCacheItem = messageObserver.lastItem,
+            let lastMessageItem = channel.lastMessage,
+            lastCacheItem.id != lastMessageItem.id {
+            let offset = messageObserver.calculateMessageFetchOffset()
+            messageObserver.restartObserver(fetchPredicate: messageObserver.defaultFetchPredicate, offset: offset)
+        } else {
+            messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
+        }
+
+        let options = pollModel.options
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map {
+                SceytChat.PollOption.Builder()
+                    .id(UUID().uuidString)
+                    .name($0)
+                    .build()
+            }
+
+        let messageTid = chatClient.generateTId()
+
+        let pollDetails = SceytChat.PollDetails.Builder()
+            .pollId(String(messageTid))
+            .name(pollModel.question)
+            .description("")
+            .options(options)
+            .allowMultipleVotes(pollModel.allowMultipleAnswers)
+            .anonymous(pollModel.isAnonymous)
+            .allowVoteRetract(true)
+            .build()
+
+        // Create message builder with poll
+        let builder = Message.Builder()
+            .tid(messageTid)
+            .type("poll")
+            .body(pollModel.question)
+            .poll(pollDetails)
+
+        // Set reply context if applicable
+        if let (replyMessage, action) = selectedMessageForAction, case .reply = action {
+            builder.parentMessageId(replyMessage.id)
+        }
+
+        // Set thread context if applicable
+        if isThread, let threadMessage {
+            builder.parentMessageId(threadMessage.id)
+            builder.replyInThread(true)
+        }
+
+        let message = builder.build()
+
+        // Send the poll message
+        sendUserMessage(message, action: .send)
     }
     
     open func sendUserMessage(
@@ -1479,6 +1545,420 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             key: key
         )
     }
+    
+    // MARK: - Poll Operations
+    
+    open func hasPendingPollVote(for messageId: MessageId) -> Bool {
+        return pendingPollVotes[messageId] == true
+    }
+    
+    open func addPollVote(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        optionId: String
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: optionId,
+            removeOptionId: nil
+        )
+
+        provider.addPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionId: optionId
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
+    }
+
+    open func deletePollVote(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        optionId: String
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: nil,
+            removeOptionId: optionId
+        )
+
+        provider.deletePollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionId: optionId
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
+    }
+
+    open func retractPollVote(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
+        
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            completion?(nil)
+            return
+        }
+        
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+        
+        // Optimistically update all selected options: deselect, decrease vote count, and remove current user from voters
+        var updatedOptions = pollViewModel.options.map { option -> PollOptionViewModel in
+            if option.isSelected {
+                var updatedOption = option
+                updatedOption.isSelected = false
+                updatedOption.voteCount = max(0, option.voteCount - 1)
+                // Remove current user from voters
+                updatedOption.voters = option.voters.filter { $0.id != SceytChatUIKit.shared.currentUserId }
+                return updatedOption
+            }
+            return option
+        }
+        
+        // Recalculate progress based on new vote counts
+        let maxVotes = updatedOptions.map { $0.voteCount }.max() ?? 1
+        updatedOptions = updatedOptions.map { option in
+            var updatedOption = option
+            updatedOption.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+            return updatedOption
+        }
+        
+        // Create updated poll view model
+        let updatedPollViewModel = PollViewModel(
+            pollId: pollViewModel.pollId,
+            question: pollViewModel.question,
+            pollTypeText: pollViewModel.pollTypeText,
+            options: updatedOptions,
+            totalVotes: pollViewModel.totalVotes,
+            closed: pollViewModel.closed,
+            anonymous: pollViewModel.anonymous,
+            allowMultipleVotes: pollViewModel.allowMultipleVotes,
+            allowVoteRetract: pollViewModel.allowVoteRetract
+        )
+        
+        // Post optimistic UI update notification
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .didUpdateMessagePoll,
+                object: nil,
+                userInfo: ["pollUIModel": updatedPollViewModel]
+            )
+        }
+        
+        provider.retractPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+            completion?(error)
+        }
+    }
+    
+    open func closePoll(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
+        
+        provider.closePoll(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            completion: completion
+        )
+    }
+    
+    // MARK: - Poll Update Helpers
+    
+    private func postOptimisticPollUpdate(
+        messageId: MessageId,
+        layoutModel: MessageLayoutModel,
+        currentPollViewModel: PollViewModel,
+        addOptionId: String?,
+        removeOptionId: String?
+    ) {
+        if let pollUIModel = createOptimisticPollViewModel(
+            messageId: messageId,
+            layoutModel: layoutModel,
+            currentPollViewModel: currentPollViewModel,
+            addOptionId: addOptionId,
+            removeOptionId: removeOptionId,
+            isClosed: nil
+        ) {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .didUpdateMessagePoll,
+                    object: nil,
+                    userInfo: ["pollUIModel": pollUIModel]
+                )
+            }
+        }
+    }
+
+    private func createOptimisticPollViewModel(
+        messageId: MessageId,
+        layoutModel: MessageLayoutModel,
+        currentPollViewModel: PollViewModel,
+        addOptionId: String?,
+        removeOptionId: String?,
+        isClosed: Bool?
+    ) -> PollViewModel? {
+        guard let currentUserId = SceytChatUIKit.shared.currentUserId, let poll = layoutModel.message.poll else {
+            return nil
+        }
+
+        let currentUser = ChatUser(user: SceytChatUIKit.shared.chatClient.user)
+        let isSingleSelection = !poll.allowMultipleVotes
+        var updatedOptions = currentPollViewModel.options
+
+        // Helper function to get voters from poll for a specific option
+        func getVotersFromPoll(for optionId: String) -> [ChatUser] {
+            poll.votes
+                .filter { $0.optionId == optionId }
+                .compactMap(\.user)
+        }
+
+        // Handle selection state updates
+        if isSingleSelection {
+            // For single selection: when adding an option, deselect all others
+            if let addOptionId {
+                // Create new options array with updated selection state and vote counts
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    // Get voters from poll for this option
+                    var updatedVoters = getVotersFromPoll(for: option.id)
+                    
+                    // Find the previously selected option (if different from the new one)
+                    let wasPreviouslySelected = option.isSelected && option.id != addOptionId
+                    
+                    if wasPreviouslySelected {
+                        // Remove current user from previously selected option's voters
+                        updatedVoters = updatedVoters.filter { $0.id != currentUserId }
+                    }
+                    
+                    // Update selection state: only the new option should be selected
+                    let isSelected = option.id == addOptionId
+                    
+                    // Increase vote count and add current user for the newly selected option
+                    var voteCount = option.voteCount
+                    if option.id == addOptionId {
+                        voteCount = option.voteCount + 1
+                        // Append current user if not already in voters array
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                    } else if wasPreviouslySelected {
+                        voteCount = max(0, option.voteCount - 1)
+                    } else if option.isSelected {
+                        // For other options that remain selected, ensure current user is in voters
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                    }
+                    
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: voteCount,
+                        progress: option.progress,
+                        selected: isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: updatedVoters
+                    )
+                }
+            } else if let removeOptionId {
+                // Removing a vote in single selection means deselecting it
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == removeOptionId {
+                        // Get voters from poll and remove current user
+                        let updatedVoters = getVotersFromPoll(for: option.id)
+                            .filter { $0.id != currentUserId }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: max(0, option.voteCount - 1),
+                            progress: option.progress,
+                            selected: false,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
+                    }
+                    // For other options, get voters from poll
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
+                }
+            }
+        } else {
+            if let addOptionId {
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == addOptionId {
+                        // Get voters from poll and add current user
+                        var updatedVoters = getVotersFromPoll(for: option.id)
+                        // Append current user if not already in voters array
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: option.voteCount + 1,
+                            progress: option.progress,
+                            selected: true,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
+                    }
+                    // For other options, get voters from poll
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
+                }
+            } else if let removeOptionId {
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == removeOptionId {
+                        // Get voters from poll and remove current user
+                        let updatedVoters = getVotersFromPoll(for: option.id)
+                            .filter { $0.id != currentUserId }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: max(0, option.voteCount - 1),
+                            progress: option.progress,
+                            selected: false,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
+                    }
+                    // For other options, get voters from poll
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
+                }
+            }
+        }
+
+        // Recalculate progress based on new vote counts
+        let maxVotes = updatedOptions.map { $0.voteCount }.max() ?? 1
+        updatedOptions = updatedOptions.map { option in
+            var updatedOption = option
+            updatedOption.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+            return updatedOption
+        }
+
+        // Update closed state if provided
+        if let isClosed {
+            updatedOptions = updatedOptions.map { option in
+                var updatedOption = option
+                updatedOption.isClosed = isClosed
+                return updatedOption
+            }
+        }
+
+        // Recalculate total votes based on updated vote counts
+        let totalVotes = updatedOptions.reduce(0) { $0 + $1.voteCount }
+
+        // Create new PollViewModel with updated options
+        return PollViewModel(
+            pollId: currentPollViewModel.pollId,
+            question: currentPollViewModel.question,
+            pollTypeText: currentPollViewModel.pollTypeText,
+            options: updatedOptions,
+            totalVotes: totalVotes,
+            closed: currentPollViewModel.closed,
+            anonymous: currentPollViewModel.anonymous,
+            allowMultipleVotes: currentPollViewModel.allowMultipleVotes,
+            allowVoteRetract: currentPollViewModel.allowVoteRetract
+        )
+    }
+
     open func report(layoutModel: MessageLayoutModel) {
         // TODO: Report Message
         logger.debug("Report Message")
@@ -1950,7 +2430,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func canReply(model: MessageLayoutModel) -> Bool {
-        model.message.state != .deleted
+        model.message.state != .deleted && !model.contentOptions.contains(.unsupported)
     }
     
     // MARK: view titles
@@ -2343,5 +2823,6 @@ public extension ChannelViewModel {
         }
     }
 }
+
 
 

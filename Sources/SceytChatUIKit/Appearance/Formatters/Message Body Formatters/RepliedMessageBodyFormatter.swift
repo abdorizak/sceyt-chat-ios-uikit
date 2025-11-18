@@ -17,6 +17,10 @@ open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
         let attributedBody = NSAttributedString(string: message.body)// messageBodyAttributes.attributedBody
         
         if attributedBody.length > 0 {
+            if MessageLayoutModel.isMessageUnsupported(message) {
+                return SceytChatUIKit.shared.formatters.unsupportedMessageShortFormatter.format(message)
+            }
+
             let attributedBody = attributedBody.mutableCopy() as! NSMutableAttributedString
             
             attributedBody.enumerateAttributes(in: NSRange(location: 0, length: attributedBody.length), using: { attributes, range, _ in
@@ -64,6 +68,11 @@ open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
                 .foregroundColor: messageBodyAttributes.deletedLabelAppearance.foregroundColor
             ])
         default:
+            // Check if message is unsupported
+            if MessageLayoutModel.isMessageUnsupported(message) {
+                return SceytChatUIKit.shared.formatters.unsupportedMessageShortFormatter.format(message)
+            }
+            
             if body.isEmpty,
                let attachment = message.attachments?.first {
                 switch MessageLayoutModel.AttachmentLayout.AttachmentType(rawValue: attachment.type) {

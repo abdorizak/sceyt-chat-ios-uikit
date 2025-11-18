@@ -124,6 +124,15 @@ public class ChannelDTO: NSManagedObject {
         return NSPredicate(format: "\(key) \(type)[c] %@", query.query ?? "")
     }
 
+    public static func fetch(ids: [ChannelId], context: NSManagedObjectContext) -> [ChannelDTO] {
+        guard !ids.isEmpty
+        else { return [] }
+        let request = fetchRequest()
+        request.sortDescriptor = NSSortDescriptor(keyPath: \ChannelDTO.id, ascending: false)
+        request.predicate = .init(format: "id IN %@", ids)
+        return fetch(request: request, context: context)
+    }
+    
     public static func fetch(id: ChannelId, context: NSManagedObjectContext) -> ChannelDTO? {
         let request = fetchRequest()
         request.sortDescriptor = NSSortDescriptor(keyPath: \ChannelDTO.id, ascending: false)

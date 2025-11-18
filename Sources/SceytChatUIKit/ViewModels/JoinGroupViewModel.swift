@@ -32,21 +32,25 @@ open class JoinGroupViewModel: DataProvider {
         super.init()
     }
     
-    public func loadChannelInfo() {
-        guard !isLoading else { return }
-        
+    public func loadChannelInfo(completion: ((Result<ChatChannel, Error>) -> Void)? = nil) {
+        guard !isLoading else {
+            return
+        }
+
         isLoading = true
         error = nil
-        
+
         // Extract channel URI from invite link
         guard let key = extractChannelUri(from: inviteLink) else {
+            let error = JoinGroupError.invalidLink
             DispatchQueue.main.async { [weak self] in
                 self?.isLoading = false
-                self?.error = JoinGroupError.invalidLink
+                self?.error = error
+                completion?(.failure(error))
             }
             return
         }
-        
+
         var param = ChannelQueryParam()
         param.includeLastMessage = false
         param.memberCount = 3
@@ -59,8 +63,12 @@ open class JoinGroupViewModel: DataProvider {
                     self?.channel = ch
                     self?.members = channel.members?.map { ChatChannelMember(member: $0) } ?? []
                     self?.event = .channelLoaded(ch)
+                    completion?(.success(ch))
                 } else {
                     self?.error = error ?? JoinGroupError.invalidLink
+                    if let error = self?.error {
+                        completion?(.failure(error))
+                    }
                 }
             }
         }

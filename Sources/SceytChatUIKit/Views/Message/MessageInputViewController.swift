@@ -85,7 +85,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             updateMediaButtonAppearance(isHidden: shouldHideMediaButton)
         }
     }
-    
+
+    open var shouldHidePollOption = false
+
     public var canRunMentionUserLogic = true
     open var mentionUserListViewController: (() -> MessageInputViewController.MentionUsersListViewController)?
     open weak var presentedMentionUserListViewController: MessageInputViewController.MentionUsersListViewController? {
@@ -102,7 +104,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     
     open var mentionTriggerPrefix: String { SceytChatUIKit.shared.config.mentionTriggerPrefix }
     open var onContentHeightUpdate: ((CGFloat, (()-> Void)?) -> Void)?
-    
+    open var onCreatePoll: ((CreatePollModel) -> Void)?
+
     @Published public var action: Action?
     
     private var selectedPhotoAssetIdentifiers = Set<String>()
@@ -542,9 +545,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     @objc
     open func addMediaButtonAction(_ sender: UIButton) {
         inputTextView.resignFirstResponder()
+        var sources: [AttachmentPickerSource] = [.media, .camera, .file]
+        if !shouldHidePollOption {
+            sources.append(.poll)
+        }
         router
             .showAttachmentAlert(
-                sources: [.media, .camera, .file],
+                sources: sources,
                 sourceView: sender)
         { [unowned self] source in
             switch source {
@@ -554,6 +561,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                 openCameraPicker()
             case .file:
                 openDocumentsPicker()
+            case .poll:
+                openPollPicker()
             case .none:
                 return
             }
@@ -628,7 +637,15 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
         }
     }
-    
+
+    open func openPollPicker() {
+        router.showCreatePoll { [unowned self] poll in
+            guard let poll else { return }
+            // Poll will be sent as a message - handle poll creation
+            self.onCreatePoll?(poll)
+        }
+    }
+
     //    private static var _textIndex = 1000
     //        private static let loren = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
     //

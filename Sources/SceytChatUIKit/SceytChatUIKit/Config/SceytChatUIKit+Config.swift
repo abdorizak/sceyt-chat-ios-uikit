@@ -17,7 +17,8 @@ extension SceytChatUIKit {
                                                           userListQueryLimit: 30,
                                                           messageListQueryLimit: 50,
                                                           attachmentListQueryLimit: 20,
-                                                          reactionListQueryLimit: 30)
+                                                          reactionListQueryLimit: 30,
+                                                          pollVotersListQueryLimit: 30)
         
         public var presenceConfig: PresenceConfig = PresenceConfig(defaultPresenceState: .online,
                                                                    defaultPresenceStatus: "")

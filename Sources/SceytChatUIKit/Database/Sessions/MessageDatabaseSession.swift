@@ -104,6 +104,11 @@ public protocol MessageDatabaseSession {
     
     @discardableResult
     func updateChecksum(data: String, messageTid: Int64, attachmentTid: Int64) -> ChecksumDTO?
+    
+    @discardableResult
+    func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO
+
+    func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO)
 }
 
 public extension MessageDatabaseSession {
@@ -140,6 +145,11 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         createOrUpdate(userMarkers: message.userMarkers ?? [], dto: dto)
         createOrUpdate(forwardDetail: message.forwardingDetails, dto: dto)
         createOrUpdate(bodyAttributes: message.bodyAttributes, dto: dto)
+        
+        // Handle poll
+        if let poll = message.poll {
+            createOrUpdate(poll: poll, dto: dto)
+        }
         
         if dto.markerTotal == nil {
             dto.markerTotal = .init()
@@ -1090,5 +1100,147 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         let dto = ChecksumDTO.fetch(message: messageTid, attachmentTid: attachmentTid, context: self)
         dto?.data = data
         return dto
+    }
+    
+    // MARK: Poll
+    
+    @discardableResult
+    public func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO {
+        let pollDTO = PollDTO.fetchOrCreate(id: poll.id, context: self).map(poll)
+        pollDTO.messageTid = dto.tid
+        pollDTO.message = dto
+
+        // Force the object to be fully loaded from the fault state
+        // This ensures the relationships are materialized before we try to mutate them
+        _ = pollDTO.id
+
+        // Create or update options
+        let optionDTOs = poll.options.map { option -> PollOptionDTO in
+            let optionDTO = PollOptionDTO.fetchOrCreate(id: option.id, pollId: poll.id, context: self).map(option)
+            optionDTO.poll = pollDTO
+            return optionDTO
+        }
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let optionsSet = pollDTO.mutableOrderedSetValue(forKey: "options")
+        optionsSet.removeAllObjects()
+        optionsSet.addObjects(from: optionDTOs)
+
+        // Create or update votes
+        let voteDTOs = poll.votes.map { vote -> PollVoteDTO in
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: poll.id,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.pollDetails = pollDTO
+            return voteDTO
+        }
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+        votesSet.removeAllObjects()
+        votesSet.addObjects(from: voteDTOs)
+
+        // Create or update own votes
+        let ownVoteDTOs = poll.ownVotes.map { vote -> PollVoteDTO in
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: poll.id,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.ownPollDetails = pollDTO
+            return voteDTO
+        }
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+        ownVotesSet.removeAllObjects()
+        ownVotesSet.addObjects(from: ownVoteDTOs)
+
+        var votesPerOption = (poll.votesPerOption as? [String: NSNumber]) ?? [:]
+        pollDTO.votesPerOption = votesPerOption as NSDictionary
+        
+        dto.poll = pollDTO
+        return dto
+    }
+
+    // MARK: Apply Changed Votes
+
+    public func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO) {
+        guard let pollDTO = messageDTO.poll else { return }
+
+        let currentUserId = SceytChatUIKit.shared.currentUserId
+
+        // Get mutable ordered sets
+        let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+        let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+
+        // Get current votesPerOption dictionary or create empty one
+        var votesPerOption = (pollDTO.votesPerOption as? [String: NSNumber]) ?? [:]
+
+        // Add new votes
+        for vote in changedVotes.addedVotes {
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: pollId,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+
+            // Check if this is the current user's vote
+            let isOwnVote = vote.user.id == currentUserId
+
+            if isOwnVote {
+                voteDTO.ownPollDetails = pollDTO
+                ownVotesSet.add(voteDTO)
+            } else {
+                voteDTO.pollDetails = pollDTO
+                votesSet.add(voteDTO)
+            }
+
+            // Update votesPerOption - increment count for this option
+            let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+            votesPerOption[vote.optionId] = NSNumber(value: currentCount + 1)
+        }
+
+        // Remove votes
+        for vote in changedVotes.removedVotes {
+            if let voteDTO = PollVoteDTO.fetch(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: pollId,
+                context: self
+            ) {
+                let isOwnVote = vote.user.id == currentUserId
+
+                if isOwnVote {
+                    ownVotesSet.remove(voteDTO)
+                } else {
+                    votesSet.remove(voteDTO)
+                }
+                delete(voteDTO)
+
+                // Update votesPerOption - decrement count for this option
+                let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+                let newCount = max(0, currentCount - 1)
+                if newCount > 0 {
+                    votesPerOption[vote.optionId] = NSNumber(value: newCount)
+                } else {
+                    // Remove the option from dictionary if count reaches 0
+                    votesPerOption.removeValue(forKey: vote.optionId)
+                }
+            }
+        }
+
+        // Update the pollDTO's votesPerOption
+        pollDTO.votesPerOption = votesPerOption as NSDictionary
+
+        messageDTO.poll = pollDTO
     }
 }

@@ -64,6 +64,8 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var forwardUser: UserDTO?
     
     @NSManaged public var bodyAttributes: Set<BodyAttributeDTO>?
+    
+    @NSManaged public var poll: PollDTO?
         
     public override func willSave() {
         super.willSave()
