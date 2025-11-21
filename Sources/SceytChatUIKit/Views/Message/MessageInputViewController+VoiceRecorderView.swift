@@ -141,7 +141,7 @@ extension MessageInputViewController {
         private var currentCenter: CGPoint?
         
         @objc
-        func onLongPress(_ gesture: UILongPressGestureRecognizer) {
+        open func onLongPress(_ gesture: UILongPressGestureRecognizer) {
             SimpleSinglePlayer.pause()
             
             guard state != .locked
