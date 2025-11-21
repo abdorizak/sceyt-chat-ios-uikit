@@ -267,17 +267,11 @@ open class ChannelProvider: DataProvider {
             { error in
                 if error == nil {
                     self.database.write {
-                        do {
-                            try $0.deleteAllMessages(
-                                channelId: self.channelId,
-                                before: currentDate
-                            )
-                        } catch {
-                            logger.errorIfNotNil(error, "Delete all messages from db in channel \(self.channelId) forEveryone: \(forEveryone)")
-                        }
-                    } completion: { error in
-                        logger.errorIfNotNil(error, "Delete all messages from db in channel \(self.channelId) forEveryone: \(forEveryone)")
-                        completion?(error)
+                        try? $0.deleteAllMessages(
+                            channelId: self.channelId,
+                            before: currentDate,
+                            completion: completion
+                        )
                     }
                 } else {
                     logger.errorIfNotNil(error, "Delete all messages from channel \(self.channelId) for forEveryone: \(forEveryone)")

@@ -52,14 +52,22 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
     
     @discardableResult
     public func createOrUpdate(channel: Channel) -> ChannelDTO {
-        let dto = ChannelDTO.fetchOrCreate(id: channel.id, context: self).map(channel)
+        return createOrUpdate(channel: channel, forceUpdate: false)
+    }
+    
+    @discardableResult
+    public func createOrUpdate(channel: Channel, forceUpdate: Bool) -> ChannelDTO {
+        let (channelDTO, created) = ChannelDTO.fetchOrCreate(id: channel.id, context: self)
+        let dto = channelDTO.map(channel)
+
         if channel.newMessageCount > 0 {
             dto.newMessageCount = max(0, Int64(channel.newMessageCount) - numberOfPendingMarkers(name: DefaultMarker.displayed.rawValue, in: dto))
         }
+
         if let createBy = channel.createdBy {
             dto.createdBy = createOrUpdate(user: createBy)
         }
-        
+
         var lastReaction: ReactionDTO?
         if let reactions = channel.lastReactions {
             let reactionDTOs = createOrUpdate(reactions: reactions)
@@ -74,22 +82,25 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
         } else {
             dto.lastReaction = nil
         }
-        
-        
-        if let message = channel.lastMessage {
-            createOrUpdate(message: message, channelId: channel.id)
+
+        if created || forceUpdate {
+            if let message = channel.lastMessage {
+                createOrUpdate(message: message, channelId: channel.id)
+            }
         }
-        
+
         if let messages = channel.messages {
             createOrUpdate(messages: messages, channelId: channel.id)
         }
+
         if let members = channel.members {
             createOrUpdate(members: members, channelId: channel.id)
         }
-        
+
         if let role = channel.userRole {
             dto.userRole = RoleDTO.fetchOrCreate(name: role, context: self)
         }
+
         if let messagesClearedAt = channel.messagesClearedAt {
             try? deleteAllMessages(
                 channelId: channel.id,
@@ -101,7 +112,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
 
     @discardableResult
     public func createOrUpdateByURI(channel: Channel) -> ChannelDTO {
-        let dto = (ChannelDTO.fetchChannelByURI(channel: ChatChannel(channel: channel), context: self) ?? ChannelDTO.fetchOrCreate(id: channel.id, context: self)).map(channel)
+        let dto = (ChannelDTO.fetchChannelByURI(channel: ChatChannel(channel: channel), context: self) ?? (ChannelDTO.fetchOrCreate(id: channel.id, context: self)).0.map(channel))
         
         dto.id = Int64(channel.id)
         
@@ -153,7 +164,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
     
     @discardableResult
     public func createOrUpdate(channel: ChatChannel) -> ChannelDTO {
-        let dto = ChannelDTO.fetchOrCreate(id: channel.id, context: self).map(channel)
+        let dto = ChannelDTO.fetchOrCreate(id: channel.id, context: self).0.map(channel)
         if channel.newMessageCount > 0 {
             dto.newMessageCount = max(0, Int64(channel.newMessageCount) - numberOfPendingMarkers(name: DefaultMarker.displayed.rawValue, in: dto))
         }
@@ -172,7 +183,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
     
     @discardableResult
     public func createOrUpdate(channels: [Channel]) -> [ChannelDTO] {
-        channels.map { createOrUpdate(channel: $0) }
+        channels.map { createOrUpdate(channel: $0, forceUpdate: true) }
     }
     
     public func markAsRead(channelId: ChannelId) {
@@ -216,7 +227,7 @@ extension NSManagedObjectContext: ChannelDatabaseSession {
     
     @discardableResult
     public func update(owner: Member, channelId: ChannelId) -> ChannelDTO {
-        let dto = ChannelDTO.fetchOrCreate(id: channelId, context: self)
+        let (dto, _) = ChannelDTO.fetchOrCreate(id: channelId, context: self)
         dto.owner = MemberDTO.fetchOrCreate(id: owner.id, channelId: channelId, context: self)
         return dto
     }

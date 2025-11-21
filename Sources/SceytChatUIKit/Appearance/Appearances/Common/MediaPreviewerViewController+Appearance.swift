@@ -42,6 +42,13 @@ extension MediaPreviewerViewController: AppearanceProviding {
         trackColor: .surface3,
         progressColor: .onPrimary,
         thumbColor: .onPrimary,
+        thumbPadding: {
+            if #available(iOS 26, *) {
+                return 6
+            } else {
+                return 20
+            }
+        }(),
         titleLabelAppearance: .init(
             foregroundColor: .onPrimary,
             font: Fonts.bold.withSize(16)
@@ -85,7 +92,10 @@ extension MediaPreviewerViewController: AppearanceProviding {
         
         @Trackable<Appearance, UIColor>
         public var thumbColor: UIColor
-        
+
+        @Trackable<Appearance, CGFloat>
+        public var thumbPadding: CGFloat
+
         @Trackable<Appearance, LabelAppearance>
         public var titleLabelAppearance: LabelAppearance
         
@@ -116,6 +126,7 @@ extension MediaPreviewerViewController: AppearanceProviding {
             trackColor: UIColor,
             progressColor: UIColor,
             thumbColor: UIColor,
+            thumbPadding: CGFloat,
             titleLabelAppearance: LabelAppearance,
             subtitleLabelAppearance: LabelAppearance,
             timelineLabelAppearance: LabelAppearance,
@@ -132,6 +143,7 @@ extension MediaPreviewerViewController: AppearanceProviding {
             self._trackColor = Trackable(value: trackColor)
             self._progressColor = Trackable(value: progressColor)
             self._thumbColor = Trackable(value: thumbColor)
+            self._thumbPadding = Trackable(value: thumbPadding)
             self._titleLabelAppearance = Trackable(value: titleLabelAppearance)
             self._subtitleLabelAppearance = Trackable(value: subtitleLabelAppearance)
             self._timelineLabelAppearance = Trackable(value: timelineLabelAppearance)
@@ -151,6 +163,7 @@ extension MediaPreviewerViewController: AppearanceProviding {
             trackColor: UIColor? = nil,
             progressColor: UIColor? = nil,
             thumbColor: UIColor? = nil,
+            thumbPadding: CGFloat? = nil,
             titleLabelAppearance: LabelAppearance? = nil,
             subtitleLabelAppearance: LabelAppearance? = nil,
             timelineLabelAppearance: LabelAppearance? = nil,
@@ -167,6 +180,7 @@ extension MediaPreviewerViewController: AppearanceProviding {
             self._trackColor = Trackable(reference: reference, referencePath: \.trackColor)
             self._progressColor = Trackable(reference: reference, referencePath: \.progressColor)
             self._thumbColor = Trackable(reference: reference, referencePath: \.thumbColor)
+            self._thumbPadding = Trackable(reference: reference, referencePath: \.thumbPadding)
             self._titleLabelAppearance = Trackable(reference: reference, referencePath: \.titleLabelAppearance)
             self._subtitleLabelAppearance = Trackable(reference: reference, referencePath: \.subtitleLabelAppearance)
             self._timelineLabelAppearance = Trackable(reference: reference, referencePath: \.timelineLabelAppearance)
@@ -183,6 +197,7 @@ extension MediaPreviewerViewController: AppearanceProviding {
             if let trackColor { self.trackColor = trackColor }
             if let progressColor { self.progressColor = progressColor }
             if let thumbColor { self.thumbColor = thumbColor }
+            if let thumbPadding { self.thumbPadding = thumbPadding }
             if let titleLabelAppearance { self.titleLabelAppearance = titleLabelAppearance }
             if let subtitleLabelAppearance { self.subtitleLabelAppearance = subtitleLabelAppearance }
             if let timelineLabelAppearance { self.timelineLabelAppearance = timelineLabelAppearance }

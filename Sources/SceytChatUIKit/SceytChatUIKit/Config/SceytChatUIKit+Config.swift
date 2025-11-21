@@ -17,7 +17,8 @@ extension SceytChatUIKit {
                                                           userListQueryLimit: 30,
                                                           messageListQueryLimit: 50,
                                                           attachmentListQueryLimit: 20,
-                                                          reactionListQueryLimit: 30)
+                                                          reactionListQueryLimit: 30,
+                                                          pollVotersListQueryLimit: 30)
         
         public var presenceConfig: PresenceConfig = PresenceConfig(defaultPresenceState: .online,
                                                                    defaultPresenceStatus: "")
@@ -50,6 +51,8 @@ extension SceytChatUIKit {
                                                                          minLength: 5,
                                                                          maxLength: 50,
                                                                          regex: "^[a-zA-Z0-9_]*$")
+        
+        public var channelInviteDeepLinkConfig: ChannelInviteDeepLinkConfig?
         
         public var syncChannelsAfterConnect: Bool = true
         
@@ -86,5 +89,6 @@ extension SceytChatUIKit {
         public var preventDuplicateAttachmentUpload: Bool = false
         public var messageBubbleTransformScale = CGAffineTransform(scaleX: 0.95, y: 0.95)
         public var defaultReactions = ["👍", "😍", "❤️", "🤝", "😂", "😏"]
+        public var voiceRecorderConfig: VoiceRecorderConfig = .init()
     }
 }

@@ -52,6 +52,9 @@ public extension SceytChatUIKit.Theme {
         public let stateSuccess: UIColor
         public let stateAttention: UIColor
         
+        public let closeButtonBackground: UIColor
+        public let closeButtonTint: UIColor
+        
         public init(
             accent: UIColor = DefaultColors.accent,
             accent2: UIColor = DefaultColors.accent2,
@@ -75,7 +78,9 @@ public extension SceytChatUIKit.Theme {
             onPrimary: UIColor = DefaultColors.onPrimary,
             stateWarning: UIColor = DefaultColors.defaultRed,
             stateSuccess: UIColor = DefaultColors.stateSuccess,
-            stateAttention: UIColor = DefaultColors.stateAttention
+            stateAttention: UIColor = DefaultColors.stateAttention,
+            closeButtonBackground: UIColor = DefaultColors.closeButtonBackground,
+            closeButtonTint: UIColor = DefaultColors.closeButtonTint
         ) {
             self.accent = accent
             self.accent2 = accent2
@@ -100,6 +105,8 @@ public extension SceytChatUIKit.Theme {
             self.stateWarning = stateWarning
             self.stateSuccess = stateSuccess
             self.stateAttention = stateAttention
+            self.closeButtonBackground = closeButtonBackground
+            self.closeButtonTint = closeButtonTint
         }
     }
 }

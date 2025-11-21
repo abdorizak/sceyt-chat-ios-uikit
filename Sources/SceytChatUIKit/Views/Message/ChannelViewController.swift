@@ -157,6 +157,7 @@ open class ChannelViewController: ViewController,
     private var shouldAnimateEditing: Bool = false
     private var lastAnimatedIndexPath: IndexPath? = nil
     private var selectMessageId: MessageId?
+    private let impactFeedbackGenerator = UIImpactFeedbackGenerator(style: .light)
     
     override open func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -230,7 +231,8 @@ open class ChannelViewController: ViewController,
     
     override open func setup() {
         super.setup()
-                
+
+        impactFeedbackGenerator.prepare()
         contextMenu = ContextMenu(parent: self)
         contextMenu.dataSource = self
         contextMenu.delegate = self
@@ -242,7 +244,7 @@ open class ChannelViewController: ViewController,
                 .init(channelId: channelViewModel.channel.id)
             return viewController
         }
-        
+
         selectingView.onAction = { [weak self] in
             guard let self else { return }
             switch $0 {
@@ -429,7 +431,14 @@ open class ChannelViewController: ViewController,
                 } completion: { _ in completion?() }
             }
         }
-        
+
+        customInputViewController.onCreatePoll = { [weak self] poll in
+            guard let self else { return }
+            channelViewModel.sendPoll(poll)
+            customInputViewController.removeActionView()
+            channelViewModel.removeSelectedMessage()
+        }
+
         customInputViewController.$action
             .compactMap { $0 }
             .sink { [unowned self] in
@@ -581,7 +590,15 @@ open class ChannelViewController: ViewController,
             .store(in: &subscriptions)
         
         inputTextView.attributedText = channelViewModel.draftMessage
-        
+
+        // Listen for poll close notification to force reload collection view
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(didClosePoll(_:)),
+            name: .didClosePoll,
+            object: nil
+        )
+
         ApplicationStateObserver()
             .didBecomeActive { [weak self] _ in
                 self?.isAppActive = true
@@ -946,6 +963,26 @@ open class ChannelViewController: ViewController,
     @objc
     open func showChannelProfileAction() {
         router.showChannelProfile()
+    }
+
+    @objc
+    open func didClosePoll(_ notification: Notification) {
+        // Force reload the collection view when a poll is closed in this channel
+        guard let userInfo = notification.userInfo,
+              let channelId = userInfo["channelId"] as? ChannelId,
+              channelId == channelViewModel.channel.id else {
+            return
+        }
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            // Invalidate layout to force recalculation of all cell heights
+            self.channelViewModel.invalidateLayout()
+            // Invalidate the collection view layout
+            self.collectionView.collectionViewLayout.invalidateLayout()
+            // Reload all data
+            self.collectionView.reloadData()
+        }
     }
 
     //MARK: Gesture actions
@@ -1428,6 +1465,7 @@ open class ChannelViewController: ViewController,
             }
             return self.channelViewModel.previewer
         }
+
         cell.onAction = { [weak self] action in
             guard let self else { return }
             
@@ -1490,8 +1528,13 @@ open class ChannelViewController: ViewController,
                 self.didSelectPhoneNumber(phoneNumber, layoutModel: model)
             case .didSwipe:
                 self.reply(layoutModel: model, in: false)
+            case .didTapBottomAction:
+                if model.message.poll != nil {
+                    self.showPollResults(for: model)
+                }
+            case .didTapPollOption(let optionIndex, let pollViewModel):
+                self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
             }
-            
         }
         cell.contextMenu = contextMenu
         channelViewModel.downloadMessageAttachmentsIfNeeded(layoutModel: model)
@@ -1600,12 +1643,26 @@ open class ChannelViewController: ViewController,
     // MARK: Send message
     
     open func createMessage(shouldClearText: Bool = true) -> UserSendMessage {
+        let messageAction = channelViewModel.selectedMessageForAction
+
+        // Validate link metadata - clear it if no link exists or if it's different from the current link
+        var linkMetadata = customInputViewController.linkMetadata
+        if let metadata = linkMetadata {
+            let currentLink = customInputViewController.getLink()
+            if currentLink == nil || currentLink != metadata.url {
+                // Link metadata is stale - either no link exists or it's different
+                linkMetadata = nil
+            }
+        }
+
         let m = UserSendMessage(
             sendText: shouldClearText ? inputTextView.attributedText : .init(),
             attachments: selectedMediaView.items,
-            linkMetadata: customInputViewController.lastDetectedLinkMetadata
+            linkMetadata: linkMetadata
         )
-        if let ma = channelViewModel.selectedMessageForAction {
+
+        m.didUserDismissLinkPreview = customInputViewController.didUserDismissLinkPreview
+        if let ma = messageAction {
             switch ma {
             case (let message, .reply):
                 m.action = .reply(message)
@@ -1622,7 +1679,7 @@ open class ChannelViewController: ViewController,
     
     open func sendMessage(_ message: UserSendMessage, shouldClearText: Bool = true) {
         userSelectOnRepliedMessage = nil
-        logger.verbose("[MESSAGE SEND] sendMessage \(message.text)")
+        logger.verbose("[MESSAGE SEND] sendMessage")
         let canShowUnread = canShowUnreadCountView
         canShowUnreadCountView = false
         channelViewModel.createAndSendUserMessage(message)
@@ -1756,6 +1813,49 @@ open class ChannelViewController: ViewController,
         }
     }
     
+    // MARK: - Poll Operations
+    
+    open func didTapPollOption(layoutModel: MessageLayoutModel, optionIndex: Int, pollViewModel: PollViewModel) {
+        // Use the passed PollViewModel which reflects the current UI state
+        // (including pending votes and optimistic updates)
+
+        // Check if poll is closed
+        guard !pollViewModel.closed else {
+            // Optionally show poll results if closed
+            return
+        }
+
+        // Check if there's a pending vote for this poll message
+        guard !channelViewModel.hasPendingPollVote(for: layoutModel.message.id) else {
+            return
+        }
+
+        // Validate option index
+        guard optionIndex >= 0, optionIndex < pollViewModel.options.count else {
+            return
+        }
+
+        impactFeedbackGenerator.impactOccurred()
+        // Get the option from PollViewModel which reflects the current selection state
+        // (including pending votes)
+        let optionViewModel = pollViewModel.options[optionIndex]
+        let isAlreadySelected = optionViewModel.isSelected
+
+        if isAlreadySelected {
+            channelViewModel.deletePollVote(
+                layoutModel: layoutModel,
+                pollViewModel: pollViewModel,
+                optionId: optionViewModel.id
+            )
+        } else {
+            channelViewModel.addPollVote(
+                layoutModel: layoutModel,
+                pollViewModel: pollViewModel,
+                optionId: optionViewModel.id
+            )
+        }
+    }
+
     open func showLink(_ link: URL) {
         router.showLink(link)
     }
@@ -1792,6 +1892,11 @@ open class ChannelViewController: ViewController,
                 generator.notificationOccurred(.success)
             }
         }
+    }
+    
+    open func showPollResults(for layoutModel: MessageLayoutModel) {
+        guard let poll = layoutModel.message.poll else { return }
+        router.showPollResults(pollResults: poll, messageID: layoutModel.message.id)
     }
     
     open func showProfile(user: ChatUser) {
@@ -2036,10 +2141,10 @@ open class ChannelViewController: ViewController,
             }
             updateUnreadViewVisibility()
             showEmptyViewIfNeeded()
-        case .reload(let indexPath):
+        case .reload(let indexPaths):
             UIView.performWithoutAnimation {
                 collectionView.performUpdates {
-                    collectionView.reloadItems(at: [indexPath])
+                    collectionView.reloadItems(at: indexPaths)
                 }
             }
             showEmptyViewIfNeeded()
@@ -2261,6 +2366,30 @@ open class ChannelViewController: ViewController,
         }
     }
     
+    open func showEndPollAlert(for layoutModel: MessageLayoutModel) {
+        guard let pollDetails = layoutModel.message.poll else { return }
+        let pollViewModel = PollViewModel(from: pollDetails, isIncmoing: layoutModel.message.incoming)
+
+        showAlert(
+            title: L10n.Poll.EndPoll.Alert.title,
+            message: L10n.Poll.EndPoll.Alert.message,
+            actions: [
+                .init(title: L10n.Alert.Button.cancel, style: .cancel),
+                .init(title: L10n.Poll.EndPoll.Alert.end, style: .destructive) { [weak self] in
+                    self?.channelViewModel.closePoll(
+                        layoutModel: layoutModel,
+                        pollViewModel: pollViewModel
+                    ) { [weak self] error in
+                        if let error = error {
+                            self?.showAlert(error: error)
+                        }
+                    }
+                }
+            ],
+            preferredActionIndex: 1
+        )
+    }
+
     private var isShowingRecordDiscardAlert = false
     open func showRecordDiscardAlertIfNeeded() {
         guard customInputViewController.isRecording,
@@ -2289,12 +2418,24 @@ open class ChannelViewController: ViewController,
         guard let model = identifier.value as? MessageLayoutModel,
               model.message.state != .deleted
         else { return false }
+        
+        // Disable context menu for unsupported messages
+        if model.contentOptions.contains(.unsupported) {
+            return false
+        }
+        
         return true
     }
     
     open func canShowEmojis(contextMenu: ContextMenu, identifier: Identifier) -> (canShowEmojis: Bool, emojisViewAppearance: ReactionPickerViewController.Appearance) {
         guard let model = identifier.value as? MessageLayoutModel
         else { return (false, appearance.reactionPickerAppearance) }
+        
+        // Disable emojis for unsupported messages
+        if model.contentOptions.contains(.unsupported) {
+            return (false, appearance.reactionPickerAppearance)
+        }
+        
         return (![.pending, .failed].contains(model.message.deliveryStatus), appearance.reactionPickerAppearance)
     }
     
@@ -2315,30 +2456,38 @@ open class ChannelViewController: ViewController,
               model.message.state != .deleted
         else { return [] }
         
-        var items: [MenuItem] = []
-        if channelViewModel.canShowInfo(model: model) {
-            items += [
-                .init(
-                    title: L10n.Message.Action.Title.info,
-                    image: .messageActionInfo,
-                    imageRenderingMode: .alwaysTemplate,
-                    action: { [weak self] _ in
-                        self?.info(layoutModel: model)
-                    }
-                )
-            ]
+        // Disable context menu for unsupported messages
+        if model.contentOptions.contains(.unsupported) {
+            return []
         }
-        if channelViewModel.canEdit(model: model) {
-            items += [
-                .init(
-                    title: L10n.Message.Action.Title.edit,
-                    image: .messageActionEdit,
-                    imageRenderingMode: .alwaysTemplate,
-                    action: { [weak self] _ in
-                        self?.edit(layoutModel: model)
-                    }
-                )
-            ]
+        
+        var isPoll = model.message.poll != nil
+        var items: [MenuItem] = []
+        if !isPoll {
+            if channelViewModel.canShowInfo(model: model) {
+                items += [
+                    .init(
+                        title: L10n.Message.Action.Title.info,
+                        image: .messageActionInfo,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            self?.info(layoutModel: model)
+                        }
+                    )
+                ]
+            }
+            if channelViewModel.canEdit(model: model) {
+                items += [
+                    .init(
+                        title: L10n.Message.Action.Title.edit,
+                        image: .messageActionEdit,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            self?.edit(layoutModel: model)
+                        }
+                    )
+                ]
+            }
         }
         if !channelViewModel.isReadOnlyChannel {
             items += [
@@ -2349,35 +2498,71 @@ open class ChannelViewController: ViewController,
                     action: { [weak self] _ in
                         self?.reply(layoutModel: model, in: false)
                     }
-                ),
-//                .init(
-//                    title: L10n.Message.Action.Title.replyInThread,
-//                    image: .messageActionReplyInThread,
-//                    imageRenderingMode: .alwaysTemplate,
-//                    action: { [weak self] _ in
-//                        self?.reply(layoutModel: model, in: true)
-//                    }
-//                )
+                )
             ]
         }
         
-        items += [
-            .init(
-                title: L10n.Message.Action.Title.forward,
-                image: .messageActionForward,
-                imageRenderingMode: .alwaysTemplate,
-                action: { [weak self] _ in
-                    self?.forward(messages: [model.message])
-                }
-            ),
-            .init(
-                title: L10n.Message.Action.Title.copy,
-                image: .messageActionCopy,
-                imageRenderingMode: .alwaysTemplate,
-                action: { [weak self] _ in
-                    self?.copy(layoutModel: model)
-                }
-            )]
+        if isPoll {
+            let pollViewModel: PollViewModel?
+            if let pollDetails = model.message.poll {
+                pollViewModel = PollViewModel(from: pollDetails, isIncmoing: model.message.incoming)
+            } else {
+                pollViewModel = nil
+            }
+            
+            if (model.message.poll?.ownVotes.count ?? 0) > 0 || (model.message.poll?.pendingVotes?.count ?? 0) > 0 {
+                items += [
+                    .init(
+                        title: "Retract Vote",
+                        image: .messageActionRetractVote,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            guard let pollViewModel, let self else { return }
+                            self.channelViewModel.retractPollVote(
+                                layoutModel: model,
+                                pollViewModel: pollViewModel
+                            ) { [weak self] error in
+                                if let error {
+                                    self?.showAlert(error: error)
+                                }
+                            }
+                        }
+                    )]
+            }
+            
+            if !model.message.incoming && model.message.state != .deleted && model.message.poll?.closed == false {
+                items += [
+                    .init(
+                        title: "End Poll",
+                        image: .messageActionEndPoll,
+                        imageRenderingMode: .alwaysTemplate,
+                        action: { [weak self] _ in
+                            self?.showEndPollAlert(for: model)
+                        }
+                    )]
+            }
+        }
+        
+        if !isPoll {
+            items += [
+                .init(
+                    title: L10n.Message.Action.Title.forward,
+                    image: .messageActionForward,
+                    imageRenderingMode: .alwaysTemplate,
+                    action: { [weak self] _ in
+                        self?.forward(messages: [model.message])
+                    }
+                ),
+                .init(
+                    title: L10n.Message.Action.Title.copy,
+                    image: .messageActionCopy,
+                    imageRenderingMode: .alwaysTemplate,
+                    action: { [weak self] _ in
+                        self?.copy(layoutModel: model)
+                    }
+                )]
+        }
+            
 //        if channelViewModel.canReport(model: model) {
 //            items += [
 //                .init(

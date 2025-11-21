@@ -93,6 +93,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
         lastMessageSenderNameFormatter: SceytChatUIKit.shared.formatters.channelLastMessageSenderNameFormatter,
         reactedUserNameFormatter: SceytChatUIKit.shared.formatters.reactedUserNameFormatter,
         attachmentIconProvider: SceytChatUIKit.shared.visualProviders.channelListAttachmentIconProvider,
+        messageTypeIconProvider: SceytChatUIKit.shared.visualProviders.messageTypeIconProvider,
         channelAvatarRenderer: SceytChatUIKit.shared.avatarRenderers.channelAvatarRenderer,
         avatarAppearance: AvatarAppearance.standard,
         presenceStateIconProvider: SceytChatUIKit.shared.visualProviders.presenceStateIconProvider,
@@ -196,7 +197,10 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
         
         @Trackable<Appearance, any AttachmentIconProviding>
         public var attachmentIconProvider: any AttachmentIconProviding
-        
+
+        @Trackable<Appearance, any MessageTypeIconProviding>
+        public var messageTypeIconProvider: any MessageTypeIconProviding
+
         @Trackable<Appearance, any ChannelAvatarRendering>
         public var channelAvatarRenderer: any ChannelAvatarRendering
         
@@ -250,6 +254,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             lastMessageSenderNameFormatter: any ChannelFormatting,
             reactedUserNameFormatter: any ChannelFormatting,
             attachmentIconProvider: any AttachmentIconProviding,
+            messageTypeIconProvider: any MessageTypeIconProviding,
             channelAvatarRenderer: any ChannelAvatarRendering,
             avatarAppearance: AvatarAppearance,
             presenceStateIconProvider: any PresenceStateIconProviding,
@@ -292,6 +297,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             self._lastMessageSenderNameFormatter = Trackable(value: lastMessageSenderNameFormatter)
             self._reactedUserNameFormatter = Trackable(value: reactedUserNameFormatter)
             self._attachmentIconProvider = Trackable(value: attachmentIconProvider)
+            self._messageTypeIconProvider = Trackable(value: messageTypeIconProvider)
             self._channelAvatarRenderer = Trackable(value: channelAvatarRenderer)
             self._avatarAppearance = Trackable(value: avatarAppearance)
             self._presenceStateIconProvider = Trackable(value: presenceStateIconProvider)
@@ -337,6 +343,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             lastMessageSenderNameFormatter: (any ChannelFormatting)? = nil,
             reactedUserNameFormatter: (any ChannelFormatting)? = nil,
             attachmentIconProvider: (any AttachmentIconProviding)? = nil,
+            messageTypeIconProvider: (any MessageTypeIconProviding)? = nil,
             channelAvatarRenderer: (any ChannelAvatarRendering)? = nil,
             avatarAppearance: AvatarAppearance? = nil,
             presenceStateIconProvider: (any PresenceStateIconProviding)? = nil,
@@ -374,6 +381,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             self._lastMessageSenderNameFormatter = Trackable(reference: reference, referencePath: \.lastMessageSenderNameFormatter)
             self._reactedUserNameFormatter = Trackable(reference: reference, referencePath: \.reactedUserNameFormatter)
             self._attachmentIconProvider = Trackable(reference: reference, referencePath: \.attachmentIconProvider)
+            self._messageTypeIconProvider = Trackable(reference: reference, referencePath: \.messageTypeIconProvider)
             self._channelAvatarRenderer = Trackable(reference: reference, referencePath: \.channelAvatarRenderer)
             self._avatarAppearance = Trackable(reference: reference, referencePath: \.avatarAppearance)
             self._presenceStateIconProvider = Trackable(reference: reference, referencePath: \.presenceStateIconProvider)
@@ -411,6 +419,7 @@ extension ChannelListViewController.ChannelCell: AppearanceProviding {
             if let lastMessageSenderNameFormatter { self.lastMessageSenderNameFormatter = lastMessageSenderNameFormatter }
             if let reactedUserNameFormatter { self.reactedUserNameFormatter = reactedUserNameFormatter }
             if let attachmentIconProvider { self.attachmentIconProvider = attachmentIconProvider }
+            if let messageTypeIconProvider { self.messageTypeIconProvider = messageTypeIconProvider }
             if let channelAvatarRenderer { self.channelAvatarRenderer = channelAvatarRenderer }
             if let avatarAppearance { self.avatarAppearance = avatarAppearance }
             if let presenceStateIconProvider { self.presenceStateIconProvider = presenceStateIconProvider }

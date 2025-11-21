@@ -152,9 +152,14 @@ extension ChannelViewController {
                 let maxSpace = infoWidth == 0 ? 70 : infoWidth + 12
                 if layout.lastCharRect.maxX + maxSpace <= layout.textSize.width {
                     layoutConstraint += [
-                        textLabel.bottomAnchor.pin(to: infoView.bottomAnchor),
                         textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12)
                     ]
+
+                    if !layout.contentOptions.contains(.poll) {
+                        layoutConstraint += [
+                            textLabel.bottomAnchor.pin(to: infoView.bottomAnchor)
+                        ]
+                    }
                 } else if layout.lastCharRect.maxX + maxSpace <= Components.messageLayoutModel.defaults.messageWidth - 12 * 2 {
                     layoutConstraint += [
                         textLabel.bottomAnchor.pin(to: infoView.bottomAnchor),
@@ -235,6 +240,49 @@ extension ChannelViewController {
                 
                 layoutConstraint += [ linkView.bottomAnchor.pin(lessThanOrEqualTo: infoView.topAnchor, constant: -4) ]
                 
+            } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {
+                layoutConstraint += [
+                    bubbleView.leadingAnchor.pin(to: avatarView.trailingAnchor, constant: 10),
+                    bubbleView.topAnchor.pin(to: containerView.topAnchor),
+                    bubbleView.widthAnchor.pin(constant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
+
+                    textLabel.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
+                    textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
+                    textLabel.heightAnchor.pin(constant: layout.textSize.height),
+                    textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
+
+                    infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
+
+                    pollView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
+                    pollView.topAnchor.pin(to: contentTopAnchor),
+                    pollView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
+                    pollView.bottomAnchor.pin(to: infoView.topAnchor, constant: -20.0),
+
+                    bottomActionView.topAnchor.pin(to: infoView.bottomAnchor, constant: 8.0),
+                    bottomActionView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 4.0),
+                    bottomActionView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -4.0),
+                ]
+            } else if layout.contentOptions.contains(.unsupported), layout.attachments.isEmpty {
+                layoutConstraint += [
+                    bubbleView.leadingAnchor.pin(to: avatarView.trailingAnchor, constant: 10),
+                    bubbleView.topAnchor.pin(to: containerView.topAnchor),
+                    bubbleView.widthAnchor.pin(constant: layout.unsupportedViewMeasure.width).priority(.required),
+
+                    textLabel.topAnchor.pin(to: contentTopAnchor, constant: (layout.isForwarded || showSenderInfo) ? 2 : 8),
+                    textLabel.widthAnchor.pin(constant: 0),
+                    textLabel.heightAnchor.pin(constant: 0),
+                    textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
+
+                    infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
+
+                    unsupportedView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
+                    unsupportedView.topAnchor.pin(to: contentTopAnchor, constant: 4.0),
+                    unsupportedView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
+                    unsupportedView.bottomAnchor.pin(to: infoView.topAnchor),
+
+                    infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24.0)
+                ]
+                
             } else {
                 infoView.backgroundView.isHidden = layout.contentOptions.contains(.file)
                 if !infoView.backgroundView.isHidden {
@@ -275,14 +323,24 @@ extension ChannelViewController {
             if infoView.backgroundView.isHidden {
                 layoutConstraint += [
                     infoView.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12),
-                    infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -8)
                 ]
+
+                if !layout.contentOptions.contains(.poll) {
+                    layoutConstraint += [
+                        infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -8)
+                    ]
+                }
             } else {
                 let infoAnchorView = (layout.contentOptions.contains(.link) && layout.attachments.isEmpty) ? linkView : attachmentView
                 layoutConstraint += [
                     infoView.trailingAnchor.pin(to: infoAnchorView.trailingAnchor, constant: -12),
-                    infoView.bottomAnchor.pin(to: infoAnchorView.bottomAnchor, constant: -9)
                 ]
+
+                if !layout.contentOptions.contains(.poll) {
+                    layoutConstraint += [
+                        infoView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -9)
+                    ]
+                }
             }
             
             if layout.hasReactions {
@@ -437,7 +495,34 @@ extension ChannelViewController {
                 
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
                 bubbleSize.height += infoViewSize.height
-                logger.debug("[LINK SIZE] \(model.message.id), \(bubbleSize.height)")
+            } else if options.contains(.poll) {
+                let pollSize = model.pollViewMeasure
+                bubbleSize = pollSize
+                if userNameSize == .zero {
+                    bubbleSize.height += 18
+                } else {
+                    bubbleSize.height += 2
+                }
+
+                bubbleSize.height += 20.0
+                let infoViewSize = InfoView.measure(model: model, appearance: appearance)
+                bubbleSize.height += infoViewSize.height
+                bubbleSize.height += 8.0
+                if model.message.poll?.anonymous == false {
+                    let actionButtonSize = BottomActionView.measure(model: model, appearance: appearance)
+                    bubbleSize.height += actionButtonSize.height
+                }
+            } else if options.contains(.unsupported) {
+                let unsupportedSize = model.unsupportedViewMeasure
+                bubbleSize = unsupportedSize
+                if userNameSize == .zero {
+                    bubbleSize.height += 18
+                } else {
+                    bubbleSize.height += 2
+                }
+
+                let infoViewSize = InfoView.measure(model: model, appearance: appearance)
+                bubbleSize.height += infoViewSize.height
             } else {
                 bubbleSize = model.attachmentsContainerSize
                 bubbleSize.width += 4
@@ -448,7 +533,6 @@ extension ChannelViewController {
                 bubbleSize.height += (model.textSize.height > 0 && model.showUserInfo) ? 8 : 2
                 bubbleSize.height += 8//Attachment padding
             }
-            logger.debug("IncomingMessageCell: measure 1 messageId: \(model.message.id), measure: \(bubbleSize) body: \(model.message.body)")
             if replySize != .zero {
                 bubbleSize.height += replySize.height
                 bubbleSize.width = max(bubbleSize.width, replySize.width)
@@ -461,7 +545,7 @@ extension ChannelViewController {
                 bubbleSize.height += userNameSize.height
                 bubbleSize.width = max(bubbleSize.width, userNameSize.width)
             }
-            logger.debug("IncomingMessageCell: measure 2 messageId: \(model.message.id), measure: \(bubbleSize) body: \(model.message.body)")
+            logger.debug("IncomingMessageCell: measure 2 messageId: \(model.message.id), measure: \(bubbleSize)")
             if model.hasReactions {
                 switch model.reactionType {
                 case .interactive:
@@ -476,7 +560,7 @@ extension ChannelViewController {
             if model.isLastDisplayedMessage {
                 bubbleSize.height += Components.messageCellUnreadMessagesSeparatorView.measure(model: model, appearance: appearance).height
             }
-            logger.debug("IncomingMessageCell: measure messageId: \(model.message.id), measure: \(bubbleSize) body: \(model.message.body)")
+            logger.debug("IncomingMessageCell: measure messageId: \(model.message.id), measure: \(bubbleSize)")
             return bubbleSize
         }
     }

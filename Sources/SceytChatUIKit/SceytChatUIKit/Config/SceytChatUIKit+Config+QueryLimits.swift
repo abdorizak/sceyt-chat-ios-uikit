@@ -16,14 +16,16 @@ extension SceytChatUIKit.Config {
         public var messageListQueryLimit: UInt
         public var attachmentListQueryLimit: UInt
         public var reactionListQueryLimit: UInt
-        
+        public var pollVotersListQueryLimit: UInt
+
         public init(
             channelListQueryLimit: UInt,
             channelMemberListQueryLimit: UInt,
             userListQueryLimit: UInt,
             messageListQueryLimit: UInt,
             attachmentListQueryLimit: UInt,
-            reactionListQueryLimit: UInt
+            reactionListQueryLimit: UInt,
+            pollVotersListQueryLimit: UInt
         ) {
             self.channelListQueryLimit = channelListQueryLimit
             self.channelMemberListQueryLimit = channelMemberListQueryLimit
@@ -31,6 +33,7 @@ extension SceytChatUIKit.Config {
             self.messageListQueryLimit = messageListQueryLimit
             self.attachmentListQueryLimit = attachmentListQueryLimit
             self.reactionListQueryLimit = reactionListQueryLimit
+            self.pollVotersListQueryLimit = pollVotersListQueryLimit
         }
     }
 }

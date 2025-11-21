@@ -76,26 +76,26 @@ public extension ChannelViewController {
         
         /// Wraps performBatchUpdates with state tracking and safe reload fallback
         open func performUpdates(_ updates: (() -> Void), completion: ((Bool) -> Void)? = nil) {
-            isPerformBatchUpdates = true
-            performBatchUpdates {
-                updates()
-            } completion: { [weak self] in
-                // Ensure we're back on the main queue before resetting flags and doing reload
-                DispatchQueue.main.async {[weak self] in
-                    if let self {
-                        isPerformBatchUpdates = false
-                        if needsReloadData {
-                            // Defer actual reload until batch updates are done
-                            reloadData()
-                            // Ensure layout is updated immediately without waiting for next runloop
-                            layoutIfNeeded()
+                isPerformBatchUpdates = true
+                performBatchUpdates {
+                    updates()
+                } completion: { [weak self] in
+                    // Ensure we're back on the main queue before resetting flags and doing reload
+                    DispatchQueue.main.async {[weak self] in
+                        if let self {
+                            isPerformBatchUpdates = false
+                            if needsReloadData {
+                                // Defer actual reload until batch updates are done
+                                reloadData()
+                                // Ensure layout is updated immediately without waiting for next runloop
+                                layoutIfNeeded()
+                            }
                         }
                     }
+                    completion?($0)
                 }
-                completion?($0)
             }
-        }
-        
+
         /// Override reloadData to prevent crashes if called during performBatchUpdates
         open override func reloadData() {
             // If batch updates are in progress, defer the reload
@@ -109,7 +109,7 @@ public extension ChannelViewController {
             layoutIfNeeded()
             needsReloadData = false
         }
-        
+
         open func reloadDataAndKeepOffset() {
             // stop scrolling
             setContentOffset(contentOffset, animated: false)
