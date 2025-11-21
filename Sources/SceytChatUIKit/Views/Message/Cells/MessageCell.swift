@@ -805,6 +805,7 @@ public extension MessageCell {
     enum HighlightMode {
         case reply
         case search
+        case mention
         case none
     }
 }
