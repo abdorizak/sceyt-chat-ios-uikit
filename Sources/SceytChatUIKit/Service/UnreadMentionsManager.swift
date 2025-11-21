@@ -21,11 +21,10 @@ public protocol UnreadMentionsManagerDelegate: AnyObject {
 public class UnreadMentionsManager: NSObject, ChannelDelegate {
     
     // MARK: - Properties
-    
+
     private let channelId: ChannelId
     private let database: Database
     private var cachedUnreadMentionIds: [MessageId] = []
-    private var currentIndex: Int = 0
     private var navigatedMentionIds: Set<MessageId> = []
     
     // Channel delegate identifier for registration
@@ -58,20 +57,17 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
     /// Fetches the next unread mention message ID
     /// - Returns: The next unread mention message ID, or nil if none available
     public func getNextUnreadMentionId() async -> MessageId? {
-        // If we have cached IDs, return the next one
-        if !cachedUnreadMentionIds.isEmpty && currentIndex < cachedUnreadMentionIds.count {
-            let messageId = cachedUnreadMentionIds[currentIndex]
-            currentIndex += 1
+        // If we have cached IDs, return and remove the first one
+        if !cachedUnreadMentionIds.isEmpty {
+            let messageId = cachedUnreadMentionIds.removeFirst()
             return messageId
         }
         
-        // If no cached IDs or we've exhausted them, fetch new ones
         await refreshUnreadMentions()
-        
-        // Return the first ID from the refreshed cache
+
+        // Return and remove the first ID from the refreshed cache
         if !cachedUnreadMentionIds.isEmpty {
-            let messageId = cachedUnreadMentionIds[currentIndex]
-            currentIndex += 1
+            let messageId = cachedUnreadMentionIds.removeFirst()
             return messageId
         }
         
@@ -88,40 +84,31 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
             let result = await query.loadNext()
 
             if let messages = result.1, !messages.isEmpty {
-                // Cache the message IDs and sort them in ascending order (oldest first)
-                // This ensures we navigate from old mentions to new ones
                 cachedUnreadMentionIds = messages.map { UInt64($0) }.sorted()
-                currentIndex = 0
-                logger.debug("Cached \(messages.count) unread mention IDs in chronological order")
             } else {
                 // Clear cache if no unread mentions
                 cachedUnreadMentionIds.removeAll()
-                currentIndex = 0
-                logger.debug("No unread mentions found")
             }
         } catch {
-            logger.error("Failed to fetch unread mentions: \(error)")
             // Clear cache on error
             cachedUnreadMentionIds.removeAll()
-            currentIndex = 0
         }
     }
     
-    /// Resets the cache and index
+    /// Resets the cache and navigated mentions
     public func reset() {
         cachedUnreadMentionIds.removeAll()
-        currentIndex = 0
         navigatedMentionIds.removeAll()
     }
     
     /// Returns whether there are cached unread mentions available
     public var hasUnreadMentions: Bool {
-        return currentIndex < cachedUnreadMentionIds.count
+        return !cachedUnreadMentionIds.isEmpty
     }
     
     /// Returns the number of cached unread mentions remaining
     public var remainingUnreadMentionsCount: Int {
-        return max(0, cachedUnreadMentionIds.count - currentIndex)
+        return cachedUnreadMentionIds.count
     }
     
     /// Marks a mention as navigated/seen by the user
@@ -137,7 +124,9 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
     /// Marks all navigated mentions as read on the server
     /// Returns the count of messages that were marked
     public func markNavigatedMentionsAsRead() -> Int {
-        guard !navigatedMentionIds.isEmpty else { return 0 }
+        guard !navigatedMentionIds.isEmpty else {
+            return 0
+        }
 
         // Convert to array for the API call
         let messageIds = Array(navigatedMentionIds)
@@ -146,49 +135,38 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
         // Clear navigated mentions after marking
         navigatedMentionIds.removeAll()
 
-        logger.debug("Marked \(count) mentions as displayed locally")
-
         return count
     }
     
-    /// Checks if all cached mentions have been navigated
+    /// Checks if all cached mentions have been navigated (cache is empty after navigation)
     public var hasNavigatedAllCachedMentions: Bool {
-        return currentIndex >= cachedUnreadMentionIds.count && !cachedUnreadMentionIds.isEmpty
+        return cachedUnreadMentionIds.isEmpty && !navigatedMentionIds.isEmpty
     }
     
     /// Adds a new mention message ID to the cache (for real-time mentions)
     public func addNewMention(_ messageId: MessageId) {
+        // Check if the messageId already exists in the cache
+        guard !cachedUnreadMentionIds.contains(messageId) else {
+            return
+        }
+
         // Find the correct position to insert the new mention to maintain chronological order
         // Since we want oldest first, newer messages (higher IDs) should go towards the end
         let insertionIndex = cachedUnreadMentionIds.firstIndex(where: { $0 > messageId }) ?? cachedUnreadMentionIds.count
-        
+
         // Insert at the correct position to maintain sorted order
         cachedUnreadMentionIds.insert(messageId, at: insertionIndex)
-        
-        // Adjust current index if the insertion happened before our current position
-        if insertionIndex <= currentIndex {
-            // Don't increment currentIndex as the user should still see this new mention
-            // when they continue navigating
-        }
-        
-        logger.debug("Added new mention to cache at position \(insertionIndex): \(messageId)")
     }
     
     /// Removes a mention message ID from the cache (for deleted mentions)
     public func removeMention(_ messageId: MessageId) {
         if let index = cachedUnreadMentionIds.firstIndex(of: messageId) {
             cachedUnreadMentionIds.remove(at: index)
-            
-            // Adjust current index if needed
-            if index < currentIndex {
-                currentIndex = max(0, currentIndex - 1)
-            }
-            
-            // Also remove from navigated mentions if present
-            navigatedMentionIds.remove(messageId)
-            
-            logger.debug("Removed mention from cache: \(messageId)")
         }
+
+        // Also remove from navigated mentions if present
+        let _ = navigatedMentionIds.contains(messageId)
+        navigatedMentionIds.remove(messageId)
     }
     
     // MARK: - ChannelDelegate
@@ -221,7 +199,9 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
         // Check if this message mentions the current user
         guard message.incoming,
               message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
-        else { return }
+        else {
+            return
+        }
 
         // Update cache and notify delegate
         addNewMention(message.id)
@@ -235,23 +215,22 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
     /// Handles when a message mentioning the current user is deleted
     private func handleDeletedMentionIfNeeded(message: Message) {
         var hadMentionBefore = false
-        
+
         // Check if message had mention before deletion
         database.read { context in
             if let existingMessage = MessageDTO.fetch(id: message.id, context: context) {
                 hadMentionBefore = existingMessage.mentionedUsers?.contains { $0.id == SceytChatUIKit.shared.currentUserId } == true
-                logger.debug("Message \(message.id) deletion check: hadMentionBefore = \(hadMentionBefore)")
             }
         }
-        
+
         // Only handle if message actually had mentions before deletion
-        guard hadMentionBefore else { return }
-        
-        logger.debug("Handling deleted mention for message: \(message.id) in channel: \(message.channelId)")
-        
+        guard hadMentionBefore else {
+            return
+        }
+
         // Update cache and notify delegate
         removeMention(message.id)
-        
+
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.delegate?.unreadMentionsManager(self, didDeleteMention: message)
@@ -261,19 +240,16 @@ public class UnreadMentionsManager: NSObject, ChannelDelegate {
     /// Handles when a message mentioning the current user is edited
     private func handleEditedMentionIfNeeded(message: Message) {
         var hadMentionBefore = false
-        
+
         // Check if message had mention before edit
         database.read { context in
             if let existingMessage = MessageDTO.fetch(id: message.id, context: context) {
                 hadMentionBefore = existingMessage.mentionedUsers?.contains { $0.id == SceytChatUIKit.shared.currentUserId } == true
-                logger.debug("Message \(message.id) edit check: hadMentionBefore = \(hadMentionBefore)")
             }
         }
-        
+
         // Check if mention status changed
         let hasMentionNow = message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
-
-        logger.debug("Handling edited mention for message: \(message.id), hadBefore: \(hadMentionBefore), hasNow: \(hasMentionNow)")
 
         guard hadMentionBefore || hasMentionNow else {
             return

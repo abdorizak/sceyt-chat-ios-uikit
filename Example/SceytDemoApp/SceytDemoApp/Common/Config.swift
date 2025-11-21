@@ -12,9 +12,9 @@ import SceytChatUIKit
 let users = ["zoe", "thomas", "ethan", "charlie", "william", "michael", "james", "john", "lily", "david", "grace", "emma", "olivia", "ben", "emily", "isabella", "sophia", "alice", "jacob"]
 
 struct Config {
-    static let sceytApiURL = "https://mp-api-staging-htgcloud-region-02.waafi.com"
-    static let sceytAppId = "yzr58x11rm"
-    static let genToken = "https://hm25ehfh6i.execute-api.eu-central-1.amazonaws.com/load-test/user/genToken?user="
+    static let sceytApiURL = "https://us-ohio-api.sceyt.com"
+    static let sceytAppId = "8lwox2ge93"
+    static let genToken = "https://vd3eaqzjli.execute-api.us-east-2.amazonaws.com/chat/token?user="
 }
 
 extension Config {

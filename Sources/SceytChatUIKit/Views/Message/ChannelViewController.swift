@@ -284,7 +284,7 @@ open class ChannelViewController: ViewController,
         updateTitle()
         unreadCountView.addTarget(self, action: #selector(unreadButtonAction(_:)), for: .touchUpInside)
 
-        unreadMentionCountView.addTarget(self, action: #selector(unreadMentionCountButtonAction(_:)), for: .touchDown)
+        unreadMentionCountView.addTarget(self, action: #selector(unreadMentionCountButtonAction(_:)), for: .touchUpInside)
 
         joinGlobalChannelButton.addTarget(self, action: #selector(joinButtonAction(_:)), for: .touchUpInside)
         titleView.profileImageView.isUserInteractionEnabled = false
@@ -542,7 +542,7 @@ open class ChannelViewController: ViewController,
             .sink { [weak self] value in
                 guard let self else { return }
                 unreadMentionCountView.unreadCount.value = appearance.unreadMentionCountAppearance.unreadCountFormatter.format(value)
-                self.unreadMentionCountView.isHidden = value == 0
+                unreadMentionCountView.isHidden = (value == 0)
 
                 if value == 0 {
                     self.channelViewModel.resetUnreadMentionsIfNeeded()
@@ -1148,7 +1148,8 @@ open class ChannelViewController: ViewController,
         {
             return true
         }
-        guard !(touch.view is ChannelViewController.ScrollDownView)
+        guard !(touch.view is ChannelViewController.ScrollDownView ||
+                touch.view is ChannelViewController.UnreadMentionCountView)
         else { return false }
         guard !(touch.view?.tag == 999)
         else { return false }
@@ -2234,13 +2235,13 @@ open class ChannelViewController: ViewController,
             @unknown default:
                 break
             }
-        case let .scrollAndSelect(indexPath, messageId):
+        case let .scrollAndSelect(indexPath, messageId, mentionMode):
             if selectMessageId == messageId,
                 lastAnimatedIndexPath == indexPath,
                collectionView.visibleAttributes.contains(where: {$0.indexPath == indexPath}) {
                 return
             }
-            var mode = MessageCell.HighlightMode.search
+            var mode = mentionMode ?? MessageCell.HighlightMode.search
             if channelViewModel.scrollToRepliedMessageId != 0 {
                 if userSelectOnRepliedMessage != nil {
                     mode = .reply
@@ -2253,7 +2254,7 @@ open class ChannelViewController: ViewController,
             }
             
             NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
-            if mode == .reply {
+            if mode == .reply || mode == .mention {
                 UIView.animate(withDuration: highlightedDurationForReplyMessage) { [weak self] in
                     NotificationCenter.default.post(name: .selectMessage, object: (messageId, MessageCell.HighlightMode.none))
                 }

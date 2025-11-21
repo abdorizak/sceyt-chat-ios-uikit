@@ -639,7 +639,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                         case .none:
                             break
                         }
-                        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId)
+                        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId, mode: nil)
                         resetStateAfterChangeEvent()
                         needToScroll = false
                     } else {
@@ -1168,6 +1168,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                     let min = filteredMessages.min(by: { $0.id < $1.id })
             else {
                 markMessagesTaskStarted = false
+                newMentionCount = UInt64(unreadMentionsManager.remainingUnreadMentionsCount)
                 return
             }
                         //
@@ -1177,6 +1178,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 markerName: marker.rawValue)
             {[weak self] error in
                 self?.markMessagesTaskStarted = false
+                
+                if error == nil {
+                    self?.updateMentionCountAfterMarkingDisplayed(messages: messages)
+                }
             }
         }
     }
@@ -1209,6 +1214,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 markerName: DefaultMarker.displayed.rawValue)
             {[weak self] error in
                 self?.markMessagesTaskStarted = false
+
+                // If marking was successful, update mention count
+                if error == nil {
+                    self?.updateMentionCountAfterMarkingDisplayed(messages: messages)
+                }
             }
         }
     }
@@ -2406,7 +2416,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     }
     
     open func scroll(to indexPath: IndexPath, messageId: MessageId) {
-        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId)
+        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId, mode: nil)
     }
     
     //MARK: Link preview
@@ -2874,7 +2884,7 @@ public extension ChannelViewModel {
         case reloadDataAndScrollToBottom
         case reloadDataAndScroll(indexPath: IndexPath, animated: Bool, pos: CollectionView.ScrollPosition)
         case reloadDataAndSelect(indexPath: IndexPath, messageId: MessageId)
-        case scrollAndSelect(indexPath: IndexPath, messageId: MessageId)
+        case scrollAndSelect(indexPath: IndexPath, messageId: MessageId, mode: MessageCell.HighlightMode?)
         case didSetUnreadIndexPath(indexPath: IndexPath)
         case typing(isTyping: Bool, user: ChatUser)
         case recording(isRecording: Bool, user: ChatUser)
@@ -2944,7 +2954,7 @@ public extension ChannelViewModel {
     /// Navigates to a specific message, handling loading if needed
     private func navigateToMessage(messageId: MessageId, isUnreadMention: Bool = false) {
         if let indexPath = indexPathOf(messageId: messageId) {
-            event = .scrollAndSelect(indexPath: indexPath, messageId: messageId)
+            event = .scrollAndSelect(indexPath: indexPath, messageId: messageId, mode: isUnreadMention ? .mention : nil)
             // Mark as navigated if this is an unread mention
             if isUnreadMention {
                 handleMentionNavigated(messageId: messageId)
@@ -2974,31 +2984,49 @@ public extension ChannelViewModel {
     private func checkAndMarkMentionsAsRead() async {
         // Get current navigated count before clearing
         let navigatedCount = unreadMentionsManager.navigatedMentionsCount
-        
-        // If user has navigated through several mentions or all cached mentions
-        let shouldMarkAsRead = navigatedCount >= 3 || 
-                              unreadMentionsManager.hasNavigatedAllCachedMentions
-        
-        if shouldMarkAsRead && navigatedCount > 0 {
+
+        if navigatedCount > 0 {
             await MainActor.run { [weak self] in
                 guard let self else { return }
                 
                 // Mark navigated mentions as read using the provider
-                let markedCount = unreadMentionsManager.markNavigatedMentionsAsRead()
-                
-                // Update local mention count
-                if markedCount > 0 {
-                    newMentionCount = max(0, newMentionCount - UInt64(markedCount))
-                }
+                let _ = unreadMentionsManager.markNavigatedMentionsAsRead()
+
+                newMentionCount = UInt64(unreadMentionsManager.remainingUnreadMentionsCount)
             }
         }
     }
-    
+
+    /// Updates mention count after messages are successfully marked as displayed
+    private func updateMentionCountAfterMarkingDisplayed(messages: [ChatMessage]) {
+        // Filter messages that mention the current user
+        let mentionedMessages = messages.filter { message in
+            message.incoming &&
+            message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
+        }
+
+        // If any messages had mentions, remove them from the cache and update count
+        guard !mentionedMessages.isEmpty else { return }
+
+        // Remove each mention from the cache
+        for message in mentionedMessages {
+            unreadMentionsManager.removeMention(message.id)
+        }
+
+        // Update the UI count on main thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
+        }
+    }
+
     /// Resets unread mentions cache when mention count becomes 0
     public func resetUnreadMentionsIfNeeded() {
-        if newMentionCount == 0 {
-            unreadMentionsManager.reset()
-        }
+        // Don't reset the cache based on newMentionCount
+        // The cache represents mentions we're currently navigating through
+        // It should only be cleared when explicitly refreshing or when truly exhausted
+        // newMentionCount represents server state, cachedUnreadMentionIds is local navigation state
+        logger.debug("[resetUnreadMentionsIfNeeded] Called with newMentionCount: \(newMentionCount), but NOT resetting cache")
     }
     
         /// Shows a message when no unread mentions are available
@@ -3015,12 +3043,8 @@ public extension ChannelViewModel {
                     guard let self else { return }
                     
                     // Mark any remaining navigated mentions as read
-                    let markedCount = unreadMentionsManager.markNavigatedMentionsAsRead()
-                    
-                    // Update local mention count
-                    if markedCount > 0 {
-                        newMentionCount = max(0, newMentionCount - UInt64(markedCount))
-                    }
+                    let _ = unreadMentionsManager.remainingUnreadMentionsCount
+                    newMentionCount = UInt64(unreadMentionsManager.remainingUnreadMentionsCount)
                 }
             }
         }
@@ -3038,9 +3062,8 @@ public extension ChannelViewModel {
         unreadMentionsManager.addNewMention(message.id)
         
         // Update the UI count on main thread
-        DispatchQueue.main.async { [weak self] in
-            self?.newMentionCount += 1
-            logger.debug("Added new real-time mention: \(message.id), new count: \(self?.newMentionCount ?? 0)")
+        DispatchQueue.main.async {
+            self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
         }
     }
 
@@ -3055,7 +3078,7 @@ public extension ChannelViewModel {
         // Update the UI count on main thread (ensure it doesn't go below 0)
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.newMentionCount = max(0, self.newMentionCount - 1)
+            self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
             logger.debug("Removed deleted mention: \(message.id), new count: \(self.newMentionCount)")
         }
     }
@@ -3078,7 +3101,7 @@ public extension ChannelViewModel {
             unreadMentionsManager.removeMention(message.id)
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                self.newMentionCount = max(0, self.newMentionCount - 1)
+                self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
                 logger.debug("Removed mention in edit: \(message.id), new count: \(self.newMentionCount)")
             }
         }
