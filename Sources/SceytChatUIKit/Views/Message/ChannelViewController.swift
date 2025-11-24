@@ -2255,7 +2255,7 @@ open class ChannelViewController: ViewController,
             
             NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
             if mode == .reply || mode == .mention {
-                UIView.animate(withDuration: highlightedDurationForReplyMessage) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + highlightedDurationForReplyMessage) {
                     NotificationCenter.default.post(name: .selectMessage, object: (messageId, MessageCell.HighlightMode.none))
                 }
             }

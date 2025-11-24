@@ -461,7 +461,7 @@ open class MessageCell: CollectionViewCell,
            let data,
            data.message.id == object.0 {
             highlightMode = object.1
-        } else if highlightMode != .none  {
+        } else {
             highlightMode = .none
         }
     }
