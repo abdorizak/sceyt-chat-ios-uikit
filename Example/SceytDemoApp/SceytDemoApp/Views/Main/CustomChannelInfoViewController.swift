@@ -10,11 +10,4 @@ import UIKit
 import SceytChatUIKit
 
 class CustomChannelInfoViewController: ChannelInfoViewController {
-    override func options() -> [ChannelInfoViewController.ActionItem] {
-        [
-            .init(title: appearance.optionTitles.notificationsTitleText,
-                  image: appearance.optionIcons.notificationsIcon,
-                  tag: ActionTag.notifications)
-        ]
-    }
 }

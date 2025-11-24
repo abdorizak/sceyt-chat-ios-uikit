@@ -864,6 +864,34 @@ public enum L10n {
     /// Preparing...
     public static let preparing = L10n.tr("Localizable", "upload.preparing", fallback: "Preparing...")
   }
+  public enum System {
+    public enum Message {
+      /// %@ added %@
+      public static func addGroupMember(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "system.message.addGroupMember", String(describing: p1), String(describing: p2), fallback: "%@ added %@")
+      }
+      /// %@ created the channel
+      public static func createChannel(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.createChannel", String(describing: p1), fallback: "%@ created the channel")
+      }
+      /// %@ created the group
+      public static func createGroup(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.createGroup", String(describing: p1), fallback: "%@ created the group")
+      }
+      /// %@ joined via invite link
+      public static func joinByInviteLink(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.joinByInviteLink", String(describing: p1), fallback: "%@ joined via invite link")
+      }
+      /// %@ left the group
+      public static func leaveGroup(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.leaveGroup", String(describing: p1), fallback: "%@ left the group")
+      }
+      /// %@ removed %@
+      public static func removeGroupMember(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "system.message.removeGroupMember", String(describing: p1), String(describing: p2), fallback: "%@ removed %@")
+      }
+    }
+  }
   public enum User {
     /// You
     public static let current = L10n.tr("Localizable", "user.current", fallback: "You")

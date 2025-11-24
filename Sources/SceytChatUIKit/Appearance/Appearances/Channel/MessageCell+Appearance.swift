@@ -370,7 +370,14 @@ extension MessageCell: AppearanceProviding {
         
         @Trackable<Appearance, any UnsupportedMessageFormatting>
         public var unsupportedMessageFormatter: any UnsupportedMessageFormatting
-        
+
+        // System message appearance
+        @Trackable<Appearance, UIFont>
+        public var systemMessageFont: UIFont
+
+        @Trackable<Appearance, UIColor>
+        public var systemMessageTextColor: UIColor
+
         // Initializer with all parameters
         public init(
             // Colors
@@ -449,7 +456,9 @@ extension MessageCell: AppearanceProviding {
             mentionUserNameFormatter: any UserFormatting,
             userDefaultAvatarProvider: any UserAvatarProviding,
             messageBodyFormatter: any MessageBodyFormatting,
-            unsupportedMessageFormatter: any UnsupportedMessageFormatting
+            unsupportedMessageFormatter: any UnsupportedMessageFormatting,
+            systemMessageFont: UIFont = Fonts.semiBold.withSize(12),
+            systemMessageTextColor: UIColor = .white
         ) {
             // Colors
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -528,6 +537,8 @@ extension MessageCell: AppearanceProviding {
             self._userDefaultAvatarProvider = Trackable(value: userDefaultAvatarProvider)
             self._messageBodyFormatter = Trackable(value: messageBodyFormatter)
             self._unsupportedMessageFormatter = Trackable(value: unsupportedMessageFormatter)
+            self._systemMessageFont = Trackable(value: systemMessageFont)
+            self._systemMessageTextColor = Trackable(value: systemMessageTextColor)
         }
         
         // Initializer with optional parameters
@@ -678,6 +689,8 @@ extension MessageCell: AppearanceProviding {
             self._userDefaultAvatarProvider = Trackable(reference: reference, referencePath: \.userDefaultAvatarProvider)
             self._messageBodyFormatter = Trackable(reference: reference, referencePath: \.messageBodyFormatter)
             self._unsupportedMessageFormatter = Trackable(reference: reference, referencePath: \.unsupportedMessageFormatter)
+            self._systemMessageFont = Trackable(reference: reference, referencePath: \.systemMessageFont)
+            self._systemMessageTextColor = Trackable(reference: reference, referencePath: \.systemMessageTextColor)
 
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let incomingBubbleColor { self.incomingBubbleColor = incomingBubbleColor }

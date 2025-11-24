@@ -107,6 +107,7 @@ extension SceytChatUIKit {
         public static var channelIncomingMessageCell: ChannelViewController.IncomingMessageCell.Type = ChannelViewController.IncomingMessageCell.self
         public static var channelMemberCell: ChannelMemberListViewController.MemberCell.Type = ChannelMemberListViewController.MemberCell.self
         public static var channelOutgoingMessageCell: ChannelViewController.OutgoingMessageCell.Type = ChannelViewController.OutgoingMessageCell.self
+        public static var channelSystemMessageCell: ChannelViewController.SystemMessageCell.Type = ChannelViewController.SystemMessageCell.self
         public static var channelInfoContainerCell: ChannelInfoViewController.ContainerCell.Type = ChannelInfoViewController.ContainerCell.self
         public static var channelInfoDateSeparatorView: ChannelInfoViewController.DateSeparatorView.Type = ChannelInfoViewController.DateSeparatorView.self
         public static var channelInfoDescriptionCell: ChannelInfoViewController.DescriptionCell.Type = ChannelInfoViewController.DescriptionCell.self

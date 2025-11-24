@@ -72,7 +72,7 @@
 "channel.info.action.join" = "join";
 "channel.info.action.more" = "more";
 
-"channel.info.item.title.autoDeleteMessages" = "Auto-Delete messages";
+"channel.info.item.title.autoDeleteMessages" = "Disappearing Messages";
 "channel.info.item.title.members" = "Members";
 "channel.info.item.title.subscribers" = "Subscribers";
 "channel.info.item.title.admins" = "Admins";
@@ -238,6 +238,14 @@
 "user.deleted" = "Deleted user";
 "user.inactive" = "Inactive user";
 "user.current" = "You";
+
+//System Messages
+"system.message.createGroup" = "%@ created the group";
+"system.message.createChannel" = "%@ created the channel";
+"system.message.addGroupMember" = "%@ added %@";
+"system.message.removeGroupMember" = "%@ removed %@";
+"system.message.leaveGroup" = "%@ left the group";
+"system.message.joinByInviteLink" = "%@ joined via invite link";
 
 //Presence
 "user.presence.online" = "online";

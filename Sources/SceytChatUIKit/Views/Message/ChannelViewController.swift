@@ -1427,6 +1427,14 @@ open class ChannelViewController: ViewController,
         model: MessageLayoutModel
     ) -> UICollectionViewCell {
         let message = model.message
+
+        // Handle system messages separately
+        if model.isSystemMessage {
+            let cell = collectionView.dequeueReusableCell(for: indexPath, cellType: Components.channelSystemMessageCell)
+            cell.data = model
+            return cell
+        }
+
         let type: MessageCell.Type =
         model.message.incoming ?
         Components.channelIncomingMessageCell :

@@ -52,7 +52,11 @@ open class MessageLayoutModel {
     open var hasPoll: Bool {
         return message.poll != nil && message.type == "poll" && message.state != .deleted
     }
-    
+
+    open var isSystemMessage: Bool {
+        return message.type == "system" && message.state != .deleted
+    }
+
     public private(set) var hasMediaAttachments: Bool = false
     public private(set) var hasFileAttachments: Bool = false
     public private(set) var hasVoiceAttachments: Bool = false
@@ -64,6 +68,7 @@ open class MessageLayoutModel {
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
     public private(set) var pollViewMeasure: CGSize = .zero
+    public private(set) var systemMessageMeasure: CGSize = .zero
     public private(set) var unsupportedViewMeasure: CGSize = .zero
     public private(set) var lastCharRect: CGRect
     public private(set) var replyCount = 0
@@ -215,6 +220,17 @@ open class MessageLayoutModel {
         }
         if hasPoll {
             contentOptions.insert(.poll)
+        }
+        if isSystemMessage {
+            contentOptions.insert(.system)
+            // System messages don't have attachments, links, or polls
+            contentOptions.remove(.text)
+            contentOptions.remove(.image)
+            contentOptions.remove(.file)
+            contentOptions.remove(.voice)
+            contentOptions.remove(.link)
+            contentOptions.remove(.poll)
+            textSize = .zero
         }
 
         // Check if message is unsupported
@@ -829,7 +845,13 @@ open class MessageLayoutModel {
         infoViewMeasure = Components.messageCellInfoView.measure(model: self, appearance: appearance)
         linkViewMeasure = hasPoll ? .zero : Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
         pollViewMeasure = hasPoll ? Components.messageCellPollView.measure(model: self, appearance: appearance) : .zero
+        systemMessageMeasure = isSystemMessage ? Components.channelSystemMessageCell.measure(model: self, appearance: appearance) : .zero
         unsupportedViewMeasure = Components.messageCellUnsupportedMessageView.measure(model: self, appearance: appearance)
+
+        if isSystemMessage {
+            return systemMessageMeasure
+        }
+
         if message.incoming {
             return Components.channelIncomingMessageCell.measure(model: self, appearance: appearance)
         } else {
@@ -867,10 +889,11 @@ public extension MessageLayoutModel {
         public static let link     = MessageContentOptions(rawValue: 1 << 4)
         public static let voice    = MessageContentOptions(rawValue: 1 << 5)
         public static let poll     = MessageContentOptions(rawValue: 1 << 6)
-        public static let unsupported = MessageContentOptions(rawValue: 1 << 7)
+        public static let system   = MessageContentOptions(rawValue: 1 << 7)
+        public static let unsupported = MessageContentOptions(rawValue: 1 << 8)
 
         public static let attachment: MessageContentOptions = [.image, .file, .voice]
-        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice, .poll, .unsupported]
+        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice, .poll, .system, .unsupported]
     }
     
     struct MessageUpdateOptions: OptionSet {
