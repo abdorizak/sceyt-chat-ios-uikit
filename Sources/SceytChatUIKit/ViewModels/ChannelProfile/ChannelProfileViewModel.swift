@@ -40,6 +40,7 @@ open class ChannelProfileViewModel: NSObject {
     public required init(channel: ChatChannel, appearance: MessageCell.Appearance) {
         self.channel = channel
         self.appearance = appearance
+        self.autoDelete = channel.messageRetentionPeriod
         channelProvider = Components.channelProvider
             .init(channelId: channel.id)
         userProvider = Components.userProvider
@@ -213,6 +214,33 @@ open class ChannelProfileViewModel: NSObject {
             updateChannel(uploadedAvatarUrl: nil)
         }
     }
+    
+    open func updateDisappearingMessageTime(_ timeInterval: TimeInterval) {
+        // Call API to set message retention period
+        // The SDK will automatically send a system message after successful update
+        self.autoDelete = timeInterval
+        channelProvider.setMessageRetentionPeriod(timeInterval: timeInterval) { [weak self] error in
+            guard let self = self else { return }
+
+            if let error = error {
+                // Revert to old value on error
+                self.autoDelete = self.channel.messageRetentionPeriod
+                // Send error event
+                self.event = .error(error)
+            } else {
+                // Reload channel from database to get updated messageRetentionPeriod
+                self.channelProvider.fetchChannel { [weak self] updatedChannel in
+                    guard let self = self, let updatedChannel = updatedChannel else {
+                        return
+                    }
+                    self.channel = updatedChannel
+                    self.autoDelete = updatedChannel.messageRetentionPeriod
+                    // Send update event to reload table
+                    self.event = .autoDeleteUpdated
+                }
+            }
+        }
+    }
 }
 
 public extension ChannelProfileViewModel {
@@ -233,5 +261,7 @@ public extension ChannelProfileViewModel {
     
     enum Event {
         case update
+        case error(Error)
+        case autoDeleteUpdated
     }
 }

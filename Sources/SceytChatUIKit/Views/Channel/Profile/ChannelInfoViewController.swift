@@ -188,6 +188,10 @@ open class ChannelInfoViewController: ViewController,
                 indexPaths.append(indexPath)
             }
             tableView.reloadRows(at: indexPaths, with: .none)
+        case .error(let error):
+            showAlert(error: error)
+        case .autoDeleteUpdated:
+            tableView.reloadData()
         }
     }
     
@@ -298,7 +302,11 @@ open class ChannelInfoViewController: ViewController,
             let action = (sections[indexPath.section] == .options ? options() : items())[indexPath.row]
             cell.iconView.image = action.image
             cell.titleLabel.text = action.title
-            if let toggle = action.toggle {
+
+            // Special handling for autoDelete to show formatted time
+            if action.tag == ActionTag.autoDeleteMessages {
+                cell.detailLabel.text = formatAutoDeleteTime(profileViewModel.autoDelete)
+            } else if let toggle = action.toggle {
                 cell.detailLabel.text = toggle ? L10n.Common.on : L10n.Common.off
             } else {
                 cell.detailLabel.text = nil
@@ -345,8 +353,7 @@ open class ChannelInfoViewController: ViewController,
             router.showAdminsList()
         case ActionTag.autoDeleteMessages:
             router.showAutoDeleteOptionsAlert(selected: { [weak self] in
-                self?.profileViewModel.autoDelete = $0.timeInterval
-                self?.tableView.reloadData()
+                self?.profileViewModel.updateDisappearingMessageTime($0.timeInterval)
             }, canceled: {})
         case ActionTag.messageSearch:
             router.goMessageSearch()
@@ -964,6 +971,32 @@ public extension ChannelInfoViewController {
         }
     }
     
+    // MARK: - Helper Methods
+
+    open func formatAutoDeleteTime(_ interval: TimeInterval) -> String {
+        if interval == 0 {
+            return L10n.Channel.Info.AutoDelete.off
+        }
+
+        let hours = Int(interval / 3600)
+        let days = hours / 24
+        let weeks = days / 7
+        let months = days / 30
+
+        if months > 0 && days % 30 == 0 {
+            return "\(months)mo"
+        } else if weeks > 0 && days % 7 == 0 {
+            return "\(weeks)w"
+        } else if days > 0 && hours % 24 == 0 {
+            return "\(days)d"
+        } else if hours > 0 {
+            return "\(hours)h"
+        } else {
+            let minutes = Int(interval / 60)
+            return "\(minutes)m"
+        }
+    }
+
     enum ActionTag {
         public static var mute = 10001
         public static var unmute = 10002

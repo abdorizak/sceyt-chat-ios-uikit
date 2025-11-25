@@ -239,6 +239,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     //MARK: Database observer events
     open func startDatabaseObserver(completion: @escaping () -> Void) {
+        provider.deleteExpiredAutoDeleteMessages()
+
         messageObserver.onWillChange = { [weak self] cache, items in
             return self?.onWillChangeEvent(cache: cache, items: items)
         }

@@ -185,7 +185,68 @@ open class ChannelProvider: DataProvider {
                 }
             }
     }
-    
+
+    open func setMessageRetentionPeriod(
+        timeInterval: TimeInterval,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        channelOperator
+            .setMessageRetentionPeriod(timeInterval: timeInterval) { channel, error in
+                if let channel = channel {
+                    self.database.write {
+                        $0.createOrUpdate(channel: channel)
+                    } completion: { dbError in
+                        logger.errorIfNotNil(dbError, "Store channel \(self.channelId) with messageRetentionPeriod \(timeInterval) in db")
+
+                        // Send system message after successful database update
+                        if dbError == nil {
+                            self.sendDisappearingMessageSystemMessage(timeInterval: timeInterval)
+                        }
+
+                        completion?(dbError)
+                    }
+                } else {
+                    logger.errorIfNotNil(error, "Set message retention period for channel \(self.channelId) with timeInterval \(timeInterval)")
+                    completion?(error)
+                }
+            }
+    }
+
+    private func sendDisappearingMessageSystemMessage(timeInterval: TimeInterval) {
+        // Create metadata model
+        let metadataModel = SystemMessageMetadata.DisappearingMessage.from(timeInterval: timeInterval)
+
+        // Encode to JSON string
+        guard let metadata = metadataModel.toJSONString() else {
+            logger.error("Failed to encode disappearing message metadata")
+            return
+        }
+
+        // Send system message with ADM body type
+        sendSystemMessage(body: "ADM", metadata: metadata)
+    }
+
+    private func sendSystemMessage(body: String, metadata: String? = nil) {
+        // Build system message
+        let builder = Message.Builder()
+            .type("system")
+            .body(body)
+            .silent(true)
+            .displayCount(0)
+
+        if let metadata = metadata {
+            builder.metadata(metadata)
+        }
+
+        let message = builder.build()
+        
+        ChannelMessageProvider(channelId: channelId)
+            .storePending(message: message) { _ in
+                ChannelMessageSender(channelId: self.channelId)
+                    .sendMessage(message)
+            }
+    }
+
     open func pin(
         completion: ((Error?) -> Void)? = nil
     ) {

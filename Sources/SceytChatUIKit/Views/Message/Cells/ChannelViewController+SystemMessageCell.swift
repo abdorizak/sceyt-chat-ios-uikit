@@ -89,7 +89,15 @@ extension ChannelViewController {
         open var data: MessageLayoutModel! {
             didSet {
                 guard let data else { return }
-                titleLabel.attributedText = data.attributedView.content
+                // Format system message using the system message body formatter
+                let formattedText = SceytChatUIKit.shared.formatters.systemMessageBodyFormatter.format(data.message)
+                titleLabel.attributedText = NSAttributedString(
+                    string: formattedText,
+                    attributes: [
+                        .font: MessageCell.appearance.systemMessageFont,
+                        .foregroundColor: MessageCell.appearance.systemMessageTextColor
+                    ]
+                )
                 var cn = contentInsets
                 cn.top = data.contentInsets.top
                 cn.bottom = data.contentInsets.bottom
@@ -109,7 +117,7 @@ extension ChannelViewController {
                 .calculateSize(
                     of: text,
                     config: .init(
-                        restrictingWidth: UIScreen.main.bounds.width - 48 - 48 - insets.left - insets.top,
+                        restrictingWidth: UIScreen.main.bounds.width - 48 - 48 - insets.left - insets.right,
                         font: appearance.systemMessageFont,
                         lastFragmentUsedRect: false
                     )).textSize

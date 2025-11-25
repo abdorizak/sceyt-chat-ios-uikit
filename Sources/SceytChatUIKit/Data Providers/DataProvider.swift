@@ -33,5 +33,13 @@ public extension DataProvider {
     static func refreshAllObjects(resetStalenessInterval: Bool = true, completion: (() -> Void)? = nil) {
         database.refreshAllObjects(resetStalenessInterval: resetStalenessInterval, completion: completion)
     }
+
+    /// Deletes expired auto-delete messages from the database
+    /// This is a global operation that should be called during sync or when starting database observers
+    static func deleteExpiredAutoDeleteMessages() {
+        database.write { context in
+            context.deleteExpiredAutoDeleteMessages()
+        }
+    }
 }
 

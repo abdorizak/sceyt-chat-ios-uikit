@@ -140,7 +140,6 @@ public class MessageDTO: NSManagedObject {
         replyCount = Int32(map.replyCount)
         displayCount = Int64(map.displayCount)
         disableMentionsCount = map.disableMentionsCount
-        
         if deliveryStatus == MessageDeliveryStatus.pending.rawValue {
             deliveryStatus = Int16(map.deliveryStatus.rawValue)
         } else if deliveryStatus == MessageDeliveryStatus.failed.rawValue,

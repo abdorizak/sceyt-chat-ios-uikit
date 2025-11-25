@@ -35,6 +35,7 @@ public class ChatChannel {
     public let lastMessage: ChatMessage?
     public let lastReaction: ChatMessage.Reaction?
     public let userRole: String?
+    public let messageRetentionPeriod: TimeInterval
     public var unSynched: Bool = false
     
     public var draftMessage: NSAttributedString?
@@ -70,6 +71,7 @@ public class ChatChannel {
         lastReaction: ChatMessage.Reaction? = nil,
         members: [ChatChannelMember]? = nil,
         userRole: String? = nil,
+        messageRetentionPeriod: TimeInterval = 0,
         draftMessage: NSAttributedString? = nil,
         unSynched: Bool = false
     ) {
@@ -97,6 +99,7 @@ public class ChatChannel {
         self.lastMessage = lastMessage
         self.lastReaction = lastReaction
         self.userRole = userRole
+        self.messageRetentionPeriod = messageRetentionPeriod
         self.draftMessage = draftMessage
         self.unSynched = unSynched
         if let metadata {
@@ -133,6 +136,7 @@ public class ChatChannel {
             lastMessage: dto.lastMessage == nil ? nil : .init(dto: dto.lastMessage!),
             lastReaction: dto.lastReaction == nil ? nil : .init(dto: dto.lastReaction!, convertMessage: true),
             userRole: dto.userRole?.name,
+            messageRetentionPeriod: dto.messageRetentionPeriod,
             draftMessage: dto.draft,
             unSynched: dto.unsynched
         )
@@ -179,7 +183,8 @@ public class ChatChannel {
             uri: channel.uri,
             lastMessage: channel.lastMessage.map { ChatMessage(message: $0, channelId: channel.id)},
             lastReaction: channel.lastReactions?.max(by: { $0.id > $1.id }).map { ChatMessage.Reaction(reaction: $0)},
-            userRole: channel.userRole)
+            userRole: channel.userRole,
+            messageRetentionPeriod: channel.messageRetentionPeriod)
         if self.channelType == .direct {
             members = channel.members?.map { .init(member: $0)}
         }

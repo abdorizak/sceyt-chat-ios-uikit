@@ -93,7 +93,8 @@ public protocol MessageDatabaseSession {
     func deleteAttachmentsFor(messageTid: Int64)
     func deleteAttachmentsFor(message: Message)
     func deleteAttachment(id: AttachmentId)
-    
+    func deleteExpiredAutoDeleteMessages()
+
     func updateAttachment(with filePath: String, chatMessage: ChatMessage, attachment: ChatMessage.Attachment)
     
     @discardableResult
@@ -1248,5 +1249,28 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         pollDTO.votesPerOption = votesPerOption as NSDictionary
 
         messageDTO.poll = pollDTO
+    }
+
+    public func deleteExpiredAutoDeleteMessages() {
+        // Calculate threshold: current time + 1 minute
+        // Delete messages where autoDeleteAt <= threshold
+        let threshold = Date().addingTimeInterval(60).bridgeDate
+
+        let fetchRequest = MessageDTO.fetchRequest()
+        fetchRequest.predicate = NSPredicate(
+            format: "autoDeleteAt != nil AND autoDeleteAt <= %@",
+            threshold
+        )
+
+        do {
+            let expiredMessages = try fetch(fetchRequest)
+            logger.verbose("Deleting \(expiredMessages.count) expired auto-delete messages")
+
+            for message in expiredMessages {
+                delete(message)
+            }
+        } catch {
+            logger.errorIfNotNil(error, "Failed to fetch expired auto-delete messages")
+        }
     }
 }
