@@ -20,8 +20,8 @@ extension MessageInputViewController {
                 send(URL, ChatMessage.Attachment.Metadata<[Int]>),
                 didStartRecording, didStopRecording
         }
-        
-        let onEvent: (Event) -> Void
+
+        var onEvent: ((Event) -> Void)?
         
         enum State {
             case unlock, lock, locked, cancel, recorded
@@ -86,7 +86,7 @@ extension MessageInputViewController {
                     {
                         recorder.stopRecording()
                         let metadata = recorder.metadata
-                        self.onEvent(.recorded(url: recorder.url, metadata: metadata))
+                        self.onEvent?(.recorded(url: recorder.url, metadata: metadata))
                     }
                     self.dismiss()
                 }
@@ -110,10 +110,9 @@ extension MessageInputViewController {
             NotificationCenter.default.removeObserver(self)
         }
         
-        init(onEvent: @escaping ((Event) -> Void)) {
-            self.onEvent = onEvent
+        public required init() {
             super.init(frame: UIScreen.main.bounds)
-            
+
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(didEnterBackgroundNotification),
@@ -141,7 +140,7 @@ extension MessageInputViewController {
         private var currentCenter: CGPoint?
         
         @objc
-        func onLongPress(_ gesture: UILongPressGestureRecognizer) {
+        open func onLongPress(_ gesture: UILongPressGestureRecognizer) {
             SimpleSinglePlayer.pause()
             
             guard state != .locked
@@ -157,12 +156,12 @@ extension MessageInputViewController {
                     Components.audioSession.requestRecordPermission { [weak self] allowed in
                         DispatchQueue.main.async { [weak self] in
                             if !allowed {
-                                self?.onEvent(.noPermission)
+                                self?.onEvent?(.noPermission)
                             }
                         }
                     }
                 default:
-                    onEvent(.noPermission)
+                    onEvent?(.noPermission)
                 }
             case .changed:
                 guard let startCenter else { return }
@@ -251,12 +250,12 @@ extension MessageInputViewController {
                     case .noPermission:
                         self.recordingState = .idle
                         self.slidingView.stopAnimating()
-                        self.onEvent(.noPermission)
+                        self.onEvent?(.noPermission)
                     case .recordingUnavailable:
                         self.recordingState = .idle
                         self.slidingView.stopAnimating()
                         self.reset()
-                        self.onEvent(.recordingUnavailable)
+                        self.onEvent?(.recordingUnavailable)
                     case .start:
                         self.recordingState = .start
                         self.slidingView.startAnimating()
@@ -265,13 +264,13 @@ extension MessageInputViewController {
                         self.recordingState = .stop
                         self.slidingView.stopAnimating()
                         self.slidingView.duration = 0
-                        self.onEvent(.didStopRecording)
+                        self.onEvent?(.didStopRecording)
                     case .maxDurationReached:
                         self.stopAndPreview()
                     }
                 }
                 recorder?.startRecording()
-                onEvent(.didStartRecording)
+                onEvent?(.didStartRecording)
             }
         }
         
@@ -293,7 +292,7 @@ extension MessageInputViewController {
                 reset(animated: animated)
             } else if state != .recorded, superview != nil {
                 reset(animated: animated)
-                onEvent(.send(recorder!.url, recorder!.metadata))
+                onEvent?(.send(recorder!.url, recorder!.metadata))
             }
         }
         
@@ -332,7 +331,7 @@ extension MessageInputViewController {
             recordingEventTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
                 guard let self = self else { return }
                 if self.recordingState == .start {
-                    self.onEvent(.didStartRecording)
+                    self.onEvent?(.didStartRecording)
                 }
             }
         }
@@ -372,7 +371,7 @@ extension MessageInputViewController {
         @objc
         private func onTapSend() {
             reset(animated: false)
-            onEvent(.send(recorder!.url, recorder!.metadata))
+            onEvent?(.send(recorder!.url, recorder!.metadata))
         }
         
         func stop() {

@@ -52,27 +52,31 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     public private(set) var nextState: State?
     
-    open lazy var recorderView = VoiceRecorderView { [weak self] in
-        guard let self else { return }
-        switch $0 {
-        case .noPermission:
-            self.showNoMicrophonePermission()
-        case .recordingUnavailable:
-            self.showRecordingUnavailable()
-        case let .recorded(url, metadata):
-            self.recordedView.isHidden = false
-            self.recordedView.setup(url: url, metadata: metadata)
-        case let .send(url, metadata):
-            if let url = Components.storage.copyFile(url) {
-                self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
-                self.action = .send(false)
+    open lazy var recorderView: VoiceRecorderView = {
+        let view = Components.messageInputVoiceRecorderView.init()
+        view.onEvent = { [weak self] event in
+            guard let self else { return }
+            switch event {
+            case .noPermission:
+                self.showNoMicrophonePermission()
+            case .recordingUnavailable:
+                self.showRecordingUnavailable()
+            case let .recorded(url, metadata):
+                self.recordedView.isHidden = false
+                self.recordedView.setup(url: url, metadata: metadata)
+            case let .send(url, metadata):
+                if let url = Components.storage.copyFile(url) {
+                    self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
+                    self.action = .send(false)
+                }
+            case .didStartRecording:
+                self.action = .didStartRecording
+            case .didStopRecording:
+                self.action = .didStopRecording
             }
-        case .didStartRecording:
-            self.action = .didStartRecording
-        case .didStopRecording:
-            self.action = .didStopRecording
         }
-    }
+        return view
+    }()
     
     open lazy var recordedView = Components.messageInputVoiceRecordPlaybackView.init()
         .withoutAutoresizingMask

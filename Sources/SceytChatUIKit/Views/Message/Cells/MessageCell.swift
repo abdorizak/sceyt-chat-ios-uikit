@@ -461,7 +461,7 @@ open class MessageCell: CollectionViewCell,
            let data,
            data.message.id == object.0 {
             highlightMode = object.1
-        } else if highlightMode != .none  {
+        } else {
             highlightMode = .none
         }
     }
@@ -805,6 +805,7 @@ public extension MessageCell {
     enum HighlightMode {
         case reply
         case search
+        case mention
         case none
     }
 }

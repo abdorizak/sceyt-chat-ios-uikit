@@ -166,6 +166,8 @@ extension SceytChatUIKit {
         public static var channelMessagesCollectionView: ChannelViewController.MessagesCollectionView.Type = ChannelViewController.MessagesCollectionView.self
         public static var channelMessagesCollectionViewLayout: ChannelViewController.MessagesCollectionViewLayout.Type = ChannelViewController.MessagesCollectionViewLayout.self
         public static var channelScrollDownView: ChannelViewController.ScrollDownView.Type = ChannelViewController.ScrollDownView.self
+        public static var channelUnreadMentionCountView: ChannelViewController.UnreadMentionCountView.Type = ChannelViewController.UnreadMentionCountView.self
+        public static var channelMentionScrollDownView: ChannelViewController.ScrollDownView.Type = ChannelViewController.ScrollDownView.self
         public static var channelInfoMediaCollectionView: ChannelInfoViewController.MediaCollectionView.Type = ChannelInfoViewController.MediaCollectionView.self
         public static var channelInfoFileCollectionView: ChannelInfoViewController.FileCollectionView.Type = ChannelInfoViewController.FileCollectionView.self
         public static var channelInfoLinkCollectionView: ChannelInfoViewController.LinkCollectionView.Type = ChannelInfoViewController.LinkCollectionView.self

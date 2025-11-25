@@ -14,7 +14,7 @@ extension ChannelViewController {
         open override var highlightMode: MessageCell.HighlightMode {
             didSet {
                 switch highlightMode {
-                case .reply:
+                case .reply, .mention:
                     bubbleView.backgroundColor = appearance.incomingHighlightedBubbleColor
                     replyView.backgroundColor = appearance.incomingHighlightedOverlayColor
                     linkView.arrangedSubviews.forEach { subview in

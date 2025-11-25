@@ -189,10 +189,21 @@ extension MessageInputViewController {
         
         open func onEvent(_ event: MentioningUserListViewModel.Event) {
             switch event {
-            case .change(_):
+            case let .change(paths):
                 if tableView.numberOfSections == 0 || tableView.numberOfRows(inSection: 0) == 0 {
                     tableView.alpha = 0
                     tableView.performBatchUpdates {
+                        // Ensure section 0 exists
+                        if tableView.numberOfSections == 0 {
+                            tableView.insertSections(IndexSet(integer: 0), with: .none)
+                        }
+
+                        // Insert all rows that need to be inserted
+                        let insertIndexPaths = paths.inserts.map { IndexPath(row: $0.row, section: 0) }
+                        let moveToIndexPaths = paths.moves.map { IndexPath(row: $0.to.row, section: 0) }
+                        tableView.insertRows(at: insertIndexPaths + moveToIndexPaths, with: .none)
+                        tableView.reloadRows(at: paths.updates.map { IndexPath(row: $0.row, section: 0) }, with: .none)
+                        tableView.deleteRows(at: paths.deletes.map { IndexPath(row: $0.row, section: 0) } + paths.moves.map { IndexPath(row: $0.from.row, section: 0) }, with: .none)
                     } completion: { [weak self] _ in
                         guard let self else { return }
                         self.tableView.alpha = 1
