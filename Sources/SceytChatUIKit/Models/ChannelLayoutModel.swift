@@ -135,7 +135,19 @@ open class ChannelLayoutModel {
     
     open func attributedBody() -> NSAttributedString {
         guard let message = lastMessage else { return NSAttributedString() }
-        
+
+        // Handle system messages
+        if message.type == "system" {
+            let formattedText = SceytChatUIKit.shared.formatters.systemMessageBodyFormatter.format(message)
+            return NSAttributedString(
+                string: formattedText,
+                attributes: [
+                    .font: appearance.lastMessageLabelAppearance.font,
+                    .foregroundColor: appearance.lastMessageLabelAppearance.foregroundColor
+                ]
+            )
+        }
+
         let attributedString: NSAttributedString
         switch message.state {
         case .deleted:

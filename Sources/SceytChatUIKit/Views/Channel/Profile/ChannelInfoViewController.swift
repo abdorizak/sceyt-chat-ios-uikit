@@ -503,7 +503,7 @@ open class ChannelInfoViewController: ViewController,
                   image: appearance.optionIcons.notificationsIcon,
                   tag: ActionTag.notifications)
         ]
-        if profileViewModel.isOwner || profileViewModel.isAdmin {
+        if profileViewModel.isOwner || profileViewModel.isAdmin || profileViewModel.isDirectChannel {
             actions += [
                 .init(title: appearance.optionTitles.autoDeleteMessagesTitleText,
                       image: appearance.optionIcons.autoDeleteMessagesIcon,

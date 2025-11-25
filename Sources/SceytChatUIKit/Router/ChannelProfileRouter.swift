@@ -28,7 +28,6 @@ open class ChannelProfileRouter: Router<ChannelInfoViewController> {
             .init(title: item.title, style: .default) { selected(item) }
         }
         
-
         actions += [.init(title: L10n.Alert.Button.cancel, style: .cancel) { canceled() }]
 
         rootViewController.showBottomSheet(
