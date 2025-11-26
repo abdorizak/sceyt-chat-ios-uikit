@@ -839,10 +839,12 @@ open class ChannelInfoViewController: ViewController,
                         self?.profileViewModel
                             .deleteAllMessages(forEveryone: forEveryone) { [weak self] error in
                                 guard let self else { return }
-                                if let error = error {
-                                    self.showAlert(error: error)
-                                } else {
-                                    self.router.goChannelListViewController()
+                                DispatchQueue.main.async {
+                                    if let error = error {
+                                        self.showAlert(error: error)
+                                    } else {
+                                        self.router.goChannelListViewController()
+                                    }
                                 }
                             }
                     }

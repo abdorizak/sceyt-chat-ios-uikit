@@ -209,7 +209,6 @@ public final class SyncService: NSObject {
             
             let channelsResult = results?.0
             let operations = Operations.syncChannelOperations(undeleteChannelIds: results?.2 ?? []) { channels in
-                DataProvider.deleteExpiredAutoDeleteMessages()
                 for channel in channels where channel.lastDisplayedMessageId != 0  {
                     let cachedId = channelsResult?[channel.id] ?? 0
                     let minDisplayId = cachedId != 0 ? min(cachedId, channel.lastDisplayedMessageId) : channel.lastDisplayedMessageId
