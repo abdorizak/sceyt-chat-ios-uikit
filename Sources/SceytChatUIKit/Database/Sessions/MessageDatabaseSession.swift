@@ -162,7 +162,7 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         if let channel = ownerChannel {
             if let lastMessage = channel.lastMessage {
                 // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
-                let threshold = Date().addingTimeInterval(60)
+                let threshold = Date().addingTimeInterval(-60)
                 let isLastMessageAutoDeleted = lastMessage.autoDeleteAt != nil && lastMessage.autoDeleteAt!.bridgeDate <= threshold
                 if isLastMessageAutoDeleted {
                     channel.lastMessage = dto
@@ -1261,7 +1261,7 @@ extension NSManagedObjectContext: MessageDatabaseSession {
     public func deleteExpiredAutoDeleteMessages() {
         // Calculate threshold: current time + 1 minute
         // Delete messages where autoDeleteAt <= threshold
-        let threshold = Date().addingTimeInterval(60).bridgeDate
+        let threshold = Date().addingTimeInterval(-60).bridgeDate
 
         let fetchRequest = MessageDTO.fetchRequest()
         fetchRequest.predicate = NSPredicate(

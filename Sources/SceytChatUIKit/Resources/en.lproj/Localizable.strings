@@ -248,7 +248,7 @@
 "system.message.removeGroupMember" = "%@ removed %@";
 "system.message.leaveGroup" = "%@ left the group";
 "system.message.joinByInviteLink" = "%@ joined via invite link";
-"system.message.setDisappearingMessageTime" = "%@ set disappearing message time to %@";
+"system.message.setDisappearingMessageTime" = "%@ set the disappearing messages timer to %@";
 "system.message.disableDisappearingMessages" = "%@ disabled disappearing messages";
 
 //Time Intervals

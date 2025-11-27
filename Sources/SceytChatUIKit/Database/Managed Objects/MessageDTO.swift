@@ -218,7 +218,7 @@ public extension MessageDTO {
 
     static func lastMessage(predicate: NSPredicate, context: NSManagedObjectContext) -> MessageDTO? {
         // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
-        let threshold = Date().addingTimeInterval(60).bridgeDate
+        let threshold = Date().addingTimeInterval(-60).bridgeDate
         let autoDeletePredicate = NSPredicate(format: "autoDeleteAt == nil OR autoDeleteAt > %@", threshold)
         let combinedPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, autoDeletePredicate])
 

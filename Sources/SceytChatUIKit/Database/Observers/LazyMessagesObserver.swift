@@ -15,8 +15,7 @@ open class LazyMessagesObserver: LazyDatabaseObserver<MessageDTO, ChatMessage> {
         loadRangeProvider: LoadRangeProvider,
         itemCreator: @escaping (MessageDTO) -> ChatMessage
     ) {
-        // Calculate the threshold: current time - 1 minute
-        let autoDeleteThreshold = Date().addingTimeInterval(-60) // 1 minute late
+        let autoDeleteThreshold = Date().addingTimeInterval(-60)
 
         defaultFetchPredicate = NSPredicate(
             format: "channelId == %lld AND repliedInThread == false AND replied == false AND unlisted == false AND (autoDeleteAt == nil OR autoDeleteAt > %@)",

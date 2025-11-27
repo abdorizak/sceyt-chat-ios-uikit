@@ -894,9 +894,9 @@ public enum L10n {
       public static func removeGroupMember(_ p1: Any, _ p2: Any) -> String {
         return L10n.tr("Localizable", "system.message.removeGroupMember", String(describing: p1), String(describing: p2), fallback: "%@ removed %@")
       }
-      /// %@ set disappearing message time to %@
+      /// %@ set the disappearing messages timer to %@
       public static func setDisappearingMessageTime(_ p1: Any, _ p2: Any) -> String {
-        return L10n.tr("Localizable", "system.message.setDisappearingMessageTime", String(describing: p1), String(describing: p2), fallback: "%@ set disappearing message time to %@")
+        return L10n.tr("Localizable", "system.message.setDisappearingMessageTime", String(describing: p1), String(describing: p2), fallback: "%@ set the disappearing messages timer to %@")
       }
     }
   }
