@@ -11,21 +11,21 @@ extension ChannelViewController {
 
     open class SystemMessageCell: CollectionViewCell, MessageCellMeasurable {
 
-        public static var titleContentInsets: UIEdgeInsets = .init(top: 0, left: 8, bottom: 0, right: 8)
+        public static var titleContentInsets: UIEdgeInsets = .init(top: 2, left: 8, bottom: 2, right: 8)
 
         open lazy var unreadView: MessageCell.UnreadMessagesSeparatorView = {
             return $0.withoutAutoresizingMask
         }(MessageCell.UnreadMessagesSeparatorView())
 
         open lazy var blurView: CustomBlurEffectView = {
-            let blur = CustomBlurEffectView(radius: 10, color: UIColor(hex: "0x000000").withAlphaComponent(0.5), colorAlpha: 0.5)
-            blur.layer.cornerRadius = 10
+            let blur = CustomBlurEffectView(radius: 11, color: UIColor(hex: "0x000000").withAlphaComponent(0.5), colorAlpha: 0.5)
+            blur.layer.cornerRadius = 11
             blur.clipsToBounds = true
             return blur.withoutAutoresizingMask
         }()
 
         open lazy var titleContentView: UIView = {
-            $0.layer.cornerRadius = 10
+            $0.layer.cornerRadius = 11
             $0.clipsToBounds = true
             return $0.withoutAutoresizingMask
         }(UIView())
@@ -78,7 +78,7 @@ extension ChannelViewController {
             layoutConstraint! += [
                 titleLabel.bottomAnchor.pin(to: unreadView.topAnchor, constant: -contentInsets.bottom)
             ]
-            titleLabel.heightAnchor.pin(greaterThanOrEqualToConstant: 20)
+            titleLabel.heightAnchor.pin(greaterThanOrEqualToConstant: 22)
         }
 
         open override func setupAppearance() {
@@ -112,17 +112,24 @@ extension ChannelViewController {
             appearance: MessageCell.Appearance
         ) -> CGSize {
             let text = SceytChatUIKit.shared.formatters.systemMessageBodyFormatter.format(model.message)
+            let attributedText = NSAttributedString(
+                string: text,
+                attributes: [
+                    .font: appearance.systemMessageFont,
+                    .foregroundColor: appearance.systemMessageTextColor
+                ]
+            )
             let insets = titleContentInsets
             var size: CGSize = TextSizeMeasure
                 .calculateSize(
-                    of: text,
+                    of: attributedText,
                     config: .init(
                         restrictingWidth: UIScreen.main.bounds.width - 48 - 48 - insets.left - insets.right,
                         font: appearance.systemMessageFont,
                         lastFragmentUsedRect: false
                     )).textSize
-            if size.height < 20 {
-                size.height = 20
+            if size.height < 22 {
+                size.height = 22
             } else {
                 size.height += insets.bottom + insets.top
             }

@@ -218,6 +218,9 @@ open class ChannelProfileViewModel: NSObject {
     open func updateDisappearingMessageTime(_ timeInterval: TimeInterval) {
         // Call API to set message retention period
         // The SDK will automatically send a system message after successful update
+        guard self.channel.messageRetentionPeriod != timeInterval else {
+            return
+        }
         self.autoDelete = timeInterval
         channelProvider.setMessageRetentionPeriod(timeInterval: timeInterval) { [weak self] error in
             guard let self = self else { return }
