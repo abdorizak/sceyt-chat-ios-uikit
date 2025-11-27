@@ -110,10 +110,10 @@ extension ChannelListViewController {
             contentView.addSubview(badgeStackView)
             contentView.addSubview(muteView)
             contentView.addSubview(avatarView)
+            contentView.addSubview(retentionBadgeView)
             contentView.addSubview(dateLabel)
             contentView.addSubview(ticksView)
             contentView.addSubview(presenceView)
-            contentView.addSubview(retentionBadgeView)
             contentView.addSubview(separatorView)
             
             avatarView.pin(to: contentView, anchors: [

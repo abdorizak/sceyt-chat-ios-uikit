@@ -161,12 +161,19 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         
         if let channel = ownerChannel {
             if let lastMessage = channel.lastMessage {
-                if lastMessage.id != 0 && dto.id != 0 {
-                    if lastMessage.id <= dto.id {
+                // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
+                let threshold = Date().addingTimeInterval(60)
+                let isLastMessageAutoDeleted = lastMessage.autoDeleteAt != nil && lastMessage.autoDeleteAt!.bridgeDate <= threshold
+                if isLastMessageAutoDeleted {
+                    channel.lastMessage = dto
+                } else {
+                    if lastMessage.id != 0 && dto.id != 0 {
+                        if lastMessage.id <= dto.id {
+                            channel.lastMessage = dto
+                        }
+                    } else if lastMessage.createdAt.bridgeDate < dto.createdAt.bridgeDate {
                         channel.lastMessage = dto
                     }
-                } else if lastMessage.createdAt.bridgeDate < dto.createdAt.bridgeDate {
-                    channel.lastMessage = dto
                 }
             } else {
                 channel.lastMessage = dto
