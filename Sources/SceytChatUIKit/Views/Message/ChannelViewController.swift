@@ -2260,10 +2260,13 @@ open class ChannelViewController: ViewController,
             } else {
                 selectMessageId = messageId
             }
+            var delayToSelect: TimeInterval = 0.3
+            DispatchQueue.main.asyncAfter(deadline: .now() + delayToSelect) {
+                NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
+            }
             
-            NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
             if mode == .reply || mode == .mention {
-                DispatchQueue.main.asyncAfter(deadline: .now() + highlightedDurationForReplyMessage) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + highlightedDurationForReplyMessage + delayToSelect) {
                     NotificationCenter.default.post(name: .selectMessage, object: (messageId, MessageCell.HighlightMode.none))
                 }
             }
