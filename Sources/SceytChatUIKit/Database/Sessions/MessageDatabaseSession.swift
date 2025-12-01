@@ -530,6 +530,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             })
             if bodyAttributeDTO == nil {
                 bodyAttributeDTO = BodyAttributeDTO.insertNewObject(into: self).map(bodyAttribute)
+            } else {
+                bodyAttributeDTO.map(bodyAttribute)
             }
             bodyAttributeDTO.message = dto
             dto.bodyAttributes?.insert(bodyAttributeDTO)
