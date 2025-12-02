@@ -33,9 +33,6 @@ extension SceytChatUIKit {
         
         public var messageAutoDeleteOptions: [IntervalOption] = [
             IntervalOption(title: L10n.Channel.Info.AutoDelete.off, timeInterval: 0),
-            IntervalOption(title: "3 minutes", timeInterval: 60 * 3),
-            IntervalOption(title: "5 minutes", timeInterval: 60 * 5),
-            IntervalOption(title: "10 minutes", timeInterval: 60 * 10),
             IntervalOption(title: L10n.Channel.Info.AutoDelete.oneDay, timeInterval: 1.days),
             IntervalOption(title: L10n.Channel.Info.AutoDelete.oneWeek, timeInterval: 1.weeks),
             IntervalOption(title: L10n.Channel.Info.AutoDelete.oneMonth, timeInterval: 1.months)
