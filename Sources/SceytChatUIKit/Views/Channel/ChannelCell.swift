@@ -141,7 +141,6 @@ extension ChannelListViewController {
             messageStackView.trailingAnchor.pin(lessThanOrEqualTo: dateLabel.trailingAnchor)
             messageStackViewCenterYConstraint = messageStackView.centerYAnchor.pin(to: contentView.centerYAnchor, activate: false)
             updateCenterYConstraint()
-            messageLabel.trailingAnchor.pin(lessThanOrEqualTo: dateLabel.trailingAnchor)
             messageLabel.trailingAnchor.pin(lessThanOrEqualTo: badgeStackView.leadingAnchor)
             
             muteView.centerYAnchor.pin(to: subjectLabel.centerYAnchor)
