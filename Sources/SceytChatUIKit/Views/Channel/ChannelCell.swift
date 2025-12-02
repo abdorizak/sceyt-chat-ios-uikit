@@ -280,7 +280,7 @@ extension ChannelListViewController {
             pinView.isHidden = data.channel.pinnedAt == nil
             backgroundColor = data.channel.pinnedAt == nil ? .clear : appearance.backgroundColor
             ticksView.image = deliveryStatusImage(message: data.lastMessage)
-            ticksView.isHidden = data.lastMessage?.state == .deleted
+            ticksView.isHidden = !data.shouldShowDeliveryTick
             unreadCount.value = data.formattedUnreadCount
             if unreadCount.isHidden, data.channel.unread {
                 unreadCount.isHidden = false

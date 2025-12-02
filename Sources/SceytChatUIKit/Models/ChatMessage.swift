@@ -548,4 +548,26 @@ public extension ChatMessage {
     }
 }
 
+// MARK: - Message Type Helpers
+public extension ChatMessage {
+    /// Predefined message type constants
+    struct MessageType {
+        public static let text = "text"
+        public static let media = "media"
+        public static let file = "file"
+        public static let link = "link"
+        public static let system = "system"
+        public static let poll = "poll"
+    }
+
+    /// Returns true if this is a system message
+    var isSystemMessage: Bool {
+        return type == MessageType.system
+    }
+
+    /// Returns true if this is a poll message
+    var isPollMessage: Bool {
+        return type == MessageType.poll && poll != nil
+    }
+}
 
