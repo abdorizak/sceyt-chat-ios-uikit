@@ -11,33 +11,25 @@ import SceytChat
 
 open class ChannelMemberListViewController: ViewController,
                                 UITableViewDelegate,
-                                UITableViewDataSource,
-                                UISearchControllerDelegate,
-                                UISearchBarDelegate {
+                                UITableViewDataSource {
     
     open var memberListViewModel: ChannelMemberListViewModel!
     open lazy var router = Components.channelMemberListRouter
         .init(rootViewController: self)
-    
-    open lazy var searchController = Components.searchController.init(searchResultsController: nil)
-    
+
     open lazy var tableView = UITableView()
         .withoutAutoresizingMask
         .rowAutomaticDimension
     
     open override func setup() {
         super.setup()
-        
+
         if memberListViewModel.shouldShowOnlyAdmins {
             title = L10n.Channel.Info.Admins.title
         } else {
             title = L10n.Channel.Info.Members.title
         }
-        
-        navigationItem.searchController = searchController
-        searchController.delegate = self
-        searchController.searchBar.delegate = self
-        
+
         tableView.register(Components.channelMemberCell.self)
         tableView.register(Components.channelAddMemberCell.self)
         tableView.delegate = self
@@ -45,14 +37,13 @@ open class ChannelMemberListViewController: ViewController,
         tableView.separatorStyle = .none
         tableView.sectionFooterHeight = 0
         tableView.sectionHeaderHeight = 0
-        memberListViewModel.startDatabaseObserver()
         memberListViewModel.$event
             .compactMap { $0 }
             .sink { [weak self] in
                 self?.onEvent($0)
             }.store(in: &subscriptions)
         memberListViewModel.loadMembers()
-        
+
         view.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onLongPress)))
     }
     
@@ -69,18 +60,6 @@ open class ChannelMemberListViewController: ViewController,
         navigationController?.navigationBar.apply(appearance: appearance.navigationBarAppearance)
         view.backgroundColor = appearance.backgroundColor
         tableView.backgroundColor = .clear
-    }
-    
-    open override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        navigationItem.hidesSearchBarWhenScrolling = false
-    }
-    
-    open override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        navigationItem.hidesSearchBarWhenScrolling = true
     }
     
     open func onEvent(_ event: ChannelMemberListViewModel.Event) {
@@ -121,10 +100,6 @@ open class ChannelMemberListViewController: ViewController,
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        if indexPath.item > memberListViewModel.numberOfMembers - 10 {
-            memberListViewModel.loadMembers()
-        }
-
         if indexPath.section == 0, memberListViewModel.hasActionRows {
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: Components.channelAddMemberCell.self)
             cell.parentAppearance = appearance.addCellAppearance
@@ -178,6 +153,21 @@ open class ChannelMemberListViewController: ViewController,
                     self.showAlert(error: error)
                 }
             }
+        }
+    }
+
+    open func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Determine the member section based on whether there are action rows
+        let memberSection = memberListViewModel.hasActionRows ? 1 : 0
+
+        // Only check for pagination in the member section
+        guard indexPath.section == memberSection else { return }
+
+        let totalMembers = memberListViewModel.numberOfItems(section: memberSection)
+
+        // Load next page when displaying the last cell
+        if indexPath.row == totalMembers - 1 {
+            memberListViewModel.loadMembers()
         }
     }
     
@@ -278,33 +268,5 @@ open class ChannelMemberListViewController: ViewController,
         if !actions.isEmpty {
             showBottomSheet(actions: actions, withCancel: true)
         }
-    }
-    
-    // MARK: UISearchControllerDelegate delegates
-    
-    open func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchController.resignFirstResponder()
-    }
-    
-    open func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.text = nil
-        memberListViewModel.cancelSearch()
-    }
-    
-    private var lastSearchText: String?
-    open func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        NSObject.cancelPreviousPerformRequests(withTarget: memberListViewModel!, selector: #selector(ChannelMemberListViewModel.search(query:)), object: lastSearchText)
-        if let text = searchBar.text, !text.isEmpty {
-            lastSearchText = text
-            memberListViewModel.perform(#selector(ChannelMemberListViewModel.search(query:)), with: text, afterDelay: 0.01)
-        } else {
-            memberListViewModel.cancelSearch()
-        }
-    }
-    
-    open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        
-        searchController.setupAppearance()
     }
 }

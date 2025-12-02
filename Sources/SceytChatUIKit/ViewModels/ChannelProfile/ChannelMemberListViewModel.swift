@@ -16,7 +16,10 @@ open class ChannelMemberListViewModel: NSObject {
     public let filterMembersByRole: String?
     public let provider: ChannelMemberListProvider
     public let channelProvider: ChannelProvider
-    
+
+    // Direct members array from server
+    private var members: [ChatChannelMember] = []
+
     public var addTitle: String {
         if shouldShowOnlyAdmins {
             return L10n.Channel.Add.Admins.title
@@ -42,29 +45,6 @@ open class ChannelMemberListViewModel: NSObject {
     }
     
     @Published public var event: Event?
-    
-    public var isSearching = false
-    
-    public lazy var defaultPredicate: NSPredicate = {
-        var predicate = NSPredicate(format: "channelId == %lld", channel.id)
-        if let filterMembersByRole {
-            predicate = predicate.and(predicate: .init(format: "role.name == %@", filterMembersByRole))
-        }
-        return predicate
-    }()
-
-    public private(set) lazy var memberObserver: DatabaseObserver<MemberDTO, ChatChannelMember> = {
-        return DatabaseObserver<MemberDTO, ChatChannelMember>(
-            request: MemberDTO.fetchRequest()
-                .fetch(predicate: defaultPredicate)
-                .sort(descriptors: [
-                    .init(keyPath: \MemberDTO.user?.firstName, ascending: true),
-                    .init(keyPath: \MemberDTO.user?.lastName, ascending: true),
-                    .init(keyPath: \MemberDTO.channelId, ascending: true)
-                ]),
-            context: SceytChatUIKit.shared.database.viewContext
-        ) { $0.convert() }
-    }()
 
     public required init(channel: ChatChannel,
                          filterMembersByRole: String? = nil) {
@@ -94,32 +74,13 @@ open class ChannelMemberListViewModel: NSObject {
         return canAddMembers && SceytChatUIKit.shared.config.channelInviteDeepLinkConfig != nil
     }
 
-    open func startDatabaseObserver() {
-        memberObserver.onDidChange = {[weak self] in
-            self?.onDidChangeEvent(items: $0)
-        }
-        do {
-            try memberObserver.startObserver()
-        } catch {
-            logger.errorIfNotNil(error, "observer.startObserver")
-        }
-    }
-
     open var shouldShowOnlyAdmins: Bool {
         filterMembersByRole == SceytChatUIKit.shared.config.memberRolesConfig.admin
     }
-    
-    open func onDidChangeEvent(items: DBChangeItemPaths) {
-        guard !isSearching
-        else {
-            event = .reload
-            return
-        }
-        event = .change(.init(changes: items, section: hasActionRows ? 1 : 0))
-    }
 
     open func member(at indexPath: IndexPath) -> ChatChannelMember? {
-        return memberObserver.item(at: .init(row: indexPath.row, section: 0))
+        guard indexPath.row < members.count else { return nil }
+        return members[indexPath.row]
     }
     
     open var numberOfSections: Int {
@@ -142,19 +103,32 @@ open class ChannelMemberListViewModel: NSObject {
         case (0, true):
             return numberOfActionRows
         case (1, true), (0, false):
-            return memberObserver.numberOfItems(in: 0)
+            return members.count
         default:
             return 0
-            
+
         }
     }
     
     var numberOfMembers: Int {
-        memberObserver.numberOfItems(in: 0)
+        members.count
     }
 
     open func loadMembers() {
-        provider.loadMembers()
+        provider.loadMembers { [weak self] fetchedMembers in
+            guard let self = self, fetchedMembers.count > 0 else { return }
+            self.members.append(contentsOf: fetchedMembers)
+            self.event = .reload
+        }
+    }
+
+    open func loadNextPageIfNeeded() {
+        guard provider.hasNext else { return }
+        loadMembers()
+    }
+
+    open var hasMoreMembers: Bool {
+        provider.hasNext
     }
 
     open func canChangeMemberRoleToOwner(memberAt indexPath: IndexPath) -> Bool {
@@ -220,33 +194,6 @@ open class ChannelMemberListViewModel: NSObject {
                                 members: members) { channel, error in
                 completion?(channel, error)
             }
-    }
-    
-    @objc
-    open func search(query: String) {
-        isSearching = true
-        var predicate = NSPredicate(format: "channelId == %lld", channel.id)
-        if let filterMembersByRole {
-            predicate = predicate.and(predicate: .init(format: "role.name == %@", filterMembersByRole))
-        }
-        predicate = predicate.and(predicate: .init(format: "user.firstName CONTAINS[c] %@ OR user.lastName CONTAINS[c] %@", query, query))
-        do {
-            try memberObserver.update(predicate: predicate)
-            provider.loadMembers()
-        } catch {
-            logger.errorIfNotNil(error, "")
-        }
-    }
-    
-    open func cancelSearch() {
-        guard isSearching else { return }
-        do {
-            try memberObserver.update(predicate: defaultPredicate)
-            provider.loadMembers()
-        } catch {
-            logger.errorIfNotNil(error, "")
-        }
-        isSearching = false
     }
 }
 
