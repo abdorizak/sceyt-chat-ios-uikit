@@ -10,6 +10,8 @@ import Foundation
 import CoreData
 import SceytChat
 
+public typealias ChannelCreated = Bool
+
 @objc(ChannelDTO)
 public class ChannelDTO: NSManagedObject {
 
@@ -122,6 +124,15 @@ public class ChannelDTO: NSManagedObject {
         return NSPredicate(format: "\(key) \(type)[c] %@", query.query ?? "")
     }
 
+    public static func fetch(ids: [ChannelId], context: NSManagedObjectContext) -> [ChannelDTO] {
+        guard !ids.isEmpty
+        else { return [] }
+        let request = fetchRequest()
+        request.sortDescriptor = NSSortDescriptor(keyPath: \ChannelDTO.id, ascending: false)
+        request.predicate = .init(format: "id IN %@", ids)
+        return fetch(request: request, context: context)
+    }
+    
     public static func fetch(id: ChannelId, context: NSManagedObjectContext) -> ChannelDTO? {
         let request = fetchRequest()
         request.sortDescriptor = NSSortDescriptor(keyPath: \ChannelDTO.id, ascending: false)
@@ -129,14 +140,14 @@ public class ChannelDTO: NSManagedObject {
         return fetch(request: request, context: context).first
     }
 
-    public static func fetchOrCreate(id: ChannelId, context: NSManagedObjectContext) -> ChannelDTO {
+    public static func fetchOrCreate(id: ChannelId, context: NSManagedObjectContext) -> (ChannelDTO, ChannelCreated) {
         if let mo = fetch(id: id, context: context) {
-            return mo
+            return (mo, false)
         }
         
         let mo = insertNewObject(into: context)
         mo.id = Int64(id)
-        return mo
+        return (mo, true)
     }
 
     public func map(_ map: Channel) -> ChannelDTO {
@@ -160,6 +171,7 @@ public class ChannelDTO: NSManagedObject {
         muted = map.muted
         muteTill = map.muteTill?.bridgeDate
         pinnedAt = map.pinnedAt?.bridgeDate
+        messageRetentionPeriod = map.messageRetentionPeriod
         
         lastDisplayedMessageId = max(lastDisplayedMessageId, Int64(map.lastDisplayedMessageId))
         lastReceivedMessageId = max(lastReceivedMessageId, Int64(map.lastReceivedMessageId))

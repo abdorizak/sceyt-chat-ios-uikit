@@ -63,6 +63,14 @@ open class MessageCell: CollectionViewCell,
         .init()
         .withoutAutoresizingMask
     
+    open lazy var pollView = Components.messageCellPollView
+        .init()
+        .withoutAutoresizingMask
+    
+    open lazy var unsupportedView = Components.messageCellUnsupportedMessageView
+        .init()
+        .withoutAutoresizingMask
+    
     open lazy var reactionTotalView = Components.messageCellReactionTotalView
         .init()
         .withoutAutoresizingMask
@@ -84,6 +92,10 @@ open class MessageCell: CollectionViewCell,
         .withoutAutoresizingMask
     
     open lazy var replyIcon = UIImageView(image: appearance.swipeToReplyIcon)
+        .withoutAutoresizingMask
+    
+    open lazy var bottomActionView = Components.messageCellActionButtonView
+        .init()
         .withoutAutoresizingMask
     
     open var highlightMode = HighlightMode.none
@@ -126,6 +138,18 @@ open class MessageCell: CollectionViewCell,
             onAction?(.openUrl(view.link))
         }
         
+        pollView.onDidTapOption = { [unowned self] index, pollViewModel in
+            onAction?(.didTapPollOption(index, pollViewModel))
+        }
+
+        pollView.onDidTapAvatars = { [unowned self] in
+            onAction?(.didTapBottomAction)
+        }
+
+        bottomActionView.onAction = { [unowned self] in
+            onAction?(.didTapBottomAction)
+        }
+
         replyView.addTarget(
             self,
             action: #selector(replyViewAction(_:)),
@@ -149,6 +173,12 @@ open class MessageCell: CollectionViewCell,
             name: .selectMessage,
             object: nil
         )
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(didUpdateMessagePoll(_:)),
+            name: .didUpdateMessagePoll,
+            object: nil
+        )
 
         replyIcon.isHidden = true
     }
@@ -163,7 +193,10 @@ open class MessageCell: CollectionViewCell,
         bubbleView.addSubview(textLabel)
         bubbleView.addSubview(attachmentView)
         bubbleView.addSubview(linkView)
+        bubbleView.addSubview(pollView)
+        bubbleView.addSubview(unsupportedView)
         bubbleView.addSubview(infoView)
+        bubbleView.addSubview(bottomActionView)
         bubbleView.addSubview(nameLabel)
         containerView.addSubview(avatarView)
         containerView.addSubview(reactionTotalView)
@@ -189,8 +222,10 @@ open class MessageCell: CollectionViewCell,
         forwardView.appearance = appearance
         attachmentView.appearance = appearance
         linkView.appearance = appearance
+        pollView.appearance = appearance
         infoView.appearance = appearance
         reactionTotalView.appearance = appearance
+        bottomActionView.appearance = appearance.bottomActionViewAppearance
         unreadMessagesSeparatorView.appearance = appearance
         checkBoxView.parentAppearance = appearance.selectionCheckboxAppearance
         
@@ -254,6 +289,8 @@ open class MessageCell: CollectionViewCell,
         nameLabel.textColor = appearance.senderNameLabelAppearance.foregroundColor ?? appearance.senderNameColorProvider.provideVisual(for: message.user)
         attachmentView.data = data
         linkView.data = data
+        pollView.data = data
+        unsupportedView.data = data
         reactionTotalView.data = data
         reactionTotalView.isHidden = (data.reactions?.isEmpty ?? true)
         replyView.data = message.repliedInThread ? nil : data.replyLayout
@@ -288,6 +325,19 @@ open class MessageCell: CollectionViewCell,
             avatarView.isHidden = true
         }
         forwardView.isHidden = !data.isForwarded
+
+        // Configure actionButtonView visibility and state based on poll data
+        if let poll = message.poll, data.contentOptions.contains(.poll), message.state != .deleted {
+            let pollViewModel = PollViewModel(from: poll, isIncmoing: message.incoming)
+            let isAnonymous = pollViewModel.anonymous
+            let hasNoVotes = pollViewModel.totalVotes == 0
+            bottomActionView.isHidden = isAnonymous
+            bottomActionView.isEnabled = !hasNoVotes
+            bottomActionView.buttonText = L10n.Poll.Results.viewResults
+        } else {
+            bottomActionView.isHidden = true
+        }
+        
         data.updateOptions = []
     }
     
@@ -411,11 +461,31 @@ open class MessageCell: CollectionViewCell,
            let data,
            data.message.id == object.0 {
             highlightMode = object.1
-        } else if highlightMode != .none  {
+        } else {
             highlightMode = .none
         }
     }
-    
+
+    @objc
+    func didUpdateMessagePoll(_ notification: Notification) {
+        guard data.hasPoll else {
+            return
+        }
+ 
+        guard let data,
+              let userInfo = notification.userInfo,
+              let pollUIModel = userInfo["pollUIModel"] as? PollViewModel,
+              pollUIModel.pollId == data.message.poll?.id else {
+            return
+        }
+
+        pollView.updatePoll(poll: pollUIModel)
+
+        // Update actionButtonView state
+        let hasNoVotes = pollUIModel.totalVotes == 0
+        bottomActionView.isEnabled = !hasNoVotes
+    }
+
     // MARK: Actions
     @objc
     open func replyCountAction(_ sender: UIButton) {
@@ -431,7 +501,7 @@ open class MessageCell: CollectionViewCell,
     open func reactionTotalViewAction(_ sender: ReactionTotalView) {
         onAction?(.tapReaction)
     }
-    
+
     //MARK: ContextMenuSnapshotProviding
     open func onPrepareSnapshot() {
         textLabel.isHidden = true
@@ -683,8 +753,10 @@ public extension MessageCell {
         case didTapMentionUser(String)
         case didTapAvatar
         case didSwipe
+        case didTapPollOption(Int, PollViewModel)
+        case didTapBottomAction
     }
-    
+
     enum Measure {
         
     }
@@ -722,7 +794,7 @@ extension MessageCell {
 public extension MessageCell {
     enum Layouts {
         public static var checkBoxSize: CGFloat = 24
-        public static var checkBoxPadding: CGFloat = 12
+        public static var checkBoxPadding: CGFloat = 10
         public static var horizontalPadding: CGFloat = 12
         public static var attachmentIconSize: CGFloat = 40
         public static var cornerRadius: CGFloat = 8
@@ -733,6 +805,7 @@ public extension MessageCell {
     enum HighlightMode {
         case reply
         case search
+        case mention
         case none
     }
 }

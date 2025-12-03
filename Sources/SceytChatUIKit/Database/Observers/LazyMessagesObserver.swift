@@ -15,9 +15,12 @@ open class LazyMessagesObserver: LazyDatabaseObserver<MessageDTO, ChatMessage> {
         loadRangeProvider: LoadRangeProvider,
         itemCreator: @escaping (MessageDTO) -> ChatMessage
     ) {
+        let autoDeleteThreshold = Date().addingTimeInterval(-60)
+
         defaultFetchPredicate = NSPredicate(
-            format: "channelId == %lld AND repliedInThread == false AND replied == false AND unlisted == false",
-            channelId
+            format: "channelId == %lld AND repliedInThread == false AND replied == false AND unlisted == false AND (autoDeleteAt == nil OR autoDeleteAt > %@)",
+            channelId,
+            autoDeleteThreshold.bridgeDate
         )
         currentFetchPredicate = defaultFetchPredicate
         self.loadRangeProvider = loadRangeProvider
@@ -39,6 +42,10 @@ open class LazyMessagesObserver: LazyDatabaseObserver<MessageDTO, ChatMessage> {
                 #keyPath(MessageDTO.parent.state),
                 #keyPath(MessageDTO.bodyAttributes),
                 #keyPath(MessageDTO.linkMetadatas),
+                #keyPath(MessageDTO.poll.votesPerOption),
+                #keyPath(MessageDTO.poll.votes),
+                #keyPath(MessageDTO.poll.ownVotes),
+                #keyPath(MessageDTO.poll.closed)
             ],
             itemCreator: itemCreator
         )

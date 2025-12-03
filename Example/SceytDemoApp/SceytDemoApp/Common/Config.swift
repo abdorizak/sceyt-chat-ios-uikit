@@ -74,4 +74,11 @@ func configureSceytChatUIKit() {
     
     // Set customized subclass for formatters
     SceytChatUIKit.shared.formatters.userNameFormatter = UserDisplayNameFormatter()
+    
+    // Configure invite link settings
+    SceytChatUIKit.shared.config.channelInviteDeepLinkConfig = SceytChatUIKit.Config.ChannelInviteDeepLinkConfig(
+        scheme: "https",
+        host: "link.sceyt.com",
+        pathPrefix: "/join/"
+    )
 }

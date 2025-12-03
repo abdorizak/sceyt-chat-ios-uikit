@@ -160,6 +160,29 @@ open class AttachmentTransfer: DataProvider {
         guard let attachments = attachments ?? message.attachments,
               !attachments.isEmpty
         else { return [] }
+        
+        for att in attachments {
+            if att.status == .pending,
+               let filePath = dataSession(for: message)?.getFilePath(attachment: att), !filePath.isEmpty
+            {
+                att.status = .done
+                att.transferProgress = 1
+                
+                let key = Self.key(message: message, attachment: att)
+                logger.verbose("[Attachment] onCompletion KEY \(key)")
+                if let blocks = self.cache[key] {
+                    let attachmentCompletion = AttachmentCompletion(
+                        message: message,
+                        attachment: att,
+                        error: nil
+                    )
+                    blocks.forEach {
+                        $0.completion?(attachmentCompletion)
+                    }
+                }
+            }
+        }
+
         let needsToDownloadAttachments = attachments.filter {
             $0.type != "link" &&
             $0.status != .pauseDownloading &&
@@ -167,8 +190,12 @@ open class AttachmentTransfer: DataProvider {
             $0.status != .done &&
             dataSession(for: message)?.getFilePath(attachment: $0) == nil
         }
-        guard !needsToDownloadAttachments.isEmpty
-        else { return [] }
+        
+        guard !needsToDownloadAttachments.isEmpty else {
+            completion?(message, nil)
+            return []
+        }
+        
         downloadMessageAttachments(
             message: message,
             attachments: needsToDownloadAttachments,

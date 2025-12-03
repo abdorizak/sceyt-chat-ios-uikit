@@ -120,9 +120,11 @@ extension MessageCell {
                 layer.masksToBounds = true
                 nameLabel.text = appearance.replyMessageAppearance.senderNameFormatter.format(data.user)
                 messageLabel.attributedText = data.attributedBody
+                stackViewH2.spacing = 4.0
                 if let image = data.icon {
                     stackViewH2.insertArrangedSubview(iconView, at: 0)
-                    iconView.image = image
+                    iconView.image = image.withTintColor(.accent, renderingMode: .alwaysTemplate)
+                    iconView.tintColor = .accent
                     iconView.addConstraints([
                         iconView.heightAnchor.pin(constant: Measure.iconSize.height),
                         iconView.widthAnchor.pin(constant: Measure.iconSize.width)

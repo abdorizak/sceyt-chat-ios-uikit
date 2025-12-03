@@ -20,6 +20,7 @@ public class ChatMessage {
     public let metadata: String?
     public let createdAt: Date
     public let updatedAt: Date?
+    public let autoDeleteAt: Date?
     public let incoming: Bool
     public let transient: Bool
     public let silent: Bool
@@ -28,6 +29,7 @@ public class ChatMessage {
     public let repliedInThread: Bool
     public let replyCount: Int
     public let displayCount: Int
+    public var disableMentionsCount: Bool
     
     public let attachments: [Attachment]?
     public let userReactions: [Reaction]?
@@ -44,6 +46,7 @@ public class ChatMessage {
     public let reactions: [Reaction]?
     public let forwardingDetails: ForwardingDetails?
     public let bodyAttributes: [BodyAttribute]?
+    public let poll: PollDetails?
 
     var hasDisplayedFromMe: Bool {
         userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == DeliveryStatus.displayed.rawValue} ) == true
@@ -57,6 +60,7 @@ public class ChatMessage {
                 metadata: String? = nil,
                 createdAt: Date = Date(),
                 updatedAt: Date? = nil,
+                autoDeleteAt: Date? = nil,
                 incoming: Bool = false,
                 transient: Bool = false,
                 silent: Bool = false,
@@ -65,6 +69,7 @@ public class ChatMessage {
                 repliedInThread: Bool = false,
                 replyCount: Int = 0,
                 displayCount: Int = 0,
+                disableMentionsCount: Bool = false,
                 attachments: [ChatMessage.Attachment]? = nil,
                 userReactions: [ChatMessage.Reaction]? = nil,
                 userPendingReactions: [ChatMessage.Reaction]? = nil,
@@ -76,7 +81,8 @@ public class ChatMessage {
                 user: ChatUser? = nil,
                 changedBy: ChatUser? = nil,
                 forwardingDetails: ForwardingDetails? = nil,
-                bodyAttributes: [BodyAttribute]? = nil
+                bodyAttributes: [BodyAttribute]? = nil,
+                poll: PollDetails? = nil
     ) {
         self.id = id
         self.tid = tid
@@ -86,6 +92,7 @@ public class ChatMessage {
         self.metadata = metadata
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.autoDeleteAt = autoDeleteAt
         self.incoming = incoming
         self.transient = transient
         self.silent = silent
@@ -94,6 +101,7 @@ public class ChatMessage {
         self.repliedInThread = repliedInThread
         self.replyCount = replyCount
         self.displayCount = displayCount
+        self.disableMentionsCount = disableMentionsCount
         self.attachments = attachments
         self.userReactions = userReactions
         self.userPendingReactions = userPendingReactions
@@ -115,6 +123,7 @@ public class ChatMessage {
         }
         self.reactionScores = reactionScores
         self.bodyAttributes = bodyAttributes
+        self.poll = poll
     }
     
     public init(dto: MessageDTO) {
@@ -126,6 +135,7 @@ public class ChatMessage {
         metadata = dto.metadata
         createdAt = dto.createdAt.bridgeDate
         updatedAt = dto.updatedAt?.bridgeDate
+        autoDeleteAt = dto.autoDeleteAt?.bridgeDate
         incoming = dto.incoming
         transient = dto.transient
         silent = dto.silent
@@ -134,6 +144,7 @@ public class ChatMessage {
         repliedInThread = dto.repliedInThread
         replyCount = Int(dto.replyCount)
         displayCount = Int(dto.displayCount)
+        disableMentionsCount = dto.disableMentionsCount
         markerCount = dto.markerTotal
         if let user = dto.user {
             self.user = user.convert()
@@ -211,6 +222,13 @@ public class ChatMessage {
         }
 
         bodyAttributes = dto.bodyAttributes?.map { $0.convert() }
+        
+        // Convert poll
+        if let pollDTO = dto.poll {
+            poll = PollDetails(dto: pollDTO)
+        } else {
+            poll = nil
+        }
 
         var reactionScores = [String: Int64]()
         var rt = [ReactionTotal]()
@@ -249,6 +267,7 @@ public class ChatMessage {
             metadata: message.metadata,
             createdAt: message.createdAt,
             updatedAt: message.updatedAt,
+            autoDeleteAt: message.autoDeleteAt,
             incoming: message.incoming,
             transient: message.transient,
             silent: message.silent,
@@ -257,6 +276,7 @@ public class ChatMessage {
             repliedInThread: message.repliedInThread,
             replyCount: message.replyCount,
             displayCount: message.displayCount,
+            disableMentionsCount: message.disableMentionsCount,
             attachments: message.attachments?.map { ChatMessage.Attachment(attachment: $0)},
             userReactions: message.userReactions?.map { ChatMessage.Reaction(reaction: $0)},
             reactionTotals: message.reactionTotals?.map { .init(reaction: $0)},
@@ -528,4 +548,26 @@ public extension ChatMessage {
     }
 }
 
+// MARK: - Message Type Helpers
+public extension ChatMessage {
+    /// Predefined message type constants
+    struct MessageType {
+        public static let text = "text"
+        public static let media = "media"
+        public static let file = "file"
+        public static let link = "link"
+        public static let system = "system"
+        public static let poll = "poll"
+    }
+
+    /// Returns true if this is a system message
+    var isSystemMessage: Bool {
+        return type == MessageType.system
+    }
+
+    /// Returns true if this is a poll message
+    var isPollMessage: Bool {
+        return type == MessageType.poll && poll != nil
+    }
+}
 

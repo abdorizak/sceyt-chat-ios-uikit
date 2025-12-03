@@ -72,124 +72,175 @@ open class LinkMetadataProvider: DataProvider {
     @discardableResult
     open func fetch(
         url: URL,
-        downloadImage: Bool = true, 
-        downloadIcon: Bool = true
-    ) async -> Result<LinkMetadata, Error> {
+        downloadImage: Bool = true,
+        downloadIcon: Bool = true,
+        completion: @escaping (Result<LinkMetadata, Error>) -> Void
+    ) {
         fetchCache.insert(url)
-        defer {
-            fetchCache.remove(url)
-        }
+
         let log_hv = url.absoluteString.hashValue
         logger.verbose("[LOAD LINK] \(log_hv) Will load link Open Graph data from SceytChat url: \(url.absoluteString)")
+
+        // Check cache first
         if let metadata = cache.object(forKey: url.absoluteString as NSString) {
             let prefixTitle = metadata.title?.prefix(titleMaxLength)
             let titleStr = prefixTitle == nil ? nil : String(prefixTitle!)
             metadata.title = titleStr
-            
+
             let prefixSummary = metadata.summary?.prefix(summaryMaxLength)
             let summaryStr = prefixSummary == nil ? nil : String(prefixSummary!)
             metadata.summary = summaryStr
-            return .success(metadata)
+
+            fetchCache.remove(url)
+            completion(.success(metadata))
+            return
         }
-        
-        let result: Result<LinkMetadata?, Error> =
-        await withCheckedContinuation { continuation in
-            database.performBgTask { context in
-                LinkMetadataDTO.fetch(url: url, context: context)?.convert()
-            } completion: { result in
-                switch result {
-                case .success(let link):
-                    continuation.resume(returning: .success(link))
-                case .failure(let error):
-                    continuation.resume(returning: .failure(error))
+
+        // Try to load from database
+        database.performBgTask { context in
+            LinkMetadataDTO.fetch(url: url, context: context)?.convert()
+        } completion: { [weak self] result in
+            guard let self else {
+                self?.fetchCache.remove(url)
+                completion(.failure(NSError(domain: "LinkMetadataProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self deallocated"])))
+                return
+            }
+
+            switch result {
+            case .success(let metadata):
+                if let metadata = metadata {
+                    logger.verbose("[LOAD LINK] \(log_hv) Load metadata from db \(metadata.url): SUCCESS")
+
+                    self.downloadImagesIfNeeded(
+                        linkMetadata: metadata,
+                        downloadImage: downloadImage,
+                        downloadIcon: downloadIcon
+                    ) {
+                        let prefixTitle = metadata.title?.prefix(self.titleMaxLength)
+                        let titleStr = prefixTitle == nil ? nil : String(prefixTitle!)
+                        metadata.title = titleStr
+
+                        let prefixSummary = metadata.summary?.prefix(self.summaryMaxLength)
+                        let summaryStr = prefixSummary == nil ? nil : String(prefixSummary!)
+                        metadata.summary = summaryStr
+
+                        self.cache.setObject(metadata, forKey: url.absoluteString as NSString)
+                        self.fetchCache.remove(url)
+                        completion(.success(metadata))
+                    }
+                    return
                 }
-                 
+
+                // No metadata in database, load from network
+                self.loadLinkMetadataFromNetwork(
+                    url: url,
+                    log_hv: log_hv,
+                    downloadImage: downloadImage,
+                    downloadIcon: downloadIcon,
+                    completion: completion
+                )
+
+            case .failure:
+                // Database error, try network
+                self.loadLinkMetadataFromNetwork(
+                    url: url,
+                    log_hv: log_hv,
+                    downloadImage: downloadImage,
+                    downloadIcon: downloadIcon,
+                    completion: completion
+                )
             }
         }
-        
-        if let metadata = try? result.get(), 
-            metadata != nil {
-            logger.verbose("[LOAD LINK] \(log_hv) Load metadata from db \(metadata.url): SUCCESS")
-            await downloadImagesIfNeeded(
-                linkMetadata: metadata,
-                downloadImage: downloadImage,
-                downloadIcon: downloadIcon)
-            let prefixTitle = metadata.title?.prefix(titleMaxLength)
-            let titleStr = prefixTitle == nil ? nil : String(prefixTitle!)
-            metadata.title = titleStr
-            
-            let prefixSummary = metadata.summary?.prefix(summaryMaxLength)
-            let summaryStr = prefixSummary == nil ? nil : String(prefixSummary!)
-            metadata.summary = summaryStr
-            cache.setObject(metadata, forKey: url.absoluteString as NSString)
-            return .success(metadata)
-        }
-        
+    }
+
+    private func loadLinkMetadataFromNetwork(
+        url: URL,
+        log_hv: Int,
+        downloadImage: Bool,
+        downloadIcon: Bool,
+        completion: @escaping (Result<LinkMetadata, Error>) -> Void
+    ) {
         let linkMetadata = LinkMetadata(url: url)
-        
-        do {
-            let (link, error) = await chatClient.loadLinkDetails(for: url)
+
+        chatClient.loadLinkDetails(for: url) { [weak self] link, error in
+            guard let self else {
+                self?.fetchCache.remove(url)
+                completion(.failure(NSError(domain: "LinkMetadataProvider", code: -1, userInfo: [NSLocalizedDescriptionKey: "Self deallocated"])))
+                return
+            }
+
             if let error {
                 logger.verbose("[LOAD LINK] \(log_hv) Failed to load link Open Graph data from SceytChat error: \(error)")
-                return .failure(error)
+                self.fetchCache.remove(url)
+                completion(.failure(error))
+                return
             }
+
             if let link {
-                let prefixTitle = link.title?.prefix(titleMaxLength)
+                let prefixTitle = link.title?.prefix(self.titleMaxLength)
                 let titleStr = prefixTitle == nil ? nil : String(prefixTitle!)
                 linkMetadata.title = titleStr
-                
-                let prefixedInfo = link.info?.prefix(summaryMaxLength)
+
+                let prefixedInfo = link.info?.prefix(self.summaryMaxLength)
                 let infoStr = prefixedInfo == nil ? nil : String(prefixedInfo!)
                 linkMetadata.summary = infoStr
+
                 if let urlStr = link.favicon?.url,
                    let url = URL(string: urlStr) {
                     linkMetadata.iconUrl = url
                 }
-                
+
                 if let urlStr = link.images?.first?.url,
                    let url = URL(string: urlStr) {
                     linkMetadata.imageUrl = url
                 }
-                
-                await downloadImagesIfNeeded(
-                    linkMetadata: linkMetadata,
-                    downloadImage: downloadImage,
-                    downloadIcon: downloadIcon
-                )
-                
+
                 logger.verbose("[LOAD LINK] \(log_hv) Load link Open Graph data siteName: \(link.siteName), title: \(link.title), type: \(link.type), info: \(link.info), locale: \(link.locale), localeAlternates: \(link.localeAlternates)")
                 if let favicon = link.favicon {
                     logger.verbose("[LOAD LINK] \(log_hv) Load link Open Graph data favicon: \(favicon.url)")
                 }
-                
+
                 if let images = link.images {
                     images.forEach { image in
                         logger.verbose("[LOAD LINK] \(log_hv) Load link Open Graph data image url: \(image.url), secureUrl: \(image.secureUrl), secureUrl: \(image.type), width: \(image.width), height: \(image.height)")
                     }
                 }
-                
             } else {
                 logger.verbose("[LOAD LINK] \(log_hv) Load link Open Graph data success but no data")
             }
-        } catch {
-            logger.verbose("[LOAD LINK] \(log_hv) Failed to load link Open Graph data error: \(error)")
-            return .failure(error)
+
+            self.downloadImagesIfNeeded(
+                linkMetadata: linkMetadata,
+                downloadImage: downloadImage,
+                downloadIcon: downloadIcon
+            ) {
+                logger.verbose("[LOAD LINK] metadata from cache ADD: \(url.absoluteString)")
+                self.cache.setObject(linkMetadata, forKey: url.absoluteString as NSString)
+                self.fetchCache.remove(url)
+                completion(.success(linkMetadata))
+            }
         }
-        logger.verbose("[LOAD LINK] metadata from cache ADD: \(url.absoluteString)")
-        cache.setObject(linkMetadata, forKey: url.absoluteString as NSString)
-        return .success(linkMetadata)
     }
     
     open func downloadImagesIfNeeded(
         linkMetadata: LinkMetadata,
         downloadImage: Bool = true,
-        downloadIcon: Bool = true
-    ) async {
+        downloadIcon: Bool = true,
+        completion: @escaping () -> Void
+    ) {
         let log_hv = linkMetadata.url.absoluteString.hashValue
-        do {
-            if downloadImage, let imageUrl = linkMetadata.imageUrl,
-                linkMetadata.image == nil {
-                let (data, _) = try await URLSession.shared.data(from: imageUrl)
+
+        let group = DispatchGroup()
+
+        if downloadImage, let imageUrl = linkMetadata.imageUrl,
+            linkMetadata.image == nil {
+            group.enter()
+            URLSession.shared.dataTask(with: imageUrl) { data, _, error in
+                defer { group.leave() }
+                guard let data = data, error == nil else {
+                    logger.verbose("[LOAD LINK] \(log_hv) Failed to download image data error: \(String(describing: error))")
+                    return
+                }
                 if let image = Components.imageBuilder.image(from: data) {
                     logger.debug("[LOAD LINK] \(log_hv) image of size: \(image.size) from \(imageUrl)")
                     linkMetadata.image = (try? Components.imageBuilder.init(image: image)
@@ -197,28 +248,37 @@ open class LinkMetadataProvider: DataProvider {
                         .uiImage ?? image
                     logger.debug("[LOAD LINK] \(log_hv) image of resize: \(linkMetadata.image!.size) from \(imageUrl)")
                 }
-                
+
                 if linkMetadata.image != nil {
                     logger.verbose("[LOAD LINK] \(log_hv) Load Image size: \(linkMetadata.image!.size) from \(linkMetadata.imageUrl): SUCCESS")
                 } else {
                     logger.error("[LOAD LINK] \(log_hv) Load Image from \(linkMetadata.imageUrl): FAILE")
                 }
-            }
-            
-            if downloadIcon, let iconUrl = linkMetadata.iconUrl,
-                linkMetadata.icon == nil {
-                let (data, _) = try await URLSession.shared.data(from: iconUrl)
+            }.resume()
+        }
+
+        if downloadIcon, let iconUrl = linkMetadata.iconUrl,
+            linkMetadata.icon == nil {
+            group.enter()
+            URLSession.shared.dataTask(with: iconUrl) { data, _, error in
+                defer { group.leave() }
+                guard let data = data, error == nil else {
+                    logger.verbose("[LOAD LINK] \(log_hv) Failed to download icon data error: \(String(describing: error))")
+                    return
+                }
                 linkMetadata.icon = Components.imageBuilder.image(from: data)
-                
+
                 if linkMetadata.icon != nil {
                     logger.verbose("[LOAD LINK] \(log_hv) Load Icon size: \(linkMetadata.icon!.size) from \(linkMetadata.iconUrl): SUCCESS")
                 } else {
                     logger.error("[LOAD LINK] \(log_hv) Load Icon from \(linkMetadata.iconUrl): FAILE")
                 }
-            }
-            cache.setObject(linkMetadata, forKey: linkMetadata.url.absoluteString as NSString)
-        } catch {
-            logger.verbose("[LOAD LINK] \(log_hv) Failed to download image data error: \(error)")
+            }.resume()
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            self?.cache.setObject(linkMetadata, forKey: linkMetadata.url.absoluteString as NSString)
+            completion()
         }
     }
 

@@ -16,12 +16,11 @@ public struct PickedData {
     public var imageURL: URL?
     public var mediaType: String?
     public var mediaMetadata: [AnyHashable: Any]?
-    
+
     //Documents
     public var documents: [URL]?
     
     var fileURL: URL? {
         imageURL ?? mediaURL
     }
-    
 }

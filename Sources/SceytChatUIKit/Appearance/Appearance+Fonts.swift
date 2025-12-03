@@ -18,7 +18,9 @@ public extension Appearance {
         public static var semiBold: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .semibold)
         public static var bold: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .bold)
         public static var monospace: UIFont = UIFont.monospacedSystemFont(ofSize: defaultSize, weight: .regular)
-        
+        public static var regularItalic: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .regular).toItalic
+        public static var semiBoldItalic: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .semibold).toItalic
+
         public init() {}
     }
 }

@@ -72,6 +72,8 @@ extension MessageCell: AppearanceProviding {
             highlightedLinkBackgroundColor: .footnoteText,
             placeholderIcon: nil
         ),
+        pollViewAppearance: PollViewAppearance.appearance,
+        bottomActionViewAppearance: BottomActionViewAppearance.appearance,
         phoneNumberLabelAppearance: LabelAppearance(
             foregroundColor: .systemBlue,
             font: Fonts.regular.withSize(16)
@@ -109,7 +111,7 @@ extension MessageCell: AppearanceProviding {
             foregroundColor: .secondaryText,
             font: Fonts.regular.withSize(12)
         ),
-        
+
         // Icons
         messageDeliveryStatusIcons: MessageDeliveryStatusIcons(),
         viewCountIcon: .eye,
@@ -160,7 +162,8 @@ extension MessageCell: AppearanceProviding {
         messageDateFormatter: SceytChatUIKit.shared.formatters.messageDateFormatter,
         mentionUserNameFormatter: SceytChatUIKit.shared.formatters.mentionUserNameFormatter,
         userDefaultAvatarProvider: SceytChatUIKit.shared.visualProviders.userAvatarProvider,
-        messageBodyFormatter: SceytChatUIKit.shared.formatters.messageBodyFormatter
+        messageBodyFormatter: SceytChatUIKit.shared.formatters.messageBodyFormatter,
+        unsupportedMessageFormatter: SceytChatUIKit.shared.formatters.unsupportedMessageFormatter
     )
     
     public struct Appearance {
@@ -247,6 +250,12 @@ extension MessageCell: AppearanceProviding {
         @Trackable<Appearance, LinkPreviewAppearance>
         public var linkPreviewAppearance: LinkPreviewAppearance
         
+        @Trackable<Appearance, PollViewAppearance>
+        public var pollViewAppearance: PollViewAppearance
+        
+        @Trackable<Appearance, BottomActionViewAppearance>
+        public var bottomActionViewAppearance: BottomActionViewAppearance
+        
         @Trackable<Appearance, LabelAppearance>
         public var phoneNumberLabelAppearance: LabelAppearance
         
@@ -273,7 +282,7 @@ extension MessageCell: AppearanceProviding {
         
         @Trackable<Appearance, LabelAppearance>
         public var attachmentFileSizeLabelAppearance: LabelAppearance
-        
+
         // Icons
         @Trackable<Appearance, MessageDeliveryStatusIcons>
         public var messageDeliveryStatusIcons: MessageDeliveryStatusIcons
@@ -359,6 +368,16 @@ extension MessageCell: AppearanceProviding {
         @Trackable<Appearance, any MessageBodyFormatting>
         public var messageBodyFormatter: any MessageBodyFormatting
         
+        @Trackable<Appearance, any UnsupportedMessageFormatting>
+        public var unsupportedMessageFormatter: any UnsupportedMessageFormatting
+
+        // System message appearance
+        @Trackable<Appearance, UIFont>
+        public var systemMessageFont: UIFont
+
+        @Trackable<Appearance, UIColor>
+        public var systemMessageTextColor: UIColor
+
         // Initializer with all parameters
         public init(
             // Colors
@@ -391,6 +410,8 @@ extension MessageCell: AppearanceProviding {
             messageStateLabelAppearance: LabelAppearance,
             linkLabelAppearance: LabelAppearance,
             linkPreviewAppearance: LinkPreviewAppearance,
+            pollViewAppearance: PollViewAppearance,
+            bottomActionViewAppearance: BottomActionViewAppearance,
             phoneNumberLabelAppearance: LabelAppearance,
             videoDurationLabelAppearance: LabelAppearance,
             threadReplyCountLabelAppearance: LabelAppearance,
@@ -434,7 +455,10 @@ extension MessageCell: AppearanceProviding {
             messageDateFormatter: any DateFormatting,
             mentionUserNameFormatter: any UserFormatting,
             userDefaultAvatarProvider: any UserAvatarProviding,
-            messageBodyFormatter: any MessageBodyFormatting
+            messageBodyFormatter: any MessageBodyFormatting,
+            unsupportedMessageFormatter: any UnsupportedMessageFormatting,
+            systemMessageFont: UIFont = Fonts.semiBold.withSize(12),
+            systemMessageTextColor: UIColor = .white
         ) {
             // Colors
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -466,6 +490,8 @@ extension MessageCell: AppearanceProviding {
             self._messageStateLabelAppearance = Trackable(value: messageStateLabelAppearance)
             self._linkLabelAppearance = Trackable(value: linkLabelAppearance)
             self._linkPreviewAppearance = Trackable(value: linkPreviewAppearance)
+            self._pollViewAppearance = Trackable(value: pollViewAppearance)
+            self._bottomActionViewAppearance = Trackable(value: bottomActionViewAppearance)
             self._phoneNumberLabelAppearance = Trackable(value: phoneNumberLabelAppearance)
             self._videoDurationLabelAppearance = Trackable(value: videoDurationLabelAppearance)
             self._threadReplyCountLabelAppearance = Trackable(value: threadReplyCountLabelAppearance)
@@ -510,6 +536,9 @@ extension MessageCell: AppearanceProviding {
             self._mentionUserNameFormatter = Trackable(value: mentionUserNameFormatter)
             self._userDefaultAvatarProvider = Trackable(value: userDefaultAvatarProvider)
             self._messageBodyFormatter = Trackable(value: messageBodyFormatter)
+            self._unsupportedMessageFormatter = Trackable(value: unsupportedMessageFormatter)
+            self._systemMessageFont = Trackable(value: systemMessageFont)
+            self._systemMessageTextColor = Trackable(value: systemMessageTextColor)
         }
         
         // Initializer with optional parameters
@@ -545,6 +574,8 @@ extension MessageCell: AppearanceProviding {
             messageStateLabelAppearance: LabelAppearance? = nil,
             linkLabelAppearance: LabelAppearance? = nil,
             linkPreviewAppearance: LinkPreviewAppearance? = nil,
+            pollViewAppearance: PollViewAppearance? = nil,
+            bottomActionViewAppearance: BottomActionViewAppearance? = nil,
             phoneNumberLabelAppearance: LabelAppearance? = nil,
             videoDurationLabelAppearance: LabelAppearance? = nil,
             threadReplyCountLabelAppearance: LabelAppearance? = nil,
@@ -588,7 +619,8 @@ extension MessageCell: AppearanceProviding {
             messageDateFormatter: (any DateFormatting)? = nil,
             mentionUserNameFormatter: (any UserFormatting)? = nil,
             userDefaultAvatarProvider: (any UserAvatarProviding)? = nil,
-            messageBodyFormatter: (any MessageBodyFormatting)? = nil
+            messageBodyFormatter: (any MessageBodyFormatting)? = nil,
+            unsupportedMessageFormatter: (any UnsupportedMessageFormatting)? = nil
         ) {
             // Colors
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
@@ -618,6 +650,8 @@ extension MessageCell: AppearanceProviding {
             self._messageStateLabelAppearance = Trackable(reference: reference, referencePath: \.messageStateLabelAppearance)
             self._linkLabelAppearance = Trackable(reference: reference, referencePath: \.linkLabelAppearance)
             self._linkPreviewAppearance = Trackable(reference: reference, referencePath: \.linkPreviewAppearance)
+            self._pollViewAppearance = Trackable(reference: reference, referencePath: \.pollViewAppearance)
+            self._bottomActionViewAppearance = Trackable(reference: reference, referencePath: \.bottomActionViewAppearance)
             self._phoneNumberLabelAppearance = Trackable(reference: reference, referencePath: \.phoneNumberLabelAppearance)
             self._videoDurationLabelAppearance = Trackable(reference: reference, referencePath: \.videoDurationLabelAppearance)
             self._threadReplyCountLabelAppearance = Trackable(reference: reference, referencePath: \.threadReplyCountLabelAppearance)
@@ -654,7 +688,10 @@ extension MessageCell: AppearanceProviding {
             self._mentionUserNameFormatter = Trackable(reference: reference, referencePath: \.mentionUserNameFormatter)
             self._userDefaultAvatarProvider = Trackable(reference: reference, referencePath: \.userDefaultAvatarProvider)
             self._messageBodyFormatter = Trackable(reference: reference, referencePath: \.messageBodyFormatter)
-            
+            self._unsupportedMessageFormatter = Trackable(reference: reference, referencePath: \.unsupportedMessageFormatter)
+            self._systemMessageFont = Trackable(reference: reference, referencePath: \.systemMessageFont)
+            self._systemMessageTextColor = Trackable(reference: reference, referencePath: \.systemMessageTextColor)
+
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let incomingBubbleColor { self.incomingBubbleColor = incomingBubbleColor }
             if let outgoingBubbleColor { self.outgoingBubbleColor = outgoingBubbleColor }
@@ -682,6 +719,8 @@ extension MessageCell: AppearanceProviding {
             if let messageStateLabelAppearance { self.messageStateLabelAppearance = messageStateLabelAppearance }
             if let linkLabelAppearance { self.linkLabelAppearance = linkLabelAppearance }
             if let linkPreviewAppearance { self.linkPreviewAppearance = linkPreviewAppearance }
+            if let pollViewAppearance { self.pollViewAppearance = pollViewAppearance }
+            if let bottomActionViewAppearance { self.bottomActionViewAppearance = bottomActionViewAppearance }
             if let phoneNumberLabelAppearance { self.phoneNumberLabelAppearance = phoneNumberLabelAppearance }
             if let videoDurationLabelAppearance { self.videoDurationLabelAppearance = videoDurationLabelAppearance }
             if let threadReplyCountLabelAppearance { self.threadReplyCountLabelAppearance = threadReplyCountLabelAppearance }
@@ -718,6 +757,7 @@ extension MessageCell: AppearanceProviding {
             if let mentionUserNameFormatter { self.mentionUserNameFormatter = mentionUserNameFormatter }
             if let userDefaultAvatarProvider { self.userDefaultAvatarProvider = userDefaultAvatarProvider }
             if let messageBodyFormatter { self.messageBodyFormatter = messageBodyFormatter }
+            if let unsupportedMessageFormatter { self.unsupportedMessageFormatter = unsupportedMessageFormatter}
         }
     }
 }

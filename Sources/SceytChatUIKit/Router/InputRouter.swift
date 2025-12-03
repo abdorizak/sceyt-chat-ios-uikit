@@ -13,6 +13,7 @@ public enum AttachmentPickerSource {
     case camera
     case media
     case file
+    case poll
 }
 
 open class InputRouter: Router<MessageInputViewController> {
@@ -38,6 +39,13 @@ open class InputRouter: Router<MessageInputViewController> {
                 icon: .chatActionFile,
                 style: .default
             ) { callback(.file) })
+        }
+        if sources.contains(.poll) {
+            actions.append(.init(
+                title: "Create Poll",
+                icon: .chatActionPoll,
+                style: .default
+            ) { callback(.poll) })
         }
         actions.append(.init(
             title: L10n.Alert.Button.cancel,
@@ -79,5 +87,16 @@ open class InputRouter: Router<MessageInputViewController> {
         }
         ImagePickerController(presenter: self.rootViewController)
             .showCamera(callback: callback)
+    }
+
+    open func showCreatePoll(_ handler: @escaping ((CreatePollModel?) -> Void)) {
+        let viewController = Components.createPollViewController.init()
+        viewController.viewModel = Components.createPollViewModel.init()
+        viewController.onPollCreated = { poll in
+            handler(poll)
+        }
+        let nav = Components.navigationController.init()
+        nav.viewControllers = [viewController]
+        rootViewController.present(nav, animated: true)
     }
 }

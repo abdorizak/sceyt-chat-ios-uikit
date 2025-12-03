@@ -33,6 +33,7 @@ extension ChannelViewController: AppearanceProviding {
             message: L10n.Channel.NoMessages.message
         ),
         scrollDownAppearance: ScrollDownView.appearance,
+        unreadMentionCountApperance: UnreadMentionCountView.appearance,
         dateSeparatorAppearance: DateSeparatorView.appearance,
         reactionPickerAppearance: ReactionPickerViewController.appearance,
         enableDateSeparator: true,
@@ -65,7 +66,10 @@ extension ChannelViewController: AppearanceProviding {
         
         @Trackable<Appearance, ScrollDownView.Appearance>
         public var scrollDownAppearance: ScrollDownView.Appearance
-        
+
+        @Trackable<Appearance, UnreadMentionCountView.Appearance>
+        public var unreadMentionCountAppearance: UnreadMentionCountView.Appearance
+
         @Trackable<Appearance, DateSeparatorView.Appearance>
         public var dateSeparatorAppearance: DateSeparatorView.Appearance
         
@@ -97,6 +101,7 @@ extension ChannelViewController: AppearanceProviding {
             headerAppearance: HeaderView.Appearance,
             emptyStateAppearance: EmptyStateView.Appearance,
             scrollDownAppearance: ScrollDownView.Appearance,
+            unreadMentionCountApperance: UnreadMentionCountView.Appearance,
             dateSeparatorAppearance: DateSeparatorView.Appearance,
             reactionPickerAppearance: ReactionPickerViewController.Appearance,
             enableDateSeparator: Bool,
@@ -111,6 +116,7 @@ extension ChannelViewController: AppearanceProviding {
             self._headerAppearance = Trackable(value: headerAppearance)
             self._emptyStateAppearance = Trackable(value: emptyStateAppearance)
             self._scrollDownAppearance = Trackable(value: scrollDownAppearance)
+            self._unreadMentionCountAppearance = Trackable(value: unreadMentionCountApperance)
             self._dateSeparatorAppearance = Trackable(value: dateSeparatorAppearance)
             self._reactionPickerAppearance = Trackable(value: reactionPickerAppearance)
             self._enableDateSeparator = Trackable(value: enableDateSeparator)
@@ -128,6 +134,7 @@ extension ChannelViewController: AppearanceProviding {
             headerAppearance: HeaderView.Appearance? = nil,
             emptyStateAppearance: EmptyStateView.Appearance? = nil,
             scrollDownAppearance: ScrollDownView.Appearance? = nil,
+            unreadMentionCountApperance: UnreadMentionCountView.Appearance? = nil,
             dateSeparatorAppearance: DateSeparatorView.Appearance? = nil,
             reactionPickerAppearance: ReactionPickerViewController.Appearance? = nil,
             enableDateSeparator: Bool? = nil,
@@ -142,6 +149,7 @@ extension ChannelViewController: AppearanceProviding {
             self._headerAppearance = Trackable(reference: reference, referencePath: \.headerAppearance)
             self._emptyStateAppearance = Trackable(reference: reference, referencePath: \.emptyStateAppearance)
             self._scrollDownAppearance = Trackable(reference: reference, referencePath: \.scrollDownAppearance)
+            self._unreadMentionCountAppearance = Trackable(reference: reference, referencePath: \.unreadMentionCountAppearance)
             self._dateSeparatorAppearance = Trackable(reference: reference, referencePath: \.dateSeparatorAppearance)
             self._reactionPickerAppearance = Trackable(reference: reference, referencePath: \.reactionPickerAppearance)
             self._enableDateSeparator = Trackable(reference: reference, referencePath: \.enableDateSeparator)
@@ -156,6 +164,7 @@ extension ChannelViewController: AppearanceProviding {
             if let headerAppearance { self.headerAppearance = headerAppearance }
             if let emptyStateAppearance { self.emptyStateAppearance = emptyStateAppearance }
             if let scrollDownAppearance { self.scrollDownAppearance = scrollDownAppearance }
+            if let unreadMentionCountApperance { self.unreadMentionCountAppearance = unreadMentionCountApperance }
             if let dateSeparatorAppearance { self.dateSeparatorAppearance = dateSeparatorAppearance }
             if let reactionPickerAppearance { self.reactionPickerAppearance = reactionPickerAppearance }
             if let enableDateSeparator { self.enableDateSeparator = enableDateSeparator }

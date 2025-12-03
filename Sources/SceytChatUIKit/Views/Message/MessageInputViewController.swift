@@ -6,6 +6,7 @@
 //  Copyright © 2022 Sceyt LLC. All rights reserved.
 //
 
+import AVFoundation
 import Combine
 import UIKit
 import CoreText
@@ -51,25 +52,31 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     public private(set) var nextState: State?
     
-    open lazy var recorderView = VoiceRecorderView { [weak self] in
-        guard let self else { return }
-        switch $0 {
-        case .noPermission:
-            self.showNoMicrophonePermission()
-        case let .recorded(url, metadata):
-            self.recordedView.isHidden = false
-            self.recordedView.setup(url: url, metadata: metadata)
-        case let .send(url, metadata):
-            if let url = Components.storage.copyFile(url) {
-                self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
-                self.action = .send(false)
+    open lazy var recorderView: VoiceRecorderView = {
+        let view = Components.messageInputVoiceRecorderView.init()
+        view.onEvent = { [weak self] event in
+            guard let self else { return }
+            switch event {
+            case .noPermission:
+                self.showNoMicrophonePermission()
+            case .recordingUnavailable:
+                self.showRecordingUnavailable()
+            case let .recorded(url, metadata):
+                self.recordedView.isHidden = false
+                self.recordedView.setup(url: url, metadata: metadata)
+            case let .send(url, metadata):
+                if let url = Components.storage.copyFile(url) {
+                    self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
+                    self.action = .send(false)
+                }
+            case .didStartRecording:
+                self.action = .didStartRecording
+            case .didStopRecording:
+                self.action = .didStopRecording
             }
-        case .didStartRecording:
-            self.action = .didStartRecording
-        case .didStopRecording:
-            self.action = .didStopRecording
         }
-    }
+        return view
+    }()
     
     open lazy var recordedView = Components.messageInputVoiceRecordPlaybackView.init()
         .withoutAutoresizingMask
@@ -85,7 +92,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             updateMediaButtonAppearance(isHidden: shouldHideMediaButton)
         }
     }
-    
+
+    open var shouldHidePollOption = false
+
     public var canRunMentionUserLogic = true
     open var mentionUserListViewController: (() -> MessageInputViewController.MentionUsersListViewController)?
     open weak var presentedMentionUserListViewController: MessageInputViewController.MentionUsersListViewController? {
@@ -102,11 +111,20 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     
     open var mentionTriggerPrefix: String { SceytChatUIKit.shared.config.mentionTriggerPrefix }
     open var onContentHeightUpdate: ((CGFloat, (()-> Void)?) -> Void)?
-    
+    open var onCreatePoll: ((CreatePollModel) -> Void)?
+
     @Published public var action: Action?
     
     private var selectedPhotoAssetIdentifiers = Set<String>()
-    public private(set) var lastDetectedLinkMetadata: LinkMetadata?
+    public private(set) var linkMetadata: LinkMetadata?
+    public private(set) var lastDetectedLinkMetadata: LinkMetadata? {
+        willSet {
+            if newValue != nil {
+                linkMetadata = newValue
+            }
+        }
+    }
+    public private(set) var didUserDismissLinkPreview = false
     private var actionViewHeightLayoutConstraint: NSLayoutConstraint!
     private var inputTextViewLeadingConstraint: NSLayoutConstraint?
     
@@ -462,18 +480,17 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         }
     }
     
-    private var findLinkTask: Task<Void, Error>?
-    open func findLink() {
-        
-        func getUrl() -> URL? {
-            guard let text = inputTextView.text, !text.isEmpty
-            else {
-                return nil
-            }
-            
-            return DataDetector.matches(text: text).first(where: { $0.url?.scheme != "mailto" && $0.url != nil })?.url
+    /// Returns the first link found in the input text view, excluding mailto links
+    open func getLink() -> URL? {
+        guard let text = inputTextView.text, !text.isEmpty
+        else {
+            return nil
         }
-        
+
+        return DataDetector.matches(text: text).first(where: { $0.url?.scheme != "mailto" && $0.url != nil })?.url
+    }
+
+    open func findLink() {
         guard let text = inputTextView.text, !text.isEmpty
         else {
             if lastDetectedLinkMetadata != nil, self.currentState == nil {
@@ -481,47 +498,48 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
             return
         }
-//        if let findLinkTask, !findLinkTask.isCancelled {
-//            findLinkTask.cancel()
-//        }
-            
-        findLinkTask =  Task {[weak self] in
-            func removeActionView() async {
-                await MainActor.run { [weak self] in
-                    guard let self
-                    else { return }
-                    if self.lastDetectedLinkMetadata != nil, self.currentState == nil  {
+
+        guard let url = getLink() else {
+            if lastDetectedLinkMetadata != nil, self.currentState == nil {
+                self.removeActionView()
+            }
+            return
+        }
+
+        if let last = lastDetectedLinkMetadata, last.url == url {
+            return
+        }
+
+        LinkMetadataProvider.default.fetch(url: url) { [weak self] result in
+            guard let self else { return }
+
+            switch result {
+            case .success(let metadata):
+                // Check if the link is still the same
+                if url != self.getLink() {
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    self.addOrUpdateLinkPreview(linkDetails: metadata)
+                }
+
+            case .failure:
+                DispatchQueue.main.async {
+                    if self.lastDetectedLinkMetadata != nil, self.currentState == nil {
                         self.removeActionView()
                     }
                 }
             }
-            if let url = getUrl() {
-                if let last = self?.lastDetectedLinkMetadata, last.url == url {
-                    return
-                }
-                guard let metadata = await try? LinkMetadataProvider.default.fetch(url: url).get()
-                else {
-                    await removeActionView()
-                    return
-                }
-                if url != getUrl() {
-                    return
-                }
-                await MainActor.run { [weak self] in
-                    guard let self
-                    else { return }
-                    self.addOrUpdateLinkPreview(linkDetails: metadata)
-                    
-                }
-            } else  {
-                await removeActionView()
-            }
         }
-        
     }
     
     open func showNoMicrophonePermission() {
         showAlert(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureErrorKey: "No permission!"]))
+    }
+
+    open func showRecordingUnavailable() {
+        showAlert(error: NSError(domain: "", code: -1, userInfo: [NSLocalizedFailureErrorKey: "Recording unavailable"]))
     }
     
     @objc
@@ -529,6 +547,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         if lastDetectedLinkMetadata != nil {
             cachedMessage = inputTextView.attributedText
         }
+        self.didUserDismissLinkPreview = true
         if case .edit = currentState {
             inputTextView.attributedText = cachedMessage
             cachedMessage = nil
@@ -542,9 +561,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     @objc
     open func addMediaButtonAction(_ sender: UIButton) {
         inputTextView.resignFirstResponder()
+        var sources: [AttachmentPickerSource] = [.media, .camera, .file]
+        if !shouldHidePollOption {
+            sources.append(.poll)
+        }
         router
             .showAttachmentAlert(
-                sources: [.media, .camera, .file],
+                sources: sources,
                 sourceView: sender)
         { [unowned self] source in
             switch source {
@@ -554,6 +577,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                 openCameraPicker()
             case .file:
                 openDocumentsPicker()
+            case .poll:
+                openPollPicker()
             case .none:
                 return
             }
@@ -628,14 +653,22 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
         }
     }
-    
+
+    open func openPollPicker() {
+        router.showCreatePoll { [unowned self] poll in
+            guard let poll else { return }
+            // Poll will be sent as a message - handle poll creation
+            self.onCreatePoll?(poll)
+        }
+    }
+
     //    private static var _textIndex = 1000
     //        private static let loren = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
     //
     //    let links = ["http://www.sceyt.com", "http://www.google.com", "http://www.test.com", "http://www.example.com"]
     @objc
     open func sendButtonAction(_ sender: UIButton) {
-        logger.verbose("[MESSAGE SEND] sendButtonAction \(inputTextView.text)")
+        logger.verbose("[MESSAGE SEND] sendButtonAction")
         if case .reply(let model) = currentState,
             lastDetectedLinkMetadata === model.linkPreviews?.first?.metadata {
             lastDetectedLinkMetadata = nil
@@ -645,10 +678,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         action = .send(true)
         currentState = nil
         nextState = nil
+        didUserDismissLinkPreview = false
+        lastDetectedLinkMetadata = nil
     }
     
     open func addReply(layoutModel: MessageLayoutModel) {
         self.lastDetectedLinkMetadata = nil
+        didUserDismissLinkPreview = false
         let hasActionView = !actionView.isHidden
         
         if case .edit = currentState {
@@ -826,6 +862,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         let shouldUpdate = lastDetectedLinkMetadata != nil
         
         self.lastDetectedLinkMetadata = linkDetails
+        self.didUserDismissLinkPreview = false
         let message = linkDetails.summary ?? ""
         
         let titleAttributedString = NSMutableAttributedString(

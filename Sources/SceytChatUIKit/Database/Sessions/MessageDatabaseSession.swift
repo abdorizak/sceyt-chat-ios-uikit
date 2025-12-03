@@ -93,7 +93,8 @@ public protocol MessageDatabaseSession {
     func deleteAttachmentsFor(messageTid: Int64)
     func deleteAttachmentsFor(message: Message)
     func deleteAttachment(id: AttachmentId)
-    
+    func deleteExpiredAutoDeleteMessages()
+
     func updateAttachment(with filePath: String, chatMessage: ChatMessage, attachment: ChatMessage.Attachment)
     
     @discardableResult
@@ -104,6 +105,11 @@ public protocol MessageDatabaseSession {
     
     @discardableResult
     func updateChecksum(data: String, messageTid: Int64, attachmentTid: Int64) -> ChecksumDTO?
+    
+    @discardableResult
+    func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO
+
+    func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO)
 }
 
 public extension MessageDatabaseSession {
@@ -141,6 +147,11 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         createOrUpdate(forwardDetail: message.forwardingDetails, dto: dto)
         createOrUpdate(bodyAttributes: message.bodyAttributes, dto: dto)
         
+        // Handle poll
+        if let poll = message.poll {
+            createOrUpdate(poll: poll, dto: dto)
+        }
+        
         if dto.markerTotal == nil {
             dto.markerTotal = .init()
         }
@@ -150,12 +161,19 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         
         if let channel = ownerChannel {
             if let lastMessage = channel.lastMessage {
-                if lastMessage.id != 0 && dto.id != 0 {
-                    if lastMessage.id <= dto.id {
+                // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
+                let threshold = Date().addingTimeInterval(-60)
+                let isLastMessageAutoDeleted = lastMessage.autoDeleteAt != nil && lastMessage.autoDeleteAt!.bridgeDate <= threshold
+                if isLastMessageAutoDeleted {
+                    channel.lastMessage = dto
+                } else {
+                    if lastMessage.id != 0 && dto.id != 0 {
+                        if lastMessage.id <= dto.id {
+                            channel.lastMessage = dto
+                        }
+                    } else if lastMessage.createdAt.bridgeDate < dto.createdAt.bridgeDate {
                         channel.lastMessage = dto
                     }
-                } else if lastMessage.createdAt.bridgeDate < dto.createdAt.bridgeDate {
-                    channel.lastMessage = dto
                 }
             } else {
                 channel.lastMessage = dto
@@ -512,6 +530,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             })
             if bodyAttributeDTO == nil {
                 bodyAttributeDTO = BodyAttributeDTO.insertNewObject(into: self).map(bodyAttribute)
+            } else {
+                bodyAttributeDTO.map(bodyAttribute)
             }
             bodyAttributeDTO.message = dto
             dto.bodyAttributes?.insert(bodyAttributeDTO)
@@ -879,7 +899,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
 
     public func deleteAllMessages(
         channelId: ChannelId,
-        before date: Date? = nil
+        before date: Date? = nil,
+        completion: ((Error?) -> Void)? = nil
     ) throws {
         let request = NSFetchRequest<NSFetchRequestResult>(entityName: MessageDTO.entityName)
         request.sortDescriptor = NSSortDescriptor(keyPath: \MessageDTO.id, ascending: false)
@@ -891,22 +912,27 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             ])
         }
         request.predicate = predicate
-        try batchDelete(fetchRequest: request)
-        try? deleteAllAttachments(channelId: channelId, before: date)
-        if let date,
-           let channel = ChannelDTO.fetch(id: channelId, context: self)
-        {
-            if let lastMessage = channel.lastMessage {
-                if date >= lastMessage.createdAt.bridgeDate {
-                    channel.lastMessage = nil
-//                    channel.messages = nil
+        do {
+            try batchDelete(fetchRequest: request)
+            try? deleteAllAttachments(channelId: channelId, before: date)
+            if let date,
+               let channel = ChannelDTO.fetch(id: channelId, context: self)
+            {
+                if let lastMessage = channel.lastMessage {
+                    if date >= lastMessage.createdAt.bridgeDate {
+                        channel.lastMessage = nil
+    //                    channel.messages = nil
+                        channel.lastReceivedMessageId = 0
+                        channel.lastDisplayedMessageId = 0
+                    }
+                } else {
                     channel.lastReceivedMessageId = 0
                     channel.lastDisplayedMessageId = 0
                 }
-            } else {
-                channel.lastReceivedMessageId = 0
-                channel.lastDisplayedMessageId = 0
             }
+            completion?(nil)
+        } catch {
+            completion?(error)
         }
     }
     
@@ -1090,5 +1116,170 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         let dto = ChecksumDTO.fetch(message: messageTid, attachmentTid: attachmentTid, context: self)
         dto?.data = data
         return dto
+    }
+    
+    // MARK: Poll
+    
+    @discardableResult
+    public func createOrUpdate(poll: SceytChat.PollDetails, dto: MessageDTO) -> MessageDTO {
+        let pollDTO = PollDTO.fetchOrCreate(id: poll.id, context: self).map(poll)
+        pollDTO.messageTid = dto.tid
+        pollDTO.message = dto
+
+        // Force the object to be fully loaded from the fault state
+        // This ensures the relationships are materialized before we try to mutate them
+        _ = pollDTO.id
+
+        // Create or update options
+        let optionDTOs = poll.options.map { option -> PollOptionDTO in
+            let optionDTO = PollOptionDTO.fetchOrCreate(id: option.id, pollId: poll.id, context: self).map(option)
+            optionDTO.poll = pollDTO
+            return optionDTO
+        }
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let optionsSet = pollDTO.mutableOrderedSetValue(forKey: "options")
+        optionsSet.removeAllObjects()
+        optionsSet.addObjects(from: optionDTOs)
+
+        // Create or update votes
+        let voteDTOs = poll.votes.map { vote -> PollVoteDTO in
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: poll.id,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.pollDetails = pollDTO
+            return voteDTO
+        }
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+        votesSet.removeAllObjects()
+        votesSet.addObjects(from: voteDTOs)
+
+        // Create or update own votes
+        let ownVoteDTOs = poll.ownVotes.map { vote -> PollVoteDTO in
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: poll.id,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+            voteDTO.ownPollDetails = pollDTO
+            return voteDTO
+        }
+
+        // Use mutableOrderedSetValue to safely update the relationship
+        let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+        ownVotesSet.removeAllObjects()
+        ownVotesSet.addObjects(from: ownVoteDTOs)
+
+        var votesPerOption = (poll.votesPerOption as? [String: NSNumber]) ?? [:]
+        pollDTO.votesPerOption = votesPerOption as NSDictionary
+        
+        dto.poll = pollDTO
+        return dto
+    }
+
+    // MARK: Apply Changed Votes
+
+    public func applyChangedVotes(_ changedVotes: SceytChat.ChangedVotes, pollId: String, messageDTO: MessageDTO) {
+        guard let pollDTO = messageDTO.poll else { return }
+
+        let currentUserId = SceytChatUIKit.shared.currentUserId
+
+        // Get mutable ordered sets
+        let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+        let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+
+        // Get current votesPerOption dictionary or create empty one
+        var votesPerOption = (pollDTO.votesPerOption as? [String: NSNumber]) ?? [:]
+
+        // Add new votes
+        for vote in changedVotes.addedVotes {
+            let voteDTO = PollVoteDTO.fetchOrCreate(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: pollId,
+                context: self
+            ).map(vote)
+            voteDTO.user = createOrUpdate(user: vote.user)
+
+            // Check if this is the current user's vote
+            let isOwnVote = vote.user.id == currentUserId
+
+            if isOwnVote {
+                voteDTO.ownPollDetails = pollDTO
+                ownVotesSet.add(voteDTO)
+            } else {
+                voteDTO.pollDetails = pollDTO
+                votesSet.add(voteDTO)
+            }
+
+            // Update votesPerOption - increment count for this option
+            let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+            votesPerOption[vote.optionId] = NSNumber(value: currentCount + 1)
+        }
+
+        // Remove votes
+        for vote in changedVotes.removedVotes {
+            if let voteDTO = PollVoteDTO.fetch(
+                optionId: vote.optionId,
+                userId: vote.user.id,
+                pollId: pollId,
+                context: self
+            ) {
+                let isOwnVote = vote.user.id == currentUserId
+
+                if isOwnVote {
+                    ownVotesSet.remove(voteDTO)
+                } else {
+                    votesSet.remove(voteDTO)
+                }
+                delete(voteDTO)
+
+                // Update votesPerOption - decrement count for this option
+                let currentCount = votesPerOption[vote.optionId]?.intValue ?? 0
+                let newCount = max(0, currentCount - 1)
+                if newCount > 0 {
+                    votesPerOption[vote.optionId] = NSNumber(value: newCount)
+                } else {
+                    // Remove the option from dictionary if count reaches 0
+                    votesPerOption.removeValue(forKey: vote.optionId)
+                }
+            }
+        }
+
+        // Update the pollDTO's votesPerOption
+        pollDTO.votesPerOption = votesPerOption as NSDictionary
+
+        messageDTO.poll = pollDTO
+    }
+
+    public func deleteExpiredAutoDeleteMessages() {
+        // Calculate threshold: current time + 1 minute
+        // Delete messages where autoDeleteAt <= threshold
+        let threshold = Date().addingTimeInterval(-60).bridgeDate
+
+        let fetchRequest = MessageDTO.fetchRequest()
+        fetchRequest.predicate = NSPredicate(
+            format: "autoDeleteAt != nil AND autoDeleteAt <= %@",
+            threshold
+        )
+
+        do {
+            let expiredMessages = try fetch(fetchRequest)
+            logger.verbose("Deleting \(expiredMessages.count) expired auto-delete messages")
+
+            for message in expiredMessages {
+                delete(message)
+            }
+        } catch {
+            logger.errorIfNotNil(error, "Failed to fetch expired auto-delete messages")
+        }
     }
 }

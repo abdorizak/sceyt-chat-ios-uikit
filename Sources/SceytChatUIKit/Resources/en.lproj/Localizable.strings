@@ -72,7 +72,7 @@
 "channel.info.action.join" = "join";
 "channel.info.action.more" = "more";
 
-"channel.info.item.title.autoDeleteMessages" = "Auto-Delete messages";
+"channel.info.item.title.autoDeleteMessages" = "Disappearing Messages";
 "channel.info.item.title.members" = "Members";
 "channel.info.item.title.subscribers" = "Subscribers";
 "channel.info.item.title.admins" = "Admins";
@@ -88,6 +88,23 @@
 "channel.info.segment.links.noItems" = "No link items yet";
 "channel.info.segment.voice.noItems" = "No voice items yet";
 
+"channel.profile.qrCodeTitle" = "QR Code for Invites";
+"channel.profile.qrCodeShare" = "Share QR Code";
+"channel.profile.qrCodeDescription" = "Show or send this to anyone who wants to join this channel";
+
+"channel.inviteLink.title" = "Invite Link";
+"channel.inviteLink.description" = "You can invite anyone to the chat using this link";
+"channel.inviteLink.messagesDescription" = "Message history is visible to new members";
+"channel.inviteLink.showPreviousMessages" = "Show Previous Messages";
+"channel.inviteLink.share" = "Share";
+"channel.inviteLink.resetLink" = "Reset Link";
+"channel.inviteLink.openQRCode" = "Open QR Code";
+"channel.inviteLink.linkCopied" = "Link copied to clipboard";
+"channel.inviteLink.cancel" = "Cancel";
+"channel.inviteLink.reset" = "Reset";
+"channel.inviteLink.resetAlertTitle" = "Reset Link";
+"channel.inviteLink.resetAlertMessage" = "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.";
+
 "channel.info.mute.one-hour" = "For 1 hour";
 "channel.info.mute.hours" = "For %d hours";
 "channel.info.mute.one-day" = "For 1 day";
@@ -96,10 +113,12 @@
 "channel.info.mute.title" = "Mute Chat:";
 
 "channel.info.autoDelete.off" = "Off";
+"channel.info.autoDelete.oneHour" = "1 hour";
 "channel.info.autoDelete.oneDay" = "1 day";
 "channel.info.autoDelete.oneWeek" = "1 week";
 "channel.info.autoDelete.oneMonth" = "1 month";
-"channel.info.autoDelete.title" = "Auto-Delete messages:";
+"channel.info.autoDelete.custom" = "Custom";
+"channel.info.autoDelete.title" = "Disappearing Messages";
 
 "channel.info.subject" = "Subject";
 
@@ -222,6 +241,29 @@
 "user.inactive" = "Inactive user";
 "user.current" = "You";
 
+//System Messages
+"system.message.createGroup" = "%@ created the group";
+"system.message.createChannel" = "%@ created the channel";
+"system.message.addGroupMember" = "%@ added %@";
+"system.message.removeGroupMember" = "%@ removed %@";
+"system.message.leaveGroup" = "%@ left the group";
+"system.message.joinByInviteLink" = "%@ joined via invite link";
+"system.message.setDisappearingMessageTime" = "%@ set the disappearing messages timer to %@";
+"system.message.disableDisappearingMessages" = "%@ disabled disappearing messages";
+
+//Time Intervals
+"time.interval.off" = "Off";
+"time.interval.minute.one" = "1 minute";
+"time.interval.minute.multiple" = "%d minutes";
+"time.interval.hour.one" = "1 hour";
+"time.interval.hour.multiple" = "%d hours";
+"time.interval.day.one" = "1 day";
+"time.interval.day.multiple" = "%d days";
+"time.interval.week.one" = "1 week";
+"time.interval.week.multiple" = "%d weeks";
+"time.interval.month.one" = "1 month";
+"time.interval.month.multiple" = "%d months";
+
 //Presence
 "user.presence.online" = "online";
 "user.presence.offline" = "offline";
@@ -239,6 +281,9 @@
 "connection.state.disconnected" = "Disconnected";
 "connection.state.reconnecting" = "Connecting";
 "connection.state.failed" = "Connection Failed";
+"connection.error.networkLost" = "Network Error";
+"connection.error.try.again" = "We’re unable to complete your request. Please try again.";
+"connection.tryAgain" = "Try Again";
 
 "alert.error.title" = "Error";
 "alert.button.ok" = "Ok";
@@ -257,6 +302,14 @@
 
 "recorder.slideToCancel" = "< Slide to cancel";
 "recorder.cancel" = "Cancel";
+
+"joinGroup.button.join" = "Join Group";
+"joinGroup.button.joining" = "Joining...";
+"joinGroup.description.default" = "Group Chat Invite";
+"joinGroup.error.invalidLink" = "Invalid invite link";
+"joinGroup.members.one-other" = "1 other";
+"joinGroup.members.others" = "%d others";
+"joinGroup.members.format" = "%@ and %@";
 
 "attachment.file" = "File";
 "attachment.image" = "Photo";
@@ -308,3 +361,32 @@
 
 "channel.self.hint" = "message yourself";
 "channel.self.title" = "Me";
+
+"poll.title" = "Poll";
+"poll.question.header" = "QUESTION";
+"poll.question.placeholder" = "Add question";
+"poll.options.header" = "OPTIONS";
+"poll.option.placeholder" = "Add";
+"poll.option.add" = "Add an option";
+"poll.parameters.header" = "PARAMETERS";
+"poll.multipleVotes" = "Multiple votes";
+"poll.anonymousPoll" = "Anonymous poll";
+"poll.cantRetractVotes" = "Can't retract votes";
+"poll.button.cancel" = "Cancel";
+"poll.button.send" = "Send";
+"poll.discard.alert.message" = "Are you sure you want to discard your poll?";
+"poll.discard.alert.keepEditing" = "Cancel";
+"poll.discard.alert.discard" = "Discard";
+"poll.results.title" = "Poll Results";
+"poll.results.showMore" = "Show All";
+"poll.results.viewResults" = "View Results";
+"poll.optionDetail.title" = "Poll Option";
+"poll.optionDetail.close" = "Close";
+"poll.types.finished" = "Poll finished";
+"poll.types.anonymous" = "Anonymous poll";
+"poll.types.singleVote" = "Single Vote";
+"poll.types.multipleVotes" = "Multiple Votes";
+"poll.endPoll.alert.title" = "End Poll";
+"poll.endPoll.alert.message" = "Are you sure you want to end this poll? People will no longer be able to vote.";
+"poll.endPoll.alert.end" = "End";
+"message.unsupported.text" = "This message is not supported.";

@@ -81,6 +81,12 @@ public extension Appearance {
                                          .init(image: Assets.addMember1.image,
                                                renderingMode: .template(.accent)))!
         }()
+        public static var inviteLink: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.circleBackground40.image,
+                                                     renderingMode: .template(.surface1)),
+                                         .init(image: Assets.link2.image,
+                                               renderingMode: .template(.accent)))!
+        }()
         public static var radio: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.radioCircle1.image,
                                                      renderingMode: .template(.iconInactive)))!
@@ -191,6 +197,14 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.actionReport.image,
                                                      renderingMode: .template(.primaryText)))!
         }()
+        public static var messageActionEndPoll: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionEndPoll.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
+        public static var messageActionRetractVote: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.actionRetractVote.image,
+                                                     renderingMode: .template(.primaryText)))!
+        }()
         public static var messageSendAction: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.circleBackground34.image,
                                                      renderingMode: .template(.accent)),
@@ -253,6 +267,12 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.circleBackground44.image,
                                                      renderingMode: .template(.backgroundSections)),
                                          .init(image: Assets.channelUnreadBubble1.image,
+                                               renderingMode: .template(.secondaryText)))!
+        }()
+        public static var channelUnreadMentionBubble: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.circleBackground44.image,
+                                                     renderingMode: .template(.backgroundSections)),
+                                         .init(image: Assets.iconMention.image,
                                                renderingMode: .template(.secondaryText)))!
         }()
         public static var channelProfileURI: UIImage = {
@@ -474,6 +494,10 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.chatClear.image,
                                                      renderingMode: .template(.accent)))!
         }()
+        public static var chatClock: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.chatClock.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
         public static var chatDelete: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.chatDelete.image,
                                                      renderingMode: .template(.stateWarning)))!
@@ -523,7 +547,11 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.chatActionLocation.image,
                                                      renderingMode: .template(.accent)))!
         }()
-        
+        public static var chatActionPoll: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.chatActionPoll.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+
         public static var searchIcon: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.searchIcon.image,
                                                      renderingMode: .template(.iconInactive)))!
@@ -569,6 +597,11 @@ public extension Appearance {
                                                      renderingMode: .template(.accent)))!
         }()
         
+        public static var refreshIcon: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.refresh.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        
         public init() { }
         
     }
@@ -593,6 +626,7 @@ extension UIImage {
     public static var deletedUser: UIImage { Images.deletedUser }
     public static var attachment: UIImage { Images.attachment }
     public static var addMember: UIImage { Images.addMember }
+    public static var inviteLink: UIImage { Images.inviteLink }
     public static var radio: UIImage { Images.radio }
     public static var radioGray: UIImage { Images.radioGray }
     public static var radioSelected: UIImage { Images.radioSelected }
@@ -631,6 +665,8 @@ extension UIImage {
     public static var messageActionSelect: UIImage { Images.messageActionSelect }
     public static var messageActionRemove: UIImage { Images.messageActionRemove }
     public static var messageActionReport: UIImage { Images.messageActionReport }
+    public static var messageActionEndPoll: UIImage { Images.messageActionEndPoll }
+    public static var messageActionRetractVote: UIImage { Images.messageActionRetractVote }
     public static var attachmentTransferPause: UIImage { Images.attachmentTransferPause }
     public static var attachmentUpload: UIImage { Images.attachmentUpload }
     public static var attachmentDownload: UIImage { Images.attachmentDownload }
@@ -653,6 +689,7 @@ extension UIImage {
     public static var channelCreatePrivate: UIImage { Images.channelCreatePrivate }
     
     public static var channelUnreadBubble: UIImage { Images.channelUnreadBubble }
+    public static var channelUnreadMentionBubble: UIImage { Images.channelUnreadMentionBubble }
     public static var channelProfileURI: UIImage { Images.channelProfileURI }
     public static var channelProfileQR: UIImage { Images.channelProfileQR }
     public static var channelProfileBell: UIImage { Images.channelProfileBell }
@@ -694,7 +731,8 @@ extension UIImage {
     public static var chatActionFile: UIImage { Images.chatActionFile }
     public static var chatActionContact: UIImage { Images.chatActionContact }
     public static var chatActionLocation: UIImage { Images.chatActionLocation }
-    
+    public static var chatActionPoll: UIImage { Images.chatActionPoll }
+
     public static var searchIcon: UIImage { Images.searchIcon }
     public static var searchFill: UIImage { Images.searchFill }
     
@@ -704,4 +742,6 @@ extension UIImage {
     public static var replyPlay: UIImage { Images.replyPlay }
     public static var closeIcon: UIImage { Images.closeIcon }
     public static var messageFile: UIImage { Images.messageFile }
+    
+    public static var refreshIcon: UIImage { Images.refreshIcon }
 }

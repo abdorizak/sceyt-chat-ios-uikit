@@ -237,23 +237,27 @@ public enum L10n {
         public static let title = L10n.tr("Localizable", "channel.info.admins.title", fallback: "Admins")
       }
       public enum AutoDelete {
+        /// Custom
+        public static let custom = L10n.tr("Localizable", "channel.info.autoDelete.custom", fallback: "Custom")
         /// Off
         public static let off = L10n.tr("Localizable", "channel.info.autoDelete.off", fallback: "Off")
         /// 1 day
         public static let oneDay = L10n.tr("Localizable", "channel.info.autoDelete.oneDay", fallback: "1 day")
+        /// 1 hour
+        public static let oneHour = L10n.tr("Localizable", "channel.info.autoDelete.oneHour", fallback: "1 hour")
         /// 1 month
         public static let oneMonth = L10n.tr("Localizable", "channel.info.autoDelete.oneMonth", fallback: "1 month")
         /// 1 week
         public static let oneWeek = L10n.tr("Localizable", "channel.info.autoDelete.oneWeek", fallback: "1 week")
-        /// Auto-Delete messages:
-        public static let title = L10n.tr("Localizable", "channel.info.autoDelete.title", fallback: "Auto-Delete messages:")
+        /// Disappearing Messages
+        public static let title = L10n.tr("Localizable", "channel.info.autoDelete.title", fallback: "Disappearing Messages")
       }
       public enum Item {
         public enum Title {
           /// Admins
           public static let admins = L10n.tr("Localizable", "channel.info.item.title.admins", fallback: "Admins")
-          /// Auto-Delete messages
-          public static let autoDeleteMessages = L10n.tr("Localizable", "channel.info.item.title.autoDeleteMessages", fallback: "Auto-Delete messages")
+          /// Disappearing Messages
+          public static let autoDeleteMessages = L10n.tr("Localizable", "channel.info.item.title.autoDeleteMessages", fallback: "Disappearing Messages")
           /// Members
           public static let members = L10n.tr("Localizable", "channel.info.item.title.members", fallback: "Members")
           /// Message Search
@@ -316,6 +320,32 @@ public enum L10n {
     public enum Intro {
       /// New Channel
       public static let title = L10n.tr("Localizable", "channel.intro.title", fallback: "New Channel")
+    }
+    public enum InviteLink {
+      /// Cancel
+      public static let cancel = L10n.tr("Localizable", "channel.inviteLink.cancel", fallback: "Cancel")
+      /// You can invite anyone to the chat using this link
+      public static let description = L10n.tr("Localizable", "channel.inviteLink.description", fallback: "You can invite anyone to the chat using this link")
+      /// Link copied to clipboard
+      public static let linkCopied = L10n.tr("Localizable", "channel.inviteLink.linkCopied", fallback: "Link copied to clipboard")
+      /// Message history is visible to new members
+      public static let messagesDescription = L10n.tr("Localizable", "channel.inviteLink.messagesDescription", fallback: "Message history is visible to new members")
+      /// Open QR Code
+      public static let openQRCode = L10n.tr("Localizable", "channel.inviteLink.openQRCode", fallback: "Open QR Code")
+      /// Reset
+      public static let reset = L10n.tr("Localizable", "channel.inviteLink.reset", fallback: "Reset")
+      /// Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.
+      public static let resetAlertMessage = L10n.tr("Localizable", "channel.inviteLink.resetAlertMessage", fallback: "Are you sure you want to reset the group link? Anyone with the existing link will no longer be able to use it to join.")
+      /// Reset Link
+      public static let resetAlertTitle = L10n.tr("Localizable", "channel.inviteLink.resetAlertTitle", fallback: "Reset Link")
+      /// Reset Link
+      public static let resetLink = L10n.tr("Localizable", "channel.inviteLink.resetLink", fallback: "Reset Link")
+      /// Share
+      public static let share = L10n.tr("Localizable", "channel.inviteLink.share", fallback: "Share")
+      /// Show Previous Messages
+      public static let showPreviousMessages = L10n.tr("Localizable", "channel.inviteLink.showPreviousMessages", fallback: "Show Previous Messages")
+      /// Invite Link
+      public static let title = L10n.tr("Localizable", "channel.inviteLink.title", fallback: "Invite Link")
     }
     public enum List {
       /// Search for channels
@@ -399,6 +429,14 @@ public enum L10n {
       /// Members
       public static let sectionTitle = L10n.tr("Localizable", "channel.private.sectionTitle", fallback: "Members")
     }
+    public enum Profile {
+      /// Show or send this to anyone who wants to join this channel
+      public static let qrCodeDescription = L10n.tr("Localizable", "channel.profile.qrCodeDescription", fallback: "Show or send this to anyone who wants to join this channel")
+      /// Share QR Code
+      public static let qrCodeShare = L10n.tr("Localizable", "channel.profile.qrCodeShare", fallback: "Share QR Code")
+      /// QR Code for Invites
+      public static let qrCodeTitle = L10n.tr("Localizable", "channel.profile.qrCodeTitle", fallback: "QR Code for Invites")
+    }
     public enum ReadOnly {
       /// Read Only.
       public static let message = L10n.tr("Localizable", "channel.readOnly.message", fallback: "Read Only.")
@@ -473,6 +511,16 @@ public enum L10n {
     public static let on = L10n.tr("Localizable", "common.on", fallback: "On")
   }
   public enum Connection {
+    /// Try Again
+    public static let tryAgain = L10n.tr("Localizable", "connection.tryAgain", fallback: "Try Again")
+    public enum Error {
+      /// Network Error
+      public static let networkLost = L10n.tr("Localizable", "connection.error.networkLost", fallback: "Network Error")
+      public enum Try {
+        /// We’re unable to complete your request. Please try again.
+        public static let again = L10n.tr("Localizable", "connection.error.try.again", fallback: "We’re unable to complete your request. Please try again.")
+      }
+    }
     public enum State {
       /// Connected
       public static let connected = L10n.tr("Localizable", "connection.state.connected", fallback: "Connected")
@@ -525,6 +573,34 @@ public enum L10n {
     public static let edit = L10n.tr("Localizable", "input.edit", fallback: "Edit message")
     /// Reply
     public static let reply = L10n.tr("Localizable", "input.reply", fallback: "Reply")
+  }
+  public enum JoinGroup {
+    public enum Button {
+      /// Join Group
+      public static let join = L10n.tr("Localizable", "joinGroup.button.join", fallback: "Join Group")
+      /// Joining...
+      public static let joining = L10n.tr("Localizable", "joinGroup.button.joining", fallback: "Joining...")
+    }
+    public enum Description {
+      /// Group Chat Invite
+      public static let `default` = L10n.tr("Localizable", "joinGroup.description.default", fallback: "Group Chat Invite")
+    }
+    public enum Error {
+      /// Invalid invite link
+      public static let invalidLink = L10n.tr("Localizable", "joinGroup.error.invalidLink", fallback: "Invalid invite link")
+    }
+    public enum Members {
+      /// %@ and %@
+      public static func format(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "joinGroup.members.format", String(describing: p1), String(describing: p2), fallback: "%@ and %@")
+      }
+      /// 1 other
+      public static let oneOther = L10n.tr("Localizable", "joinGroup.members.one-other", fallback: "1 other")
+      /// %d others
+      public static func others(_ p1: Int) -> String {
+        return L10n.tr("Localizable", "joinGroup.members.others", p1, fallback: "%d others")
+      }
+    }
   }
   public enum Link {
     /// Copy link
@@ -635,6 +711,10 @@ public enum L10n {
         return L10n.tr("Localizable", "message.reply.count", p1, fallback: "%d Replies")
       }
     }
+    public enum Unsupported {
+      /// This message is not supported.
+      public static let text = L10n.tr("Localizable", "message.unsupported.text", fallback: "This message is not supported.")
+    }
   }
   public enum Nav {
     public enum Bar {
@@ -658,6 +738,86 @@ public enum L10n {
       public static let next = L10n.tr("Localizable", "nav.bar.next", fallback: "Next")
       /// Update
       public static let update = L10n.tr("Localizable", "nav.bar.update", fallback: "Update")
+    }
+  }
+  public enum Poll {
+    /// Anonymous poll
+    public static let anonymousPoll = L10n.tr("Localizable", "poll.anonymousPoll", fallback: "Anonymous poll")
+    /// Can't retract votes
+    public static let cantRetractVotes = L10n.tr("Localizable", "poll.cantRetractVotes", fallback: "Can't retract votes")
+    /// Multiple votes
+    public static let multipleVotes = L10n.tr("Localizable", "poll.multipleVotes", fallback: "Multiple votes")
+    /// Poll
+    public static let title = L10n.tr("Localizable", "poll.title", fallback: "Poll")
+    public enum Button {
+      /// Cancel
+      public static let cancel = L10n.tr("Localizable", "poll.button.cancel", fallback: "Cancel")
+      /// Send
+      public static let send = L10n.tr("Localizable", "poll.button.send", fallback: "Send")
+    }
+    public enum Discard {
+      public enum Alert {
+        /// Discard
+        public static let discard = L10n.tr("Localizable", "poll.discard.alert.discard", fallback: "Discard")
+        /// Cancel
+        public static let keepEditing = L10n.tr("Localizable", "poll.discard.alert.keepEditing", fallback: "Cancel")
+        /// Are you sure you want to discard your poll?
+        public static let message = L10n.tr("Localizable", "poll.discard.alert.message", fallback: "Are you sure you want to discard your poll?")
+      }
+    }
+    public enum EndPoll {
+      public enum Alert {
+        /// End
+        public static let end = L10n.tr("Localizable", "poll.endPoll.alert.end", fallback: "End")
+        /// Are you sure you want to end this poll? People will no longer be able to vote.
+        public static let message = L10n.tr("Localizable", "poll.endPoll.alert.message", fallback: "Are you sure you want to end this poll? People will no longer be able to vote.")
+        /// End Poll
+        public static let title = L10n.tr("Localizable", "poll.endPoll.alert.title", fallback: "End Poll")
+      }
+    }
+    public enum Option {
+      /// Add an option
+      public static let add = L10n.tr("Localizable", "poll.option.add", fallback: "Add an option")
+      /// Add
+      public static let placeholder = L10n.tr("Localizable", "poll.option.placeholder", fallback: "Add")
+    }
+    public enum OptionDetail {
+      /// Close
+      public static let close = L10n.tr("Localizable", "poll.optionDetail.close", fallback: "Close")
+      /// Poll Option
+      public static let title = L10n.tr("Localizable", "poll.optionDetail.title", fallback: "Poll Option")
+    }
+    public enum Options {
+      /// OPTIONS
+      public static let header = L10n.tr("Localizable", "poll.options.header", fallback: "OPTIONS")
+    }
+    public enum Parameters {
+      /// PARAMETERS
+      public static let header = L10n.tr("Localizable", "poll.parameters.header", fallback: "PARAMETERS")
+    }
+    public enum Question {
+      /// QUESTION
+      public static let header = L10n.tr("Localizable", "poll.question.header", fallback: "QUESTION")
+      /// Add question
+      public static let placeholder = L10n.tr("Localizable", "poll.question.placeholder", fallback: "Add question")
+    }
+    public enum Results {
+      /// Show All
+      public static let showMore = L10n.tr("Localizable", "poll.results.showMore", fallback: "Show All")
+      /// Poll Results
+      public static let title = L10n.tr("Localizable", "poll.results.title", fallback: "Poll Results")
+      /// View Results
+      public static let viewResults = L10n.tr("Localizable", "poll.results.viewResults", fallback: "View Results")
+    }
+    public enum Types {
+      /// Anonymous poll
+      public static let anonymous = L10n.tr("Localizable", "poll.types.anonymous", fallback: "Anonymous poll")
+      /// Poll finished
+      public static let finished = L10n.tr("Localizable", "poll.types.finished", fallback: "Poll finished")
+      /// Multiple Votes
+      public static let multipleVotes = L10n.tr("Localizable", "poll.types.multipleVotes", fallback: "Multiple Votes")
+      /// Single Vote
+      public static let singleVote = L10n.tr("Localizable", "poll.types.singleVote", fallback: "Single Vote")
     }
   }
   public enum Previewer {
@@ -703,6 +863,88 @@ public enum L10n {
   public enum SearchBar {
     /// Search
     public static let placeholder = L10n.tr("Localizable", "searchBar.placeholder", fallback: "Search")
+  }
+  public enum System {
+    public enum Message {
+      /// %@ added %@
+      public static func addGroupMember(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "system.message.addGroupMember", String(describing: p1), String(describing: p2), fallback: "%@ added %@")
+      }
+      /// %@ created the channel
+      public static func createChannel(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.createChannel", String(describing: p1), fallback: "%@ created the channel")
+      }
+      /// %@ created the group
+      public static func createGroup(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.createGroup", String(describing: p1), fallback: "%@ created the group")
+      }
+      /// %@ disabled disappearing messages
+      public static func disableDisappearingMessages(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.disableDisappearingMessages", String(describing: p1), fallback: "%@ disabled disappearing messages")
+      }
+      /// %@ joined via invite link
+      public static func joinByInviteLink(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.joinByInviteLink", String(describing: p1), fallback: "%@ joined via invite link")
+      }
+      /// %@ left the group
+      public static func leaveGroup(_ p1: Any) -> String {
+        return L10n.tr("Localizable", "system.message.leaveGroup", String(describing: p1), fallback: "%@ left the group")
+      }
+      /// %@ removed %@
+      public static func removeGroupMember(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "system.message.removeGroupMember", String(describing: p1), String(describing: p2), fallback: "%@ removed %@")
+      }
+      /// %@ set the disappearing messages timer to %@
+      public static func setDisappearingMessageTime(_ p1: Any, _ p2: Any) -> String {
+        return L10n.tr("Localizable", "system.message.setDisappearingMessageTime", String(describing: p1), String(describing: p2), fallback: "%@ set the disappearing messages timer to %@")
+      }
+    }
+  }
+  public enum Time {
+    public enum Interval {
+      /// Off
+      public static let off = L10n.tr("Localizable", "time.interval.off", fallback: "Off")
+      public enum Day {
+        /// %d days
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.day.multiple", p1, fallback: "%d days")
+        }
+        /// 1 day
+        public static let one = L10n.tr("Localizable", "time.interval.day.one", fallback: "1 day")
+      }
+      public enum Hour {
+        /// %d hours
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.hour.multiple", p1, fallback: "%d hours")
+        }
+        /// 1 hour
+        public static let one = L10n.tr("Localizable", "time.interval.hour.one", fallback: "1 hour")
+      }
+      public enum Minute {
+        /// %d minutes
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.minute.multiple", p1, fallback: "%d minutes")
+        }
+        /// 1 minute
+        public static let one = L10n.tr("Localizable", "time.interval.minute.one", fallback: "1 minute")
+      }
+      public enum Month {
+        /// %d months
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.month.multiple", p1, fallback: "%d months")
+        }
+        /// 1 month
+        public static let one = L10n.tr("Localizable", "time.interval.month.one", fallback: "1 month")
+      }
+      public enum Week {
+        /// %d weeks
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.week.multiple", p1, fallback: "%d weeks")
+        }
+        /// 1 week
+        public static let one = L10n.tr("Localizable", "time.interval.week.one", fallback: "1 week")
+      }
+    }
   }
   public enum Upload {
     /// Preparing...

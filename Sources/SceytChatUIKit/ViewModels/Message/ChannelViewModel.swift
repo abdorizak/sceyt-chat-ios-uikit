@@ -10,11 +10,12 @@ import SceytChat
 import UIKit
 import Combine
 
-open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
+open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, UnreadMentionsManagerDelegate {
     public typealias ChangeItem = LazyDatabaseObserver<MessageDTO, ChatMessage>.ChangeItemPaths
     //MARK: Events
     @Published public var event: Event?
     @Published public var newMessageCount: UInt64 = 0
+    @Published public var newMentionCount: UInt64 = 0
     @Published public var peerPresence: Presence?
     
     @Published public var isEditing: Bool = false
@@ -41,7 +42,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     public let presenceProvider = PresenceProvider.default
-    
+
+    // MARK: - Unread Mentions Management
+
+    public lazy var unreadMentionsManager = UnreadMentionsManager(channelId: channel.id)
+
     //MARK: Message observer
     open lazy var messageObserver: LazyMessagesObserver = {
         createMessageObserver()
@@ -103,12 +108,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     public private(set) var lastDisplayedMessageId: MessageId = 0
     public private(set) var selectedMessageForAction: (ChatMessage, MessageAction)?
     public static var messagesFetchLimit: UInt = 50
-    open var hasUnreadMessages: Bool {
-        channel.newMessageCount > 0
-    }
-    
+
     open var canUpdateUnreadPosition = true
-    
+
     //MARK: private properties
     private var schedulers = [UserId: Scheduler]()
     private var isFetchingData = false
@@ -119,6 +121,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     private var lastLoadNearMessageId: MessageId = 0
     private(set) var scrollToMessageIdIfSearching: MessageId = 0
     open private(set) var scrollToRepliedMessageId: MessageId = 0
+    private(set) var scrollToUnreadMentionMessageId: MessageId = 0
     private(set) var searchDirection: SearchDirection = .none
     private var markMessagesQueue = DispatchQueue(label: "com.sceytchat.uikit.mark_messages")
     @Atomic private var markMessagesTaskStarted = false
@@ -126,6 +129,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     @Atomic private var lastPendingMarkDisplayedMessageId: MessageId = 0
     @Atomic private var isAppActive: Bool = true
     @Atomic private var isRestartingMessageObserver: DataReloadingType = .none
+    @Atomic private var pendingPollVotes: [MessageId: Bool] = [:]
     
     // MARK: internal properties
     var lastNavigatedIndexPath: IndexPath?
@@ -167,7 +171,18 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             identifier: clientDelegateIdentifier
         )
         event = .updateChannel
+
         newMessageCount = channel.newMessageCount
+        newMentionCount = channel.newMentionCount
+        resetUnreadMentionsIfNeeded()
+
+        // Pre-fetch mentions if there are unread mentions
+        if newMentionCount > 0 {
+            Task {
+                await unreadMentionsManager.refreshUnreadMentions()
+            }
+        }
+
         markAsReadIfNeeded()
         subscribeToPeerPresence()
         ApplicationStateObserver()
@@ -177,6 +192,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             .didEnterBackground { [weak self] _ in
                 self?.isAppActive = false
             }
+
+        // Set up unread mentions manager delegate
+        unreadMentionsManager.delegate = self
+
         startDatabaseObserver {}
         if chatClient.connectionState == .connected {
             loadLastMessages()
@@ -199,6 +218,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         logger.verbose("ChannelViewModel deinit for channel \(channel.id)")
         channelObserver.stopObserver()
         messageObserver.stopObserver()
+        NotificationCenter.default.removeObserver(self)
         //        unsubscribeToPeerPresence()
         SceytChatUIKit.shared.chatClient.removeDelegate(identifier: clientDelegateIdentifier)
         SceytChatUIKit.shared.chatClient.removeChannelDelegate(identifier: channelDelegateIdentifier)
@@ -219,6 +239,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     
     //MARK: Database observer events
     open func startDatabaseObserver(completion: @escaping () -> Void) {
+        provider.deleteExpiredAutoDeleteMessages()
+
         messageObserver.onWillChange = { [weak self] cache, items in
             return self?.onWillChangeEvent(cache: cache, items: items)
         }
@@ -521,6 +543,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         if self.isSearching,
            let indexPath = indexPath(of: scrollToMessageIdIfSearching, items: items) {
             return (indexPath, scrollToMessageIdIfSearching)
+        } else if let indexPath = indexPath(of: scrollToUnreadMentionMessageId, items: items) {
+            return (indexPath, scrollToUnreadMentionMessageId)
         } else if let indexPath = indexPath(of: scrollToRepliedMessageId, items: items) {
             return (indexPath, scrollToRepliedMessageId)
         }
@@ -548,6 +572,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
                 guard let self else { return }
                 self.scrollToRepliedMessageId = 0
+                self.scrollToUnreadMentionMessageId = 0
                 self.isRestartingMessageObserver = .none
             }
     }
@@ -555,6 +580,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     open func scrollToItemIfNeeded(items: ChangeItem) {
         if let (indexPath, mid) = needsToScrollAtIndexPath(items: items) {
             updateStateAfterChangeEvent(for: indexPath)
+            
+            // Check if this is an unread mention navigation
+            let isUnreadMentionNavigation = scrollToUnreadMentionMessageId == mid
+            
             if isSearching {
                 updateLastNavigatedIndexPath(indexPath: indexPath)
                 scrollToMessageIdIfSearching = 0
@@ -562,9 +591,16 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 isSearchResultsLoading = false
                 isRestartingMessageObserver = .none
             } else {
+                scrollToRepliedMessageId = 0
                 isRestartingMessageObserver = .none
             }
+            
             scroll(to: indexPath, messageId: mid)
+            
+            // Mark mention as navigated only after successful scroll
+            if isUnreadMentionNavigation {
+                handleMentionNavigated(messageId: mid)
+            }
         }
     }
 
@@ -575,18 +611,26 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             var needToScroll = true
             defer {
                 if needToScroll {
-                    scrollToItemIfNeeded(items: items) 
+                    scrollToItemIfNeeded(items: items)
                 }
             }
 
             if isInitial {
-                let messageId = scrollToRepliedMessageId != 0 ? scrollToRepliedMessageId : lastDisplayedMessageId
+                let messageId = scrollToRepliedMessageId != 0 ? scrollToRepliedMessageId : 
+                               scrollToUnreadMentionMessageId != 0 ? scrollToUnreadMentionMessageId : lastDisplayedMessageId
                 if messageId != 0,
                    let indexPath = items.changeItems
                     .first(where: {$0.item?.id == messageId})?
                     .indexPath {
                     needToScroll = false
-                    event = .reloadDataAndScroll(indexPath: indexPath, animated: scrollToRepliedMessageId != 0, pos: .centeredVertically)
+                    let animated = scrollToRepliedMessageId != 0 || scrollToUnreadMentionMessageId != 0
+                    event = .reloadDataAndScroll(indexPath: indexPath, animated: animated, pos: .centeredVertically)
+                    
+                    // Mark mention as navigated if this is an unread mention
+                    if scrollToUnreadMentionMessageId == messageId {
+                        handleMentionNavigated(messageId: messageId)
+                    }
+                    
                     resetStateAfterChangeEvent()
                 } else {
                     if let (indexPath, messageId) = needsToScrollAtIndexPath(items: items) {
@@ -598,7 +642,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                         case .none:
                             break
                         }
-                        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId)
+                        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId, mode: nil)
                         resetStateAfterChangeEvent()
                         needToScroll = false
                     } else {
@@ -908,7 +952,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     ) {
         guard let message = message(at: indexPath)
         else { return }
-        logger.info("ChannelViewModel loadLastMessages (next) channel id: \(channel.id), \(indexPath) lastDisplayedMessageId \(message.id) \(message.body)")
+        logger.info("ChannelViewModel loadLastMessages (next) channel id: \(channel.id), \(indexPath) lastDisplayedMessageId \(message.id)")
         if message.id == 0 {
             loadPrevMessages(before: MessageId(Int64.max))
         } else {
@@ -1038,6 +1082,22 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         
     }
     
+    open func loadNearMessagesOfUnreadMention(
+        id: MessageId,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        if chatClient.connectionState == .connected {
+            provider.loadNearMessages(near: id) { [weak self] error in
+                if error == nil {
+                    self?.messageObserver.restartToNear(at: id)
+                }
+                completion?(error)
+            }
+        } else {
+            completion?(SceytChatError.notConnect)
+        }
+    }
+    
     open func resetToInitialStateIfNeeded() -> Bool {
         guard let lastMessage = channel.lastMessage
         else { return false}
@@ -1065,6 +1125,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     open func resetScrollState() {
         scrollToMessageIdIfSearching = 0
         scrollToRepliedMessageId = 0
+        scrollToUnreadMentionMessageId = 0
         searchDirection = .none
     }
     
@@ -1110,6 +1171,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                     let min = filteredMessages.min(by: { $0.id < $1.id })
             else {
                 markMessagesTaskStarted = false
+                newMentionCount = UInt64(unreadMentionsManager.remainingUnreadMentionsCount)
                 return
             }
                         //
@@ -1119,6 +1181,10 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 markerName: marker.rawValue)
             {[weak self] error in
                 self?.markMessagesTaskStarted = false
+                
+                if error == nil {
+                    self?.updateMentionCountAfterMarkingDisplayed(messages: messages)
+                }
             }
         }
     }
@@ -1151,6 +1217,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 markerName: DefaultMarker.displayed.rawValue)
             {[weak self] error in
                 self?.markMessagesTaskStarted = false
+
+                // If marking was successful, update mention count
+                if error == nil {
+                    self?.updateMentionCountAfterMarkingDisplayed(messages: messages)
+                }
             }
         }
     }
@@ -1171,6 +1242,53 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     //MARK: Send message
+    /// Creates a base `Message.Builder` configured from the given `UserSendMessage`.
+    /// Override or call this to customize message creation logic (e.g., hardcode flags for certain actions).
+    /// - Important: This method only sets base properties; attachment/body handling stays in `createAndSendUserMessage`.
+    open func makeBaseMessageBuilder(for userMessage: UserSendMessage) -> Message.Builder {
+        let builder = Message.Builder()
+            .type(userMessage.type)
+
+        switch userMessage.action {
+        case let .edit(message):
+            // Preserve ids for edit flow
+            builder.id(message.id)
+            builder.tid(Int(message.tid))
+            // Keep the original mention behavior during edit
+            builder.disableMentionsCount(message.disableMentionsCount)
+        case let .reply(message):
+            // Configure reply linkage
+            builder.parentMessageId(message.id)
+            builder.disableMentionsCount(message.disableMentionsCount)
+        case let .forward(message):
+            // Hardcode mention disabling for forwarded messages as requested
+            builder.disableMentionsCount(message.disableMentionsCount)
+        case .send:
+            break
+        }
+
+        // Thread context
+        if isThread, let threadMessage {
+            builder.parentMessageId(threadMessage.id)
+            builder.replyInThread(true)
+        }
+
+        // Common metadata/mentions
+        if let metadata = userMessage.metadata {
+            builder.metadata(metadata)
+        }
+        if let mentionUsers = userMessage.mentionUsers {
+            builder.mentionUserIds(mentionUsers.map { $0.id })
+        }
+
+        // Body attributes are part of the base builder since they are agnostic to attachments
+        if let bodyAttributes = userMessage.bodyAttributes {
+            builder.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
+        }
+
+        return builder
+    }
+
     open func createAndSendUserMessage(_ userMessage: UserSendMessage) {
         if isTyping {
             isTyping = false
@@ -1185,7 +1303,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         } else {
             messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
         }
-        
+
         if case let .edit(message) = userMessage.action,
            message.body == userMessage.text {
             if let oldBodyAttributes = message.bodyAttributes,
@@ -1197,9 +1315,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 return
             }
         }
-        let builder = Message
-            .Builder()
-            .type(userMessage.type)
+        let builder = makeBaseMessageBuilder(for: userMessage)
         var editAttachments = [Attachment]()
         switch userMessage.action {
         case let .edit(message):
@@ -1209,36 +1325,33 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             if let attachments = message.attachments?.filter({ $0.type != "link" }) {
                 editAttachments += attachments.map { $0.builder.build() }
             }
-            
-        case let .reply(message):
-            builder.parentMessageId(message.id)
         default:
             break
         }
-        
+
         if isThread {
             builder.parentMessageId(threadMessage!.id)
             builder.replyInThread(true)
         }
-        
+
         if let metadata = userMessage.metadata {
             builder.metadata(metadata)
         }
-        
+
         if let mentionUsers = userMessage.mentionUsers {
             builder.mentionUserIds(mentionUsers.map { $0.id })
         }
-        
+
         var messages = [Message]()
         var linkAttachment = [Attachment]()
         if let attachment = userMessage.linkAttachments.first?.attachment {
             linkAttachment = [attachment]
         }
-        
+
         if let bodyAttributes = userMessage.bodyAttributes {
             builder.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
         }
-        
+
         if let items = userMessage.attachments, items.count > 0 {
             for (index, item) in items.enumerated() {
                 if index == 0 {
@@ -1255,7 +1368,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             messages.append(builder.build())
         }
         guard !messages.isEmpty else { return }
-        
+
         let first = messages.remove(at: 0)
         sendUserMessage(first, action: userMessage.action)
         if let linkMetadata = userMessage.linkMetadata {
@@ -1270,6 +1383,71 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 }
         }
     }
+
+    /// Sends a poll message to the channel.
+    /// - Parameter pollModel: The poll model containing question, options, and settings.
+    open func sendPoll(_ pollModel: CreatePollModel) {
+        if isTyping {
+            isTyping = false
+        }
+        scrollToRepliedMessageId = 0
+        scrollToMessageIdIfSearching = 0
+
+        // Ensure observer is up to date
+        if let lastCacheItem = messageObserver.lastItem,
+            let lastMessageItem = channel.lastMessage,
+            lastCacheItem.id != lastMessageItem.id {
+            let offset = messageObserver.calculateMessageFetchOffset()
+            messageObserver.restartObserver(fetchPredicate: messageObserver.defaultFetchPredicate, offset: offset)
+        } else {
+            messageObserver.update(predicate: messageObserver.defaultFetchPredicate)
+        }
+
+        let options = pollModel.options
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map {
+                SceytChat.PollOption.Builder()
+                    .id(UUID().uuidString)
+                    .name($0)
+                    .build()
+            }
+
+        let messageTid = chatClient.generateTId()
+
+        let pollDetails = SceytChat.PollDetails.Builder()
+            .pollId(String(messageTid))
+            .name(pollModel.question)
+            .description("")
+            .options(options)
+            .allowMultipleVotes(pollModel.allowMultipleAnswers)
+            .anonymous(pollModel.isAnonymous)
+            .allowVoteRetract(true)
+            .build()
+
+        // Create message builder with poll
+        let builder = Message.Builder()
+            .tid(messageTid)
+            .type("poll")
+            .body(pollModel.question)
+            .poll(pollDetails)
+
+        // Set reply context if applicable
+        if let (replyMessage, action) = selectedMessageForAction, case .reply = action {
+            builder.parentMessageId(replyMessage.id)
+        }
+
+        // Set thread context if applicable
+        if isThread, let threadMessage {
+            builder.parentMessageId(threadMessage.id)
+            builder.replyInThread(true)
+        }
+
+        let message = builder.build()
+
+        // Send the poll message
+        sendUserMessage(message, action: .send)
+    }
     
     open func sendUserMessage(
         _ message: Message,
@@ -1277,7 +1455,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     ) {
         
         @Sendable func send(storeBeforeSend: Bool = false) {
-            logger.verbose("[MESSAGE SEND] sendUserMessage messageSender \(message.body)")
+            logger.verbose("[MESSAGE SEND] sendUserMessage messageSender")
             switch action {
             case .send, .reply, .forward:
                 logger.verbose("[MESSAGE SEND] sendUserMessage messageSender send reply forward")
@@ -1402,14 +1580,23 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func deleteAllMessages(
-        forMeOnly: Bool,
-        completion: @escaping (Error?) -> Void
-    ) {
-        channelProvider.deleteAllMessages(
-            forEveryone: !forMeOnly,
-            completion: completion
-        )
-    }
+            forMeOnly: Bool,
+            completion: @escaping (Error?) -> Void
+        ) {
+            channelProvider.deleteAllMessages(
+                forEveryone: !forMeOnly
+            ) { [weak self] error in
+                if error == nil {
+                    DispatchQueue.main.async {
+                        self?.isInitialLoad = true
+                        self?.messageObserver.restartObserver(
+                            fetchPredicate: self?.messageObserver.fetchPredicate ?? NSPredicate(value: true)
+                        ) {}
+                    }
+                }
+                completion(error)
+            }
+        }
     
     open func addReaction(
         layoutModel: MessageLayoutModel,
@@ -1437,6 +1624,420 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             key: key
         )
     }
+    
+    // MARK: - Poll Operations
+    
+    open func hasPendingPollVote(for messageId: MessageId) -> Bool {
+        return pendingPollVotes[messageId] == true
+    }
+    
+    open func addPollVote(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        optionId: String
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: optionId,
+            removeOptionId: nil
+        )
+
+        provider.addPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionId: optionId
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
+    }
+
+    open func deletePollVote(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        optionId: String
+    ) {
+        guard let poll = layoutModel.message.poll else { return }
+
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            return
+        }
+
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+
+        // Post optimistic UI update notification
+        postOptimisticPollUpdate(
+            messageId: layoutModel.message.id,
+            layoutModel: layoutModel,
+            currentPollViewModel: pollViewModel,
+            addOptionId: nil,
+            removeOptionId: optionId
+        )
+
+        provider.deletePollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            optionId: optionId
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+        }
+    }
+
+    open func retractPollVote(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
+        
+        // Check if there's already a pending vote for this message
+        if pendingPollVotes[layoutModel.message.id] == true {
+            completion?(nil)
+            return
+        }
+        
+        // Mark vote as pending
+        pendingPollVotes[layoutModel.message.id] = true
+        
+        // Optimistically update all selected options: deselect, decrease vote count, and remove current user from voters
+        var updatedOptions = pollViewModel.options.map { option -> PollOptionViewModel in
+            if option.isSelected {
+                var updatedOption = option
+                updatedOption.isSelected = false
+                updatedOption.voteCount = max(0, option.voteCount - 1)
+                // Remove current user from voters
+                updatedOption.voters = option.voters.filter { $0.id != SceytChatUIKit.shared.currentUserId }
+                return updatedOption
+            }
+            return option
+        }
+        
+        // Recalculate progress based on new vote counts
+        let maxVotes = updatedOptions.map { $0.voteCount }.max() ?? 1
+        updatedOptions = updatedOptions.map { option in
+            var updatedOption = option
+            updatedOption.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+            return updatedOption
+        }
+        
+        // Create updated poll view model
+        let updatedPollViewModel = PollViewModel(
+            pollId: pollViewModel.pollId,
+            question: pollViewModel.question,
+            pollTypeText: pollViewModel.pollTypeText,
+            options: updatedOptions,
+            totalVotes: pollViewModel.totalVotes,
+            closed: pollViewModel.closed,
+            anonymous: pollViewModel.anonymous,
+            allowMultipleVotes: pollViewModel.allowMultipleVotes,
+            allowVoteRetract: pollViewModel.allowVoteRetract
+        )
+        
+        // Post optimistic UI update notification
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .didUpdateMessagePoll,
+                object: nil,
+                userInfo: ["pollUIModel": updatedPollViewModel]
+            )
+        }
+        
+        provider.retractPollVote(
+            messageId: layoutModel.message.id,
+            pollId: poll.id
+        ) { [weak self] error in
+            // Clear pending state when request completes
+            self?.pendingPollVotes[layoutModel.message.id] = false
+            completion?(error)
+        }
+    }
+    
+    open func closePoll(
+        layoutModel: MessageLayoutModel,
+        pollViewModel: PollViewModel,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        guard let poll = layoutModel.message.poll else {
+            completion?(nil)
+            return
+        }
+        
+        provider.closePoll(
+            messageId: layoutModel.message.id,
+            pollId: poll.id,
+            completion: completion
+        )
+    }
+    
+    // MARK: - Poll Update Helpers
+    
+    private func postOptimisticPollUpdate(
+        messageId: MessageId,
+        layoutModel: MessageLayoutModel,
+        currentPollViewModel: PollViewModel,
+        addOptionId: String?,
+        removeOptionId: String?
+    ) {
+        if let pollUIModel = createOptimisticPollViewModel(
+            messageId: messageId,
+            layoutModel: layoutModel,
+            currentPollViewModel: currentPollViewModel,
+            addOptionId: addOptionId,
+            removeOptionId: removeOptionId,
+            isClosed: nil
+        ) {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .didUpdateMessagePoll,
+                    object: nil,
+                    userInfo: ["pollUIModel": pollUIModel]
+                )
+            }
+        }
+    }
+
+    private func createOptimisticPollViewModel(
+        messageId: MessageId,
+        layoutModel: MessageLayoutModel,
+        currentPollViewModel: PollViewModel,
+        addOptionId: String?,
+        removeOptionId: String?,
+        isClosed: Bool?
+    ) -> PollViewModel? {
+        guard let currentUserId = SceytChatUIKit.shared.currentUserId, let poll = layoutModel.message.poll else {
+            return nil
+        }
+
+        let currentUser = ChatUser(user: SceytChatUIKit.shared.chatClient.user)
+        let isSingleSelection = !poll.allowMultipleVotes
+        var updatedOptions = currentPollViewModel.options
+
+        // Helper function to get voters from poll for a specific option
+        func getVotersFromPoll(for optionId: String) -> [ChatUser] {
+            poll.votes
+                .filter { $0.optionId == optionId }
+                .compactMap(\.user)
+        }
+
+        // Handle selection state updates
+        if isSingleSelection {
+            // For single selection: when adding an option, deselect all others
+            if let addOptionId {
+                // Create new options array with updated selection state and vote counts
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    // Get voters from poll for this option
+                    var updatedVoters = getVotersFromPoll(for: option.id)
+                    
+                    // Find the previously selected option (if different from the new one)
+                    let wasPreviouslySelected = option.isSelected && option.id != addOptionId
+                    
+                    if wasPreviouslySelected {
+                        // Remove current user from previously selected option's voters
+                        updatedVoters = updatedVoters.filter { $0.id != currentUserId }
+                    }
+                    
+                    // Update selection state: only the new option should be selected
+                    let isSelected = option.id == addOptionId
+                    
+                    // Increase vote count and add current user for the newly selected option
+                    var voteCount = option.voteCount
+                    if option.id == addOptionId {
+                        voteCount = option.voteCount + 1
+                        // Append current user if not already in voters array
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                    } else if wasPreviouslySelected {
+                        voteCount = max(0, option.voteCount - 1)
+                    } else if option.isSelected {
+                        // For other options that remain selected, ensure current user is in voters
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                    }
+                    
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: voteCount,
+                        progress: option.progress,
+                        selected: isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: updatedVoters
+                    )
+                }
+            } else if let removeOptionId {
+                // Removing a vote in single selection means deselecting it
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == removeOptionId {
+                        // Get voters from poll and remove current user
+                        let updatedVoters = getVotersFromPoll(for: option.id)
+                            .filter { $0.id != currentUserId }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: max(0, option.voteCount - 1),
+                            progress: option.progress,
+                            selected: false,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
+                    }
+                    // For other options, get voters from poll
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
+                }
+            }
+        } else {
+            if let addOptionId {
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == addOptionId {
+                        // Get voters from poll and add current user
+                        var updatedVoters = getVotersFromPoll(for: option.id)
+                        // Append current user if not already in voters array
+                        if !updatedVoters.contains(where: { $0.id == currentUserId }) {
+                            updatedVoters.append(currentUser)
+                        }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: option.voteCount + 1,
+                            progress: option.progress,
+                            selected: true,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
+                    }
+                    // For other options, get voters from poll
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
+                }
+            } else if let removeOptionId {
+                updatedOptions = updatedOptions.map { option -> PollOptionViewModel in
+                    if option.id == removeOptionId {
+                        // Get voters from poll and remove current user
+                        let updatedVoters = getVotersFromPoll(for: option.id)
+                            .filter { $0.id != currentUserId }
+                        return PollOptionViewModel(
+                            id: option.id,
+                            text: option.text,
+                            voteCount: max(0, option.voteCount - 1),
+                            progress: option.progress,
+                            selected: false,
+                            isAnonymous: option.isAnonymous,
+                            isIncoming: option.isIncoming,
+                            isClosed: option.isClosed,
+                            voters: updatedVoters
+                        )
+                    }
+                    // For other options, get voters from poll
+                    var voters = getVotersFromPoll(for: option.id)
+                    // Ensure current user is in voters if option is selected
+                    if option.isSelected && !voters.contains(where: { $0.id == currentUserId }) {
+                        voters.append(currentUser)
+                    }
+                    return PollOptionViewModel(
+                        id: option.id,
+                        text: option.text,
+                        voteCount: option.voteCount,
+                        progress: option.progress,
+                        selected: option.isSelected,
+                        isAnonymous: option.isAnonymous,
+                        isIncoming: option.isIncoming,
+                        isClosed: option.isClosed,
+                        voters: voters
+                    )
+                }
+            }
+        }
+
+        // Recalculate progress based on new vote counts
+        let maxVotes = updatedOptions.map { $0.voteCount }.max() ?? 1
+        updatedOptions = updatedOptions.map { option in
+            var updatedOption = option
+            updatedOption.progress = maxVotes > 0 ? Float(option.voteCount) / Float(maxVotes) : 0.0
+            return updatedOption
+        }
+
+        // Update closed state if provided
+        if let isClosed {
+            updatedOptions = updatedOptions.map { option in
+                var updatedOption = option
+                updatedOption.isClosed = isClosed
+                return updatedOption
+            }
+        }
+
+        // Recalculate total votes based on updated vote counts
+        let totalVotes = updatedOptions.reduce(0) { $0 + $1.voteCount }
+
+        // Create new PollViewModel with updated options
+        return PollViewModel(
+            pollId: currentPollViewModel.pollId,
+            question: currentPollViewModel.question,
+            pollTypeText: currentPollViewModel.pollTypeText,
+            options: updatedOptions,
+            totalVotes: totalVotes,
+            closed: currentPollViewModel.closed,
+            anonymous: currentPollViewModel.anonymous,
+            allowMultipleVotes: currentPollViewModel.allowMultipleVotes,
+            allowVoteRetract: currentPollViewModel.allowVoteRetract
+        )
+    }
+
     open func report(layoutModel: MessageLayoutModel) {
         // TODO: Report Message
         logger.debug("Report Message")
@@ -1595,7 +2196,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         isSearchResultsLoading = true
         
         searchResult = .init(
-            channelId: channel.id, 
+            channelId: channel.id,
             searchFields: [
                 .init(
                     key: .body,
@@ -1628,7 +2229,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func findPreviousSearchedMessage() {
-        guard let messageId = searchResult.prevItem() 
+        guard let messageId = searchResult.prevItem()
         else {
             logger.verbose("find prev searched message - message id not find")
             return
@@ -1726,6 +2327,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
         scrollToRepliedMessageId = messageId
         if let (index, indexPath) = cachePosition(messageId: messageId) {
             scroll(to: indexPath, messageId: messageId)
+            scrollToRepliedMessageId = 0
             updateLastNavigatedIndexPath(indexPath: indexPath)
             if index < 5 {
                 loadPrevMessages(before: messageId)
@@ -1750,6 +2352,41 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                 }
             } else {
                 self.loadNearMessagesOfRepliedMessage(id: messageId)
+            }
+        }
+    }
+    
+    /// Finds and navigates to an unread mention message, loading it if necessary
+    open func findUnreadMentionMessage(messageId: MessageId) {
+        guard messageId != 0 else { return }
+        scrollToUnreadMentionMessageId = messageId
+        if let (index, indexPath) = cachePosition(messageId: messageId) {
+            scroll(to: indexPath, messageId: messageId)
+            updateLastNavigatedIndexPath(indexPath: indexPath)
+            handleMentionNavigated(messageId: messageId)
+            if index < 5 {
+                loadPrevMessages(before: messageId)
+            }
+            return
+        }
+        
+        // Load messages around the unread mention
+        messageObserver
+            .loadRangeProvider
+            .fetchLoadRanges(
+                channelId: channel.id,
+                messageId: messageId)
+        {[weak self] ranges in
+            guard let self else { return }
+            if !ranges.isEmpty {
+                self.messageObserver.restartToNear(at: messageId) {[weak self] isDone in
+                    guard let self else { return }
+                    if !isDone {
+                        self.loadNearMessagesOfUnreadMention(id: messageId)
+                    }
+                }
+            } else {
+                self.loadNearMessagesOfUnreadMention(id: messageId)
             }
         }
     }
@@ -1783,7 +2420,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func scroll(to indexPath: IndexPath, messageId: MessageId) {
-        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId)
+        event = .scrollAndSelect(indexPath: indexPath, messageId: messageId, mode: nil)
     }
     
     //MARK: Link preview
@@ -1801,12 +2438,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
                     else { return }
                     guard (metadata.image == nil || metadata.isThumbnailData)
                     else { return }
-                    Task {
-                        if let imageUrl = metadata.imageUrl {
-                            await linkMetadataProvider.downloadImagesIfNeeded(linkMetadata: metadata)
-                            self.provider.storeLinkMetadata(metadata, to: model.message)
-                        } else {
-                            switch await linkMetadataProvider.fetch(url: link) {
+                    if let imageUrl = metadata.imageUrl {
+                        linkMetadataProvider.downloadImagesIfNeeded(linkMetadata: metadata) { [weak self] in
+                            self?.provider.storeLinkMetadata(metadata, to: model.message)
+                        }
+                    } else {
+                        linkMetadataProvider.fetch(url: link) { [weak self] result in
+                            guard let self else { return }
+                            switch result {
                             case .success(let data):
                                 logger.verbose("Successfully loaded link Open Graph data mid: \(model.message.id) link: \(link), imageUrl: \(data.imageUrl) image: \(data.image)")
                                 self.provider.storeLinkMetadata(data, to: model.message)
@@ -1824,8 +2463,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
             } else {
                 guard !linkMetadataProvider.isFetching(url: link)
                 else { return }
-                Task {
-                    switch await linkMetadataProvider.fetch(url: link) {
+                linkMetadataProvider.fetch(url: link) { [weak self] result in
+                    guard let self else { return }
+                    switch result {
                     case .success(let data):
                         logger.verbose("Successfully loaded link Open Graph data mid: \(model.message.id) link: \(link), imageUrl: \(data.imageUrl) image: \(data.image)")
                         self.provider.storeLinkMetadata(data, to: model.message)
@@ -1908,7 +2548,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate {
     }
     
     open func canReply(model: MessageLayoutModel) -> Bool {
-        model.message.state != .deleted
+        model.message.state != .deleted && !model.contentOptions.contains(.unsupported)
     }
     
     // MARK: view titles
@@ -2246,12 +2886,12 @@ public extension ChannelViewModel {
     enum Event {
         case update(paths: CollectionUpdateIndexPaths)
         case updateDeliveryStatus(model: MessageLayoutModel, indexPath: IndexPath)
-        case reload(IndexPath)
+        case reload([IndexPath])
         case reloadData
         case reloadDataAndScrollToBottom
         case reloadDataAndScroll(indexPath: IndexPath, animated: Bool, pos: CollectionView.ScrollPosition)
         case reloadDataAndSelect(indexPath: IndexPath, messageId: MessageId)
-        case scrollAndSelect(indexPath: IndexPath, messageId: MessageId)
+        case scrollAndSelect(indexPath: IndexPath, messageId: MessageId, mode: MessageCell.HighlightMode?)
         case didSetUnreadIndexPath(indexPath: IndexPath)
         case typing(isTyping: Bool, user: ChatUser)
         case recording(isRecording: Bool, user: ChatUser)
@@ -2300,6 +2940,191 @@ public extension ChannelViewModel {
             }
         }
     }
+
+    // MARK: - Unread Mentions Navigation
+
+    /// Navigates to the next unread mention message
+    public func navigateToNextUnreadMention() async {
+        guard let messageId = await unreadMentionsManager.getNextUnreadMentionId() else {
+            // No unread mentions available
+            DispatchQueue.main.async { [weak self] in
+                self?.showNoUnreadMentionsMessage()
+            }
+            return
+        }
+
+        await MainActor.run { [weak self] in
+            self?.navigateToMessage(messageId: messageId, isUnreadMention: true)
+        }
+    }
+
+    /// Navigates to a specific message, handling loading if needed
+    private func navigateToMessage(messageId: MessageId, isUnreadMention: Bool = false) {
+        if let indexPath = indexPathOf(messageId: messageId) {
+            event = .scrollAndSelect(indexPath: indexPath, messageId: messageId, mode: isUnreadMention ? .mention : nil)
+            // Mark as navigated if this is an unread mention
+            if isUnreadMention {
+                handleMentionNavigated(messageId: messageId)
+            }
+        } else {
+            // Message not loaded, need to load it
+            if isUnreadMention {
+                findUnreadMentionMessage(messageId: messageId)
+            } else {
+                findReplayedMessage(messageId: messageId)
+            }
+        }
+    }
+
+    /// Handles when a mention has been navigated to by the user
+    private func handleMentionNavigated(messageId: MessageId) {
+        // Mark this mention as navigated
+        unreadMentionsManager.markMentionAsNavigated(messageId)
+        
+        // Check if we should mark mentions as read and update count
+        Task {
+            await checkAndMarkMentionsAsRead()
+        }
+    }
+    
+    /// Checks if mentions should be marked as read and updates the count
+    private func checkAndMarkMentionsAsRead() async {
+        // Get current navigated count before clearing
+        let navigatedCount = unreadMentionsManager.navigatedMentionsCount
+
+        if navigatedCount > 0 {
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                
+                // Mark navigated mentions as read using the provider
+                let _ = unreadMentionsManager.markNavigatedMentionsAsRead()
+
+                newMentionCount = UInt64(unreadMentionsManager.remainingUnreadMentionsCount)
+            }
+        }
+    }
+
+    /// Updates mention count after messages are successfully marked as displayed
+    private func updateMentionCountAfterMarkingDisplayed(messages: [ChatMessage]) {
+        // Filter messages that mention the current user
+        let mentionedMessages = messages.filter { message in
+            message.incoming &&
+            message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
+        }
+
+        // If any messages had mentions, remove them from the cache and update count
+        guard !mentionedMessages.isEmpty else { return }
+
+        // Remove each mention from the cache
+        for message in mentionedMessages {
+            unreadMentionsManager.removeMention(message.id)
+        }
+
+        // Update the UI count on main thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
+        }
+    }
+
+    /// Resets unread mentions cache when mention count becomes 0
+    public func resetUnreadMentionsIfNeeded() {
+        // Don't reset the cache based on newMentionCount
+        // The cache represents mentions we're currently navigating through
+        // It should only be cleared when explicitly refreshing or when truly exhausted
+        // newMentionCount represents server state, cachedUnreadMentionIds is local navigation state
+        logger.debug("[resetUnreadMentionsIfNeeded] Called with newMentionCount: \(newMentionCount), but NOT resetting cache")
+    }
+    
+        /// Shows a message when no unread mentions are available
+    private func showNoUnreadMentionsMessage() {
+        // Send an event to notify UI that there are no unread mentions
+        // The ViewController can listen to this and show an alert
+        logger.debug("No unread mentions available")
+
+        // Also check if we have any navigated mentions that should be marked as read
+        let navigatedCount = unreadMentionsManager.navigatedMentionsCount
+        if navigatedCount > 0 {
+            Task {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    
+                    // Mark any remaining navigated mentions as read
+                    let _ = unreadMentionsManager.remainingUnreadMentionsCount
+                    newMentionCount = UInt64(unreadMentionsManager.remainingUnreadMentionsCount)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Real-time Mention Handling
+    
+    /// Handles when a new message mentioning the current user is received
+    public func handleNewMentionMessage(_ message: ChatMessage) {
+        guard message.incoming,
+              message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
+        else { return }
+
+        // Add to unread mentions cache
+        unreadMentionsManager.addNewMention(message.id)
+        
+        // Update the UI count on main thread
+        DispatchQueue.main.async {
+            self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
+        }
+    }
+
+    /// Handles when a message mentioning the current user is deleted
+    /// Note: This should only be called when we already know the message had mentions
+    public func handleDeletedMentionMessage(_ message: ChatMessage) {
+        logger.debug("ChannelViewModel handling deleted mention: \(message.id)")
+        
+        // Remove from unread mentions cache
+        unreadMentionsManager.removeMention(message.id)
+        
+        // Update the UI count on main thread (ensure it doesn't go below 0)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
+            logger.debug("Removed deleted mention: \(message.id), new count: \(self.newMentionCount)")
+        }
+    }
+
+    /// Handles when a message mentioning the current user is edited
+    public func handleEditedMentionMessage(_ message: ChatMessage, hadMentionBefore: Bool) {
+        let hasMentionNow = message.mentionedUsers?.contains(where: { $0.id == SceytChatUIKit.shared.currentUserId }) == true
+
+        logger.debug("ChannelViewModel handling edited mention: \(message.id), hadBefore: \(hadMentionBefore), hasNow: \(hasMentionNow)")
+
+        if !hadMentionBefore && hasMentionNow {
+            // Mention was added in edit
+            unreadMentionsManager.addNewMention(message.id)
+            DispatchQueue.main.async { [weak self] in
+                self?.newMentionCount += 1
+                logger.debug("Added mention in edit: \(message.id), new count: \(self?.newMentionCount ?? 0)")
+            }
+        } else if hadMentionBefore && !hasMentionNow {
+            // Mention was removed in edit
+            unreadMentionsManager.removeMention(message.id)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.newMentionCount = UInt64(self.unreadMentionsManager.remainingUnreadMentionsCount)
+                logger.debug("Removed mention in edit: \(message.id), new count: \(self.newMentionCount)")
+            }
+        }
+    }
+
+    // MARK: - UnreadMentionsManagerDelegate
+
+    public func unreadMentionsManager(_ manager: UnreadMentionsManager, didReceiveNewMention message: Message) {
+        handleNewMentionMessage(.init(message: message, channelId: message.channelId))
+    }
+    
+    public func unreadMentionsManager(_ manager: UnreadMentionsManager, didDeleteMention message: Message) {
+        handleDeletedMentionMessage(.init(message: message, channelId: message.channelId))
+    }
+    
+    public func unreadMentionsManager(_ manager: UnreadMentionsManager, didEditMention message: Message, hadMentionBefore: Bool) {
+        handleEditedMentionMessage(.init(message: message, channelId: message.channelId), hadMentionBefore: hadMentionBefore)
+    }
 }
-
-

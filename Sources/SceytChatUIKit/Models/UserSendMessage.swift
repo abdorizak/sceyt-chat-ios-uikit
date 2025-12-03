@@ -26,9 +26,10 @@ open class UserSendMessage {
     open var attachments: [AttachmentModel]?
     open var type: String = ChannelViewModel.MessageType.text.rawValue
     open var linkMetadata: LinkMetadata?
-    
+    open var didUserDismissLinkPreview: Bool = false
+
     open var linkAttachments: [AttachmentModel] {
-        Self.createLinkAttachmentsFrom(text: text, linkMetaData: linkMetadata)
+        Self.createLinkAttachmentsFrom(text: text, linkMetaData: linkMetadata, didUserDismissLinkPreview: didUserDismissLinkPreview)
     }
     
     public required init(sendText: NSAttributedString,
@@ -99,10 +100,10 @@ open class UserSendMessage {
         }
     }
     
-    open class func createLinkAttachmentsFrom(text: String, linkMetaData: LinkMetadata?) -> [AttachmentModel] {
+    open class func createLinkAttachmentsFrom(text: String, linkMetaData: LinkMetadata?, didUserDismissLinkPreview: Bool = false) -> [AttachmentModel] {
         DataDetector.getLinks(text: text)
             .map { url in
-                AttachmentModel(link: url, linkMetaData: linkMetaData, hideLinkDetails: linkMetaData == nil)
+                AttachmentModel(link: url, linkMetaData: linkMetaData, hideLinkDetails: didUserDismissLinkPreview)
             }
     }
     
@@ -214,17 +215,19 @@ public struct AttachmentModel {
                     .imageBuilder.init(image: image)
                     .thumbHashBase64() ?? ""
             }
-            if let json = ChatMessage.Attachment.Metadata<String>(
-                width: width,
-                height: height,
-                thumbnail: thumbnail,
-                duration: 0,
-                description: linkMetaData?.summary,
-                imageUrl: linkMetaData?.imageUrl?.absoluteString,
-                thumbnailUrl: linkMetaData?.iconUrl?.absoluteString,
-                hideLinkDetails: hideLinkDetails
-            ).build() {
-                builder.metadata(json)
+            if let meta = linkMetaData {
+                if let json = ChatMessage.Attachment.Metadata<String>(
+                    width: width,
+                    height: height,
+                    thumbnail: thumbnail,
+                    duration: 0,
+                    description: meta.summary,
+                    imageUrl: meta.imageUrl?.absoluteString,
+                    thumbnailUrl: meta.iconUrl?.absoluteString,
+                    hideLinkDetails: hideLinkDetails
+                ).build() {
+                    builder.metadata(json)
+                }
             }
         }
         return builder

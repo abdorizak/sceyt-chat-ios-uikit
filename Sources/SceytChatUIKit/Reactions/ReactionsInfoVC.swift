@@ -43,6 +43,7 @@ open class ReactionsInfoViewController: ViewController,
     open lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
         .withoutAutoresizingMask
     private var transition: ReactionTransition!
+    private var hasSelectedInitialItem = false
 
     public required init() {
         super.init(nibName: nil, bundle: nil)
@@ -122,6 +123,18 @@ open class ReactionsInfoViewController: ViewController,
         cell.parentAppearance = appearance.headerCellAppearance
         cell.data = reactionScoreViewModel.value(at: indexPath)
         return cell
+    }
+    
+    open func collectionView(_ collectionView: UICollectionView,
+                             willDisplay cell: UICollectionViewCell,
+                             forItemAt indexPath: IndexPath) {
+        if indexPath.item == 0 && !hasSelectedInitialItem {
+            // Select first item after layout
+            DispatchQueue.main.async {
+                collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredHorizontally)
+            }
+            hasSelectedInitialItem = true
+        }
     }
 
     // MARK: UICollectionViewDelegate

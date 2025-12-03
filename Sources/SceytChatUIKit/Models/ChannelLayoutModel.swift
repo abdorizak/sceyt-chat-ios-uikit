@@ -50,7 +50,12 @@ open class ChannelLayoutModel {
     public var formattedDate: String!
     
     public var formattedUnreadCount: String!
-    
+
+    public var shouldShowDeliveryTick: Bool {
+        guard let message = lastMessage else { return false }
+        return message.state != .deleted && !message.isSystemMessage
+    }
+
     required public init(channel: ChatChannel, appearance: ChannelListViewController.ChannelCell.Appearance) {
         self.channel = channel
         self.appearance = appearance
@@ -135,7 +140,19 @@ open class ChannelLayoutModel {
     
     open func attributedBody() -> NSAttributedString {
         guard let message = lastMessage else { return NSAttributedString() }
-        
+
+        // Handle system messages
+        if message.isSystemMessage {
+            let formattedText = SceytChatUIKit.shared.formatters.systemMessageBodyFormatter.format(message)
+            return NSAttributedString(
+                string: formattedText,
+                attributes: [
+                    .font: appearance.lastMessageLabelAppearance.font,
+                    .foregroundColor: appearance.lastMessageLabelAppearance.foregroundColor
+                ]
+            )
+        }
+
         let attributedString: NSAttributedString
         switch message.state {
         case .deleted:
@@ -151,6 +168,7 @@ open class ChannelLayoutModel {
                     deletedLabelAppearance: appearance.deletedLabelAppearance,
                     attachmentNameFormatter: appearance.attachmentNameFormatter,
                     attachmentIconProvider: appearance.attachmentIconProvider,
+                    messageTypeIconProvider: appearance.messageTypeIconProvider,
                     mentionUserNameFormatter: appearance.mentionUserNameFormatter
                 )
             )
@@ -167,6 +185,7 @@ open class ChannelLayoutModel {
                     deletedLabelAppearance: appearance.deletedLabelAppearance,
                     attachmentNameFormatter: appearance.attachmentNameFormatter,
                     attachmentIconProvider: appearance.attachmentIconProvider,
+                    messageTypeIconProvider: appearance.messageTypeIconProvider,
                     mentionUserNameFormatter: appearance.mentionUserNameFormatter
                 )
             )

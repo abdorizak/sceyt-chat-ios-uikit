@@ -33,6 +33,7 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var repliedInThread: Bool
     @NSManaged public var replyCount: Int32
     @NSManaged public var displayCount: Int64
+    @NSManaged public var disableMentionsCount: Bool
     @NSManaged public var replied: Bool
     @NSManaged public var unlisted: Bool
     
@@ -63,6 +64,8 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var forwardUser: UserDTO?
     
     @NSManaged public var bodyAttributes: Set<BodyAttributeDTO>?
+    
+    @NSManaged public var poll: PollDTO?
         
     public override func willSave() {
         super.willSave()
@@ -136,7 +139,7 @@ public class MessageDTO: NSManagedObject {
         repliedInThread = map.repliedInThread
         replyCount = Int32(map.replyCount)
         displayCount = Int64(map.displayCount)
-        
+        disableMentionsCount = map.disableMentionsCount
         if deliveryStatus == MessageDeliveryStatus.pending.rawValue {
             deliveryStatus = Int16(map.deliveryStatus.rawValue)
         } else if deliveryStatus == MessageDeliveryStatus.failed.rawValue,
@@ -166,6 +169,7 @@ extension MessageDTO {
         replyCount = 0
         repliedInThread = false
         displayCount = 1
+        disableMentionsCount = false
         let dateFormatter = ISO8601DateFormatter()
         dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
        
@@ -211,12 +215,17 @@ extension MessageDTO {
 }
 
 public extension MessageDTO {
-    
+
     static func lastMessage(predicate: NSPredicate, context: NSManagedObjectContext) -> MessageDTO? {
+        // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
+        let threshold = Date().addingTimeInterval(-60).bridgeDate
+        let autoDeletePredicate = NSPredicate(format: "autoDeleteAt == nil OR autoDeleteAt > %@", threshold)
+        let combinedPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, autoDeletePredicate])
+
         let result = MessageDTO
             .maxExpression(
                 keyPaths: ["createdAt"],
-                predicate: predicate,
+                predicate: combinedPredicate,
                 context: context,
                 resultType: .managedObjectIDResultType,
                 expressionResultType: .objectIDAttributeType

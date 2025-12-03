@@ -22,6 +22,12 @@ public final class SyncService: NSObject {
         return op
     }()
     
+    public static var pollVoteQueue: OperationQueue = {
+        let op = OperationQueue()
+        op.maxConcurrentOperationCount = 1
+        return op
+    }()
+    
     public static var markersQueue: OperationQueue = {
         let op = OperationQueue()
         op.maxConcurrentOperationCount = 5
@@ -34,6 +40,11 @@ public final class SyncService: NSObject {
             makePendingReactionOperations {
                 if !$0.isEmpty {
                     reactionQueue.addOperations($0, waitUntilFinished: false)
+                }
+            }
+            makePendingPollVoteOperations {
+                if !$0.isEmpty {
+                    pollVoteQueue.addOperations($0, waitUntilFinished: false)
                 }
             }
             markersQueue.cancelAllOperations()
@@ -110,6 +121,35 @@ public final class SyncService: NSObject {
             }
     }
     
+    public class func makePendingPollVoteOperations(
+        completion: @escaping ([PollVoteResendOperation]) -> Void
+    ) {
+        var operations = [PollVoteResendOperation]()
+        Components.channelMessageProvider
+            .fetchPendingPollVotes { pendingVotes in
+                let group = Dictionary(grouping: pendingVotes) { $0.2 } // Group by ChannelId
+                for ch in group {
+                    let provider = Components.channelMessageProvider.init(channelId: ch.key)
+                    // Group by optionId to ensure only the latest pending vote per option is processed
+                    let optionGroups = Dictionary(grouping: ch.value) { $0.0.optionId }
+                    for (optionId, votes) in optionGroups {
+                        // Get the latest pending vote for this option (highest createdAt)
+                        if let latestVote = votes.max(by: { $0.0.createdAt < $1.0.createdAt }) {
+                            let op = PollVoteResendOperation(
+                                provider: provider,
+                                messageId: latestVote.1,
+                                pollId: latestVote.0.pollId,
+                                optionId: optionId,
+                                isAdd: latestVote.0.isAdd
+                            )
+                            operations.append(op)
+                        }
+                    }
+                }
+                completion(operations)
+            }
+    }
+    
     public class func sendPendingMessages() {
         workerQueue
             .async {
@@ -135,12 +175,22 @@ public final class SyncService: NSObject {
             }
     }
     
+    public class func sendPendingPollVotes() {
+        workerQueue
+            .async {
+                makePendingPollVoteOperations {
+                    pollVoteQueue.addOperations($0, waitUntilFinished: false)
+                }
+            }
+    }
+    
     public class func syncChannels(
         task: BGAppRefreshTask? = nil,
         completion: ((Bool) -> Void)? = nil) {
             Components.channelMessageMarkerProvider.canMarkMessage = false
             Self.isSyncing = true
             Self.sendPendingReactions()
+            Self.sendPendingPollVotes()
             
             let channelSyncQueue = OperationQueue()
             channelSyncQueue.maxConcurrentOperationCount = 1

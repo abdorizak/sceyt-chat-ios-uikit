@@ -49,6 +49,14 @@ open class MessageLayoutModel {
         return true
     }
     
+    open var hasPoll: Bool {
+        return message.poll != nil && message.type == "poll" && message.state != .deleted
+    }
+
+    open var isSystemMessage: Bool {
+        return message.type == "system" && message.state != .deleted
+    }
+
     public private(set) var hasMediaAttachments: Bool = false
     public private(set) var hasFileAttachments: Bool = false
     public private(set) var hasVoiceAttachments: Bool = false
@@ -59,6 +67,9 @@ open class MessageLayoutModel {
     public private(set) var parentTextSize: CGSize
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
+    public private(set) var pollViewMeasure: CGSize = .zero
+    public private(set) var systemMessageMeasure: CGSize = .zero
+    public private(set) var unsupportedViewMeasure: CGSize = .zero
     public private(set) var lastCharRect: CGRect
     public private(set) var replyCount = 0
     public              var contentInsets: UIEdgeInsets = .zero
@@ -207,15 +218,42 @@ open class MessageLayoutModel {
         if hasVoiceAttachments {
             contentOptions.insert(.voice)
         }
+        if hasPoll {
+            contentOptions.insert(.poll)
+        }
+        if isSystemMessage {
+            contentOptions.insert(.system)
+            // System messages don't have attachments, links, or polls
+            contentOptions.remove(.text)
+            contentOptions.remove(.image)
+            contentOptions.remove(.file)
+            contentOptions.remove(.voice)
+            contentOptions.remove(.link)
+            contentOptions.remove(.poll)
+            textSize = .zero
+        }
+
+        // Check if message is unsupported
+        if Self.isMessageUnsupported(message) && message.state != .deleted {
+            contentOptions.insert(.unsupported)
+            contentOptions.remove(.text)
+            contentOptions.remove(.image)
+            contentOptions.remove(.file)
+            contentOptions.remove(.voice)
+            contentOptions.remove(.link)
+            contentOptions.remove(.poll)
+            textSize = .zero
+        }
+
         if attachments.isEmpty {
             for link in Self.createLinkPreviews(message: message, linkAttachments: linkAttachments) {
                 addLinkPreview(linkMetadata: link)
             }
         }
-        
+
         reactions = createReactions(message: message)
         attachmentsContainerSize = calculateAttachmentsContainerSize()
-        if !isForwarded {
+        if !isForwarded && !contentOptions.contains(.unsupported) {
             if contentOptions.isEmpty || contentOptions == [.name] {
                 let size = Self.textSizeMeasure
                     .calculateSize(
@@ -228,7 +266,7 @@ open class MessageLayoutModel {
         //        updateOptions.insert(.reload)
         measureSize = measure()
     }
-    
+
     @discardableResult
     open func update(
         channel: ChatChannel,
@@ -343,6 +381,29 @@ open class MessageLayoutModel {
                 contentOptions.insert(.text)
             }
             updateOptions.insert(.body)
+        }
+
+        // Handle poll state changes
+        let hasNewPoll = message.poll != nil && message.type == "poll" && message.state != .deleted
+        if hasNewPoll {
+            if !contentOptions.contains(.poll) {
+                contentOptions.insert(.poll)
+                updateOptions.insert(.poll)
+            }
+            // Check if poll data changed (votes, votesPerOption, closed state)
+            if let currentPoll = self.message.poll, let newPoll = message.poll {
+                if currentPoll.votesPerOption != newPoll.votesPerOption ||
+                   currentPoll.votes.count != newPoll.votes.count ||
+                   currentPoll.ownVotes.count != newPoll.ownVotes.count ||
+                   currentPoll.closed != newPoll.closed {
+                    updateOptions.insert(.poll)
+                }
+            }
+        } else {
+            if contentOptions.contains(.poll) {
+                contentOptions.remove(.poll)
+                updateOptions.insert(.poll)
+            }
         }
         let title = appearance.senderNameFormatter.format(message.user)
         if !message.incoming ||
@@ -627,7 +688,15 @@ open class MessageLayoutModel {
         var linkMetadatas = [LinkMetadata]()
         if let links = message.linkMetadatas, !links.isEmpty {
             linkMetadatas += links.compactMap { data in
-                if message.attachments?.first(where: { $0.url == data.url.absoluteString})?.imageDecodedMetadata?.hideLinkDetails == true {
+                let hasHiddenDetails = message.attachments?.first(where: { attachment in
+                    guard let urlString = attachment.url,
+                          let attachmentURL = URL(string: urlString) else {
+                        return false
+                    }
+                    return attachmentURL.isEqual(url: data.url)
+                })?.imageDecodedMetadata?.hideLinkDetails == true
+
+                if hasHiddenDetails {
                     return nil
                 }
                 var image: UIImage? = nil
@@ -754,8 +823,7 @@ open class MessageLayoutModel {
         } else {
             linkPreviews?.append(preview)
         }
-       
-        if !(contentOptions.contains(.link) || contentOptions.contains(.file) || contentOptions.contains(.image) || contentOptions.contains(.voice)) {
+        if !hasPoll && !(contentOptions.contains(.link) || contentOptions.contains(.file) || contentOptions.contains(.image) || contentOptions.contains(.voice)) {
             contentOptions.insert(.link)
         }
         return true
@@ -764,10 +832,26 @@ open class MessageLayoutModel {
     open func updateThreadReplyCount(message: Message) {
         replyCount = message.replyCount
     }
-    
+
+    /// Determines if a message is unsupported by the current app version
+    /// Override this method to customize the logic for detecting unsupported messages
+    /// By default, uses the `messageTypeSupportProvider` from `SceytChatUIKit.shared.visualProviders`
+    /// to determine if a message type is supported
+    open class func isMessageUnsupported(_ message: ChatMessage) -> Bool {
+        return !SceytChatUIKit.shared.visualProviders.messageTypeSupportProvider.provideVisual(for: message)
+    }
+
     open func measure() -> CGSize {
         infoViewMeasure = Components.messageCellInfoView.measure(model: self, appearance: appearance)
-        linkViewMeasure = Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
+        linkViewMeasure = hasPoll ? .zero : Components.messageCellLinkStackView.measure(model: self, appearance: appearance)
+        pollViewMeasure = hasPoll ? Components.messageCellPollView.measure(model: self, appearance: appearance) : .zero
+        systemMessageMeasure = isSystemMessage ? Components.channelSystemMessageCell.measure(model: self, appearance: appearance) : .zero
+        unsupportedViewMeasure = Components.messageCellUnsupportedMessageView.measure(model: self, appearance: appearance)
+
+        if isSystemMessage {
+            return systemMessageMeasure
+        }
+
         if message.incoming {
             return Components.channelIncomingMessageCell.measure(model: self, appearance: appearance)
         } else {
@@ -804,9 +888,12 @@ public extension MessageLayoutModel {
         public static let file     = MessageContentOptions(rawValue: 1 << 3)
         public static let link     = MessageContentOptions(rawValue: 1 << 4)
         public static let voice    = MessageContentOptions(rawValue: 1 << 5)
-        
+        public static let poll     = MessageContentOptions(rawValue: 1 << 6)
+        public static let system   = MessageContentOptions(rawValue: 1 << 7)
+        public static let unsupported = MessageContentOptions(rawValue: 1 << 8)
+
         public static let attachment: MessageContentOptions = [.image, .file, .voice]
-        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice]
+        public static let all: MessageContentOptions = [.name, .text, .image, .file, .link, .voice, .poll, .system, .unsupported]
     }
     
     struct MessageUpdateOptions: OptionSet {
@@ -826,12 +913,13 @@ public extension MessageLayoutModel {
         public static let reaction              = MessageUpdateOptions(rawValue: 1 << 7)
         public static let link                  = MessageUpdateOptions(rawValue: 1 << 8)
         public static let reload                = MessageUpdateOptions(rawValue: 1 << 9)
+        public static let poll                  = MessageUpdateOptions(rawValue: 1 << 10)
         
-        public static let all: MessageUpdateOptions = [.body, .user, .replyCount, parentMessageUser, .parentMessageBody, .attachment, .link, deliveryStatus]
+        public static let all: MessageUpdateOptions = [.body, .user, .replyCount, parentMessageUser, .parentMessageBody, .attachment, .link, deliveryStatus, .poll]
     }
     
     struct Defaults {
-        public var messageWidthRatio: CGFloat = 0.75
+        public var messageWidthRatio: CGFloat = 0.72
         public internal(set) lazy var messageWidth: CGFloat = floor(messageWidthRatio * UIScreen.main.bounds.width)
         public var messageSenderNameWidth = CGFloat(170)
         public var imageAttachmentSize  = CGSize(width: 260, height: 200)
@@ -1231,6 +1319,14 @@ extension MessageLayoutModel {
         }
                 
         open func makeIcon() -> UIImage? {
+            // Check for poll first
+            if message.poll != nil {
+                let pollIcon = UIImage.chatActionPoll
+                let targetSize = CGSize(width: 16, height: 16)
+                let resizedIcon = resizeImage(pollIcon, to: targetSize)
+                return resizedIcon?.withRenderingMode(.alwaysTemplate)
+            }
+
             if let attachment = message.attachments?.first {
                 switch attachment.type {
                 case "voice":
@@ -1240,7 +1336,14 @@ extension MessageLayoutModel {
                 }
             }
             return nil
-            
+
+        }
+
+        private func resizeImage(_ image: UIImage, to size: CGSize) -> UIImage? {
+            UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+            defer { UIGraphicsEndImageContext() }
+            image.draw(in: CGRect(origin: .zero, size: size))
+            return UIGraphicsGetImageFromCurrentImageContext()
         }
     }
 }

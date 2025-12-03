@@ -58,6 +58,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             ], for: [])
         UITabBar.appearance().tintColor = SceytChatUIKit.shared.theme.colors.accent
         UISwitch.appearance().onTintColor = SceytChatUIKit.shared.theme.colors.accent
+        
+        QRCodeViewController.appearance = QRCodeViewController.Appearance(
+            reference: QRCodeViewController.appearance,
+            logoImage: getAppIcon(),
+            logoSize: CGSize(width: 50, height: 50),
+            logoBackgroundColor: .white,
+            logoCornerRadius: 12
+        )
+    }
+    
+    // MARK: - App Icon Helper
+    
+    private func getAppIcon() -> UIImage? {
+        if let iconName = Bundle.main.object(forInfoDictionaryKey: "CFBundleIconFile") as? String,
+           let icon = UIImage(named: iconName) {
+            return icon
+        }
+        
+        if let icons = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any],
+           let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+           let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+           let firstIcon = iconFiles.first,
+           let icon = UIImage(named: firstIcon) {
+            return icon
+        }
+        
+        return nil
     }
     
     func registerForPushNotifications() {

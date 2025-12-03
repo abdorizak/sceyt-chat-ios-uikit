@@ -8,6 +8,7 @@
 
 import Foundation
 import SceytChat
+import CoreData
 
 open class ChannelMessageProvider: DataProvider {
     
@@ -337,6 +338,308 @@ open class ChannelMessageProvider: DataProvider {
         }
     }
     
+    // MARK: - Poll Operations
+
+    open func addPollVote(
+        messageId: MessageId,
+        pollId: String,
+        optionId: String,
+        storeForResend: Bool = true,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        database.write {
+            if storeForResend {
+                // Store pending votes for each option
+                if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
+                    if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                        // Cancel any existing pending vote for the same option
+                        if let existingPendingVote = PendingVoteDTO.fetch(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            context: $0
+                        ) {
+                            $0.delete(existingPendingVote)
+                        }
+
+                        // Create fresh pending vote
+                        let pendingVote = PendingVoteDTO.fetchOrCreate(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            messageTid: messageDTO.tid,
+                            context: $0
+                        )
+                        pendingVote.isAdd = true
+                        pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
+                    }
+                }
+            }
+        } completion: { _ in
+            self.channelOperator.addPollVote(
+                messageId: messageId,
+                pollId: pollId,
+                optionIds: [optionId]
+            ) { changedVotes, message, error in
+                if let error {
+                    if error.code == 1301 {
+                        self.database.write { context in
+                            self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
+                        }
+                    }
+
+                    completion?(error)
+                    return
+                }
+
+                guard let changedVotes else {
+                    completion?(error)
+                    return
+                }
+                
+                guard let message = message else {
+                    completion?(error)
+                    return
+                }
+
+                self.database.write { context in
+                    // Remove pending votes after successful vote
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                        self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                    }
+                } completion: { _ in
+                    completion?(nil)
+                }
+            }
+        }
+    }
+
+    private func deletePendingVote(pollId: String, optionId: String, context: NSManagedObjectContext) {
+        if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+            if let pendingVote = PendingVoteDTO.fetch(
+                pollId: pollId,
+                optionId: optionId,
+                userId: userId,
+                context: context
+            ) {
+                context.delete(pendingVote)
+            }
+        }
+    }
+    
+    open func deletePollVote(
+        messageId: MessageId,
+        pollId: String,
+        optionId: String,
+        storeForResend: Bool = true,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        database.write {
+            if storeForResend {
+                // Store pending vote removals
+                if let messageDTO = MessageDTO.fetch(id: messageId, context: $0) {
+                    if let userId = SceytChatUIKit.shared.currentUserId, !userId.isEmpty {
+                        // Cancel any existing pending vote for the same option
+                        if let existingPendingVote = PendingVoteDTO.fetch(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            context: $0
+                        ) {
+                            $0.delete(existingPendingVote)
+                        }
+                        
+                        // Create fresh pending vote removal
+                        let pendingVote = PendingVoteDTO.fetchOrCreate(
+                            pollId: pollId,
+                            optionId: optionId,
+                            userId: userId,
+                            messageTid: messageDTO.tid,
+                            context: $0
+                        )
+                        pendingVote.isAdd = false
+                        pendingVote.createdAt = Int64(Date().timeIntervalSince1970 * 1000)
+                    }
+                }
+            }
+        } completion: { _ in
+            self.channelOperator.deletePollVote(
+                messageId: messageId,
+                pollId: pollId,
+                optionIds: [optionId]
+            ) { changedVotes, message, error in
+                if let error {
+                    if error.code == 1301 {
+                        self.database.write { context in
+                            self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
+                        }
+                    }
+
+                    completion?(error)
+                    return
+                }
+
+                guard let changedVotes else {
+                    completion?(error)
+                    return
+                }
+
+                guard let message = message else {
+                    completion?(error)
+                    return
+                }
+
+                self.database.write { context in
+                    // Remove pending votes after successful deletion
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                        self.deletePendingVote(pollId: pollId, optionId: optionId, context: context)
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                    }
+                } completion: { _ in
+                    completion?(nil)
+                }
+            }
+        }
+    }
+    
+    open func retractPollVote(
+        messageId: MessageId,
+        pollId: String,
+        storeForResend: Bool = true,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        database.write { context in
+            // Remove any pending votes for this poll
+            if let messageDTO = MessageDTO.fetch(id: messageId, context: context) {
+                let pendingVotes = PendingVoteDTO.fetch(messageTid: messageDTO.tid, context: context)
+                pendingVotes.forEach { pendingVote in
+                    if pendingVote.pollId == pollId {
+                        context.delete(pendingVote)
+                    }
+                }
+            }
+        } completion: { _ in
+            self.channelOperator.retractPollVote(
+                messageId: messageId,
+                pollId: pollId
+            ) { changedVotes, message, error in
+                guard let changedVotes else {
+                    completion?(error)
+                    return
+                }
+
+                guard let message = message else {
+                    completion?(error)
+                    return
+                }
+
+                self.database.write { context in
+                    if let messageDTO = MessageDTO.fetch(id: message.id, context: context) {
+                        // Apply changed votes to ownVotes
+                        context.applyChangedVotes(changedVotes, pollId: pollId, messageDTO: messageDTO)
+                    }
+                } completion: { _ in
+                    completion?(nil)
+                }
+            }
+        }
+    }
+    
+    open func closePoll(
+        messageId: MessageId,
+        pollId: String,
+        completion: ((Error?) -> Void)? = nil
+    ) {
+        channelOperator.closePoll(
+            messageId: messageId,
+            pollId: pollId
+        ) { voteDetails, message, error in
+            if let error {
+                completion?(error)
+                return
+            }
+            guard let message = message else {
+                completion?(error)
+                return
+            }
+            self.database.write { context in
+                guard let messageDTO = MessageDTO.fetch(id: message.id, context: context),
+                      let pollDTO = messageDTO.poll else {
+                    return
+                }
+
+                // Update poll to closed state
+                pollDTO.closed = true
+                if let closedAt = message.poll?.closedAt {
+                    pollDTO.closedAt = Int64(closedAt.timeIntervalSince1970)
+                }
+
+                // Update votes
+                if let votes = voteDetails?.votes {
+                    let voteDTOs = votes.map { vote -> PollVoteDTO in
+                        let voteDTO = PollVoteDTO.fetchOrCreate(
+                            optionId: vote.optionId,
+                            userId: vote.user.id,
+                            pollId: pollId,
+                            context: context
+                        ).map(vote)
+                        voteDTO.user = context.createOrUpdate(user: vote.user)
+                        voteDTO.pollDetails = pollDTO
+                        return voteDTO
+                    }
+
+                    let votesSet = pollDTO.mutableOrderedSetValue(forKey: "votes")
+                    votesSet.removeAllObjects()
+                    votesSet.addObjects(from: voteDTOs)
+                }
+
+                // Update ownVotes
+                if let ownVotes = voteDetails?.ownVotes {
+                    let ownVoteDTOs = ownVotes.map { vote -> PollVoteDTO in
+                        let voteDTO = PollVoteDTO.fetchOrCreate(
+                            optionId: vote.optionId,
+                            userId: vote.user.id,
+                            pollId: pollId,
+                            context: context
+                        ).map(vote)
+                        voteDTO.user = context.createOrUpdate(user: vote.user)
+                        voteDTO.ownPollDetails = pollDTO
+                        return voteDTO
+                    }
+
+                    let ownVotesSet = pollDTO.mutableOrderedSetValue(forKey: "ownVotes")
+                    ownVotesSet.removeAllObjects()
+                    ownVotesSet.addObjects(from: ownVoteDTOs)
+                }
+
+                // Update votesPerOption
+                if let votesPerOption = voteDetails?.votesPerOption, !votesPerOption.isEmpty {
+                    var dict: [String: NSNumber] = [:]
+                    for (key, value) in votesPerOption {
+                        dict[key] = value
+                    }
+                    pollDTO.votesPerOption = dict as NSDictionary
+                }
+
+            } completion: { _ in
+                // Post notification to force UI reload after poll is closed
+                NotificationCenter.default.post(
+                    name: .didClosePoll,
+                    object: nil,
+                    userInfo: [
+                        "messageId": messageId,
+                        "pollId": pollId,
+                        "channelId": self.channelId
+                    ]
+                )
+                completion?(nil)
+            }
+        }
+    }
+    
     open func markMessagesAsReceived (
         ids: [MessageId],
         storeForResend: Bool = true,
@@ -538,6 +841,34 @@ extension ChannelMessageProvider {
             }
         }
     
+    public class func fetchPendingPollVotes(
+        _ completion: @escaping ([(PendingPollVote, MessageId, ChannelId)]) -> Void) {
+            database.performBgTask(resultQueue: .global()) {
+                let request = PendingVoteDTO.fetchRequest()
+                request.sortDescriptor = NSSortDescriptor(keyPath: \PendingVoteDTO.createdAt, ascending: true)
+                let context = $0
+                return PendingVoteDTO.fetch(request: request, context: context)
+                    .compactMap { pendingVoteDTO in
+                        // Get message from messageTid
+                        if let messageDTO = MessageDTO.fetch(tid: pendingVoteDTO.messageTid, context: context),
+                           let pollId = pendingVoteDTO.pollId,
+                           let optionId = pendingVoteDTO.optionId {
+                            let pendingVote = PendingPollVote(dto: pendingVoteDTO)
+                            return (pendingVote, MessageId(messageDTO.id), ChannelId(messageDTO.channelId))
+                        }
+                        return nil
+                    }
+            } completion: { result in
+                switch result {
+                case .success(let result):
+                    completion(result)
+                case .failure(let error):
+                    logger.errorIfNotNil(error, "")
+                    completion([])
+                }
+            }
+        }
+    
     public class func fetchMessage(
         id: MessageId,
         completion: @escaping (ChatMessage?) -> Void
@@ -576,18 +907,28 @@ extension ChannelMessageProvider {
                 completion(nil)
             }
         }
+
+    /// Deletes expired auto-delete messages from the database
+    /// This should be called when starting the database observer to clean up expired messages
+    open func deleteExpiredAutoDeleteMessages() {
+        Self.deleteExpiredAutoDeleteMessages()
+    }
 }
 
 private extension ChannelMessageProvider {
-    
+
     func sendReceivedMarker(messages: [Message]) {
-        DispatchQueue
-            .global(qos: .background)
-            .async {
-                let ids: [MessageId] = messages.compactMap {
-                    ($0.incoming || $0.userMarkers?.contains(where: { $0.name == "received"}) == true) ? nil : $0.id
+        DispatchQueue.global(qos: .background).async {
+            let ids: [MessageId] = messages.compactMap { message in
+                let alreadyReceived = message.userMarkers?.contains { $0.name == DefaultMarker.received.rawValue } ?? false
+                if message.incoming && !alreadyReceived {
+                    return message.id
                 }
-                self.markMessagesAsReceived(ids: ids)
+                return nil
+            }
+
+            guard !ids.isEmpty else { return }
+            self.markMessagesAsReceived(ids: ids)
         }
     }
 }
