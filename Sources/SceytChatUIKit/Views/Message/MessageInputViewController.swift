@@ -490,7 +490,6 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         return DataDetector.matches(text: text).first(where: { $0.url?.scheme != "mailto" && $0.url != nil })?.url
     }
 
-    private var findLinkTask: Task<Void, Error>?
     open func findLink() {
         guard let text = inputTextView.text, !text.isEmpty
         else {
@@ -499,43 +498,40 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
             return
         }
-//        if let findLinkTask, !findLinkTask.isCancelled {
-//            findLinkTask.cancel()
-//        }
 
-        findLinkTask =  Task {[weak self] in
-            func removeActionView() async {
-                await MainActor.run { [weak self] in
-                    guard let self
-                    else { return }
-                    if self.lastDetectedLinkMetadata != nil, self.currentState == nil  {
+        guard let url = getLink() else {
+            if lastDetectedLinkMetadata != nil, self.currentState == nil {
+                self.removeActionView()
+            }
+            return
+        }
+
+        if let last = lastDetectedLinkMetadata, last.url == url {
+            return
+        }
+
+        LinkMetadataProvider.default.fetch(url: url) { [weak self] result in
+            guard let self else { return }
+
+            switch result {
+            case .success(let metadata):
+                // Check if the link is still the same
+                if url != self.getLink() {
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    self.addOrUpdateLinkPreview(linkDetails: metadata)
+                }
+
+            case .failure:
+                DispatchQueue.main.async {
+                    if self.lastDetectedLinkMetadata != nil, self.currentState == nil {
                         self.removeActionView()
                     }
                 }
             }
-            if let url = self?.getLink() {
-                if let last = self?.lastDetectedLinkMetadata, last.url == url {
-                    print("url:\(url) metadataURL:\(last.url)")
-                    return
-                }
-                guard let metadata = await try? LinkMetadataProvider.default.fetch(url: url).get()
-                else {
-                    await removeActionView()
-                    return
-                }
-                if url != self?.getLink() {
-                    return
-                }
-                await MainActor.run { [weak self] in
-                    guard let self
-                    else { return }
-                    self.addOrUpdateLinkPreview(linkDetails: metadata)
-                }
-            } else  {
-                await removeActionView()
-            }
         }
-        
     }
     
     open func showNoMicrophonePermission() {

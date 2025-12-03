@@ -24,11 +24,15 @@ open class ChannelProfileRouter: Router<ChannelInfoViewController> {
         selected: @escaping (SceytChatUIKit.Config.IntervalOption) -> Void,
         canceled: @escaping () -> Void
     ) {
+        var actions: [SheetAction] = SceytChatUIKit.shared.config.messageAutoDeleteOptions.map { item in
+            .init(title: item.title, style: .default) { selected(item) }
+        }
+        
+        actions += [.init(title: L10n.Alert.Button.cancel, style: .cancel) { canceled() }]
+
         rootViewController.showBottomSheet(
             title: L10n.Channel.Info.AutoDelete.title,
-            actions: SceytChatUIKit.shared.config.messageAutoDeleteOptions.map { item in
-                    .init(title: item.title, style: .default) { selected(item) }
-            } + [.init(title: L10n.Alert.Button.cancel, style: .cancel) { canceled() }])
+            actions: actions)
     }
     
     open func showAttachment(_ attachment: ChatMessage.Attachment) {

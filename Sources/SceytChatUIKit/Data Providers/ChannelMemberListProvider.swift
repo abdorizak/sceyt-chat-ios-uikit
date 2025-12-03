@@ -14,10 +14,11 @@ open class ChannelMemberListProvider: DataProvider {
     public var queryLimit = SceytChatUIKit.shared.config.queryLimits.channelMemberListQueryLimit
     public var queryOrder = MemberListOrder.username
     public var queryType = MemberListQueryType.all
+    public var hasNext: Bool = true
 
     let channelId: ChannelId
-    private var loadedPage: Int = 0
-    private var lastLoadedMemberId: UserId?
+    private var isLoading = false
+
     public required init(channelId: ChannelId) {
         self.channelId = channelId
         super.init()
@@ -26,59 +27,48 @@ open class ChannelMemberListProvider: DataProvider {
     open lazy var query: MemberListQuery = {
         .Builder(channelId: channelId)
         .order(queryOrder)
-        .limit(queryLimit)
+        .limit(UInt(queryLimit))
         .queryType(queryType)
         .build()
     }()
 
-    open func loadMembers() {
-        if !query.hasNext || query.loading {
+    /// Loads next page of members from server
+    open func loadMembers(completion: (([ChatChannelMember]) -> Void)? = nil) {
+        guard !isLoading else {
+            completion?([])
             return
         }
-        query.loadNext { _, members, _ in
-            guard let members = members,
-                  !members.isEmpty
-            else { return }
-            self.loadedPage += 1
-            self.store(members: members)
-            self.lastLoadedMemberId = members.max(by: {
-                $0.id < $1.id
-            })?.id
+        guard hasNext else {
+            completion?([])
+            return
         }
-    }
 
-    open func store(members: [Member]) {
-        let predicate = deleteMembersPredicate(members: members)
-        database.write {
-            if let predicate {
-                $0.deleteMembers(predicate: predicate)
+        isLoading = true
+
+        query.loadNext { [weak self] _, members, error in
+            guard let self = self else {
+                completion?([])
+                return
             }
-            $0.createOrUpdate(
-                members: members, channelId: self.channelId)
-        } completion: { error in
-            logger.debug(error?.localizedDescription ?? "")
-        }
-    }
-    
-    private func deleteMembersPredicate(members: [Member]) -> NSPredicate? {
-        if !members.isEmpty {
-            let ids = members.map { $0.id }
-            if members.count < queryLimit {
-                if let lastLoadedMemberId {
-                    return NSPredicate(format: "user.id > %@ AND (channelId == %lld) AND (NOT (user.id IN %@))", lastLoadedMemberId, channelId, ids)
-                } else {
-                    return NSPredicate(format: "(channelId == %lld) AND (NOT (user.id IN %@))", channelId, ids)
-                }
-                
-            }
-            if let lastLoadedMemberId {
-                return NSPredicate(format: "(user.id > %@ AND user.id <= %@) AND (channelId == %lld) AND (NOT (user.id IN %@))", lastLoadedMemberId, ids.last!, channelId, ids)
-            } else {
-                let max = ids.max() ?? ids.last!
-                return NSPredicate(format: "(user.id <= %@) AND (channelId == %lld) AND (NOT (user.id IN %@))", max, channelId, ids)
+
+            self.isLoading = false
+
+            if let error = error {
+                logger.errorIfNotNil(error, "Failed to load members")
+                completion?([])
+                return
             }
             
+            if (members?.count ?? 0) < queryLimit {
+                hasNext = false
+            }
+
+            if let members = members {
+                let chatMembers = members.map { ChatChannelMember(member: $0) }
+                completion?(chatMembers)
+            } else {
+                completion?([])
+            }
         }
-        return nil
     }
 }

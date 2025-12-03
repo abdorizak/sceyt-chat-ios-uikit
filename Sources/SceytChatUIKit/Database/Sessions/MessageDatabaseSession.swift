@@ -93,7 +93,8 @@ public protocol MessageDatabaseSession {
     func deleteAttachmentsFor(messageTid: Int64)
     func deleteAttachmentsFor(message: Message)
     func deleteAttachment(id: AttachmentId)
-    
+    func deleteExpiredAutoDeleteMessages()
+
     func updateAttachment(with filePath: String, chatMessage: ChatMessage, attachment: ChatMessage.Attachment)
     
     @discardableResult
@@ -160,12 +161,19 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         
         if let channel = ownerChannel {
             if let lastMessage = channel.lastMessage {
-                if lastMessage.id != 0 && dto.id != 0 {
-                    if lastMessage.id <= dto.id {
+                // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
+                let threshold = Date().addingTimeInterval(-60)
+                let isLastMessageAutoDeleted = lastMessage.autoDeleteAt != nil && lastMessage.autoDeleteAt!.bridgeDate <= threshold
+                if isLastMessageAutoDeleted {
+                    channel.lastMessage = dto
+                } else {
+                    if lastMessage.id != 0 && dto.id != 0 {
+                        if lastMessage.id <= dto.id {
+                            channel.lastMessage = dto
+                        }
+                    } else if lastMessage.createdAt.bridgeDate < dto.createdAt.bridgeDate {
                         channel.lastMessage = dto
                     }
-                } else if lastMessage.createdAt.bridgeDate < dto.createdAt.bridgeDate {
-                    channel.lastMessage = dto
                 }
             } else {
                 channel.lastMessage = dto
@@ -522,6 +530,8 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             })
             if bodyAttributeDTO == nil {
                 bodyAttributeDTO = BodyAttributeDTO.insertNewObject(into: self).map(bodyAttribute)
+            } else {
+                bodyAttributeDTO.map(bodyAttribute)
             }
             bodyAttributeDTO.message = dto
             dto.bodyAttributes?.insert(bodyAttributeDTO)
@@ -1248,5 +1258,28 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         pollDTO.votesPerOption = votesPerOption as NSDictionary
 
         messageDTO.poll = pollDTO
+    }
+
+    public func deleteExpiredAutoDeleteMessages() {
+        // Calculate threshold: current time + 1 minute
+        // Delete messages where autoDeleteAt <= threshold
+        let threshold = Date().addingTimeInterval(-60).bridgeDate
+
+        let fetchRequest = MessageDTO.fetchRequest()
+        fetchRequest.predicate = NSPredicate(
+            format: "autoDeleteAt != nil AND autoDeleteAt <= %@",
+            threshold
+        )
+
+        do {
+            let expiredMessages = try fetch(fetchRequest)
+            logger.verbose("Deleting \(expiredMessages.count) expired auto-delete messages")
+
+            for message in expiredMessages {
+                delete(message)
+            }
+        } catch {
+            logger.errorIfNotNil(error, "Failed to fetch expired auto-delete messages")
+        }
     }
 }

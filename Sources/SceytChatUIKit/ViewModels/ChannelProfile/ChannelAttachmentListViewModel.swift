@@ -137,15 +137,13 @@ open class ChannelAttachmentListViewModel: NSObject {
                     logger.debug("[LONK LOAD] HAS META \(url)")
                     onLoadLinkMetadata(metadata)
                 } else {
-                    Task {
-                        switch await LinkMetadataProvider.default.fetch(url: url) {
-                        case .success(let metadata):
-                            logger.debug("[LONK LOAD] HAS META fetch \(url)")
-                            await MainActor.run {
+                    LinkMetadataProvider.default.fetch(url: url) { result in
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .success(let metadata):
+                                logger.debug("[LONK LOAD] HAS META fetch \(url)")
                                 onLoadLinkMetadata(metadata)
-                            }
-                        case .failure(let error):
-                            await MainActor.run {
+                            case .failure:
                                 onLoadLinkMetadata(nil)
                             }
                         }

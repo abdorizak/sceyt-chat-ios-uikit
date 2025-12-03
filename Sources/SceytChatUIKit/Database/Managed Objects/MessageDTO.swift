@@ -140,7 +140,6 @@ public class MessageDTO: NSManagedObject {
         replyCount = Int32(map.replyCount)
         displayCount = Int64(map.displayCount)
         disableMentionsCount = map.disableMentionsCount
-        
         if deliveryStatus == MessageDeliveryStatus.pending.rawValue {
             deliveryStatus = Int16(map.deliveryStatus.rawValue)
         } else if deliveryStatus == MessageDeliveryStatus.failed.rawValue,
@@ -216,12 +215,17 @@ extension MessageDTO {
 }
 
 public extension MessageDTO {
-    
+
     static func lastMessage(predicate: NSPredicate, context: NSManagedObjectContext) -> MessageDTO? {
+        // Add 1 minute buffer to match deleteExpiredAutoDeleteMessages threshold
+        let threshold = Date().addingTimeInterval(-60).bridgeDate
+        let autoDeletePredicate = NSPredicate(format: "autoDeleteAt == nil OR autoDeleteAt > %@", threshold)
+        let combinedPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, autoDeletePredicate])
+
         let result = MessageDTO
             .maxExpression(
                 keyPaths: ["createdAt"],
-                predicate: predicate,
+                predicate: combinedPredicate,
                 context: context,
                 resultType: .managedObjectIDResultType,
                 expressionResultType: .objectIDAttributeType

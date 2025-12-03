@@ -72,7 +72,7 @@
 "channel.info.action.join" = "join";
 "channel.info.action.more" = "more";
 
-"channel.info.item.title.autoDeleteMessages" = "Auto-Delete messages";
+"channel.info.item.title.autoDeleteMessages" = "Disappearing Messages";
 "channel.info.item.title.members" = "Members";
 "channel.info.item.title.subscribers" = "Subscribers";
 "channel.info.item.title.admins" = "Admins";
@@ -113,10 +113,12 @@
 "channel.info.mute.title" = "Mute Chat:";
 
 "channel.info.autoDelete.off" = "Off";
+"channel.info.autoDelete.oneHour" = "1 hour";
 "channel.info.autoDelete.oneDay" = "1 day";
 "channel.info.autoDelete.oneWeek" = "1 week";
 "channel.info.autoDelete.oneMonth" = "1 month";
-"channel.info.autoDelete.title" = "Auto-Delete messages:";
+"channel.info.autoDelete.custom" = "Custom";
+"channel.info.autoDelete.title" = "Disappearing Messages";
 
 "channel.info.subject" = "Subject";
 
@@ -238,6 +240,29 @@
 "user.deleted" = "Deleted user";
 "user.inactive" = "Inactive user";
 "user.current" = "You";
+
+//System Messages
+"system.message.createGroup" = "%@ created the group";
+"system.message.createChannel" = "%@ created the channel";
+"system.message.addGroupMember" = "%@ added %@";
+"system.message.removeGroupMember" = "%@ removed %@";
+"system.message.leaveGroup" = "%@ left the group";
+"system.message.joinByInviteLink" = "%@ joined via invite link";
+"system.message.setDisappearingMessageTime" = "%@ set the disappearing messages timer to %@";
+"system.message.disableDisappearingMessages" = "%@ disabled disappearing messages";
+
+//Time Intervals
+"time.interval.off" = "Off";
+"time.interval.minute.one" = "1 minute";
+"time.interval.minute.multiple" = "%d minutes";
+"time.interval.hour.one" = "1 hour";
+"time.interval.hour.multiple" = "%d hours";
+"time.interval.day.one" = "1 day";
+"time.interval.day.multiple" = "%d days";
+"time.interval.week.one" = "1 week";
+"time.interval.week.multiple" = "%d weeks";
+"time.interval.month.one" = "1 month";
+"time.interval.month.multiple" = "%d months";
 
 //Presence
 "user.presence.online" = "online";

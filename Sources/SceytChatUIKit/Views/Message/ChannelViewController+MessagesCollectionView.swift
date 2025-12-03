@@ -36,6 +36,7 @@ public extension ChannelViewController {
             clipsToBounds = true
             contentInsetAdjustmentBehavior = .always
             
+            register(Components.channelSystemMessageCell)
             register(Components.channelOutgoingMessageCell)
             register(Components.channelIncomingMessageCell)
             register(Components.channelDateSeparatorView, kind: .header)

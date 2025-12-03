@@ -1427,6 +1427,14 @@ open class ChannelViewController: ViewController,
         model: MessageLayoutModel
     ) -> UICollectionViewCell {
         let message = model.message
+
+        // Handle system messages separately
+        if model.isSystemMessage {
+            let cell = collectionView.dequeueReusableCell(for: indexPath, cellType: Components.channelSystemMessageCell)
+            cell.data = model
+            return cell
+        }
+
         let type: MessageCell.Type =
         model.message.incoming ?
         Components.channelIncomingMessageCell :
@@ -2252,10 +2260,13 @@ open class ChannelViewController: ViewController,
             } else {
                 selectMessageId = messageId
             }
+            var delayToSelect: TimeInterval = 0.3
+            DispatchQueue.main.asyncAfter(deadline: .now() + delayToSelect) {
+                NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
+            }
             
-            NotificationCenter.default.post(name: .selectMessage, object: (messageId, mode))
             if mode == .reply || mode == .mention {
-                DispatchQueue.main.asyncAfter(deadline: .now() + highlightedDurationForReplyMessage) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + highlightedDurationForReplyMessage + delayToSelect) {
                     NotificationCenter.default.post(name: .selectMessage, object: (messageId, MessageCell.HighlightMode.none))
                 }
             }

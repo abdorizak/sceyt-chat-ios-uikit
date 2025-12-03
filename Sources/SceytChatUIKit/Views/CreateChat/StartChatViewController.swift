@@ -180,10 +180,10 @@ open class StartChatViewController: ViewController,
     
     private var lastSearchText: String?
     open func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        NSObject.cancelPreviousPerformRequests(withTarget: viewModel!, selector: #selector(ChannelMemberListViewModel.search(query:)), object: lastSearchText)
+        NSObject.cancelPreviousPerformRequests(withTarget: viewModel!, selector: #selector(CreateNewChannelViewModel.search(query:)), object: lastSearchText)
         if let text = searchBar.text, !text.isEmpty {
             lastSearchText = text
-            viewModel.perform(#selector(ChannelMemberListViewModel.search(query:)), with: text, afterDelay: 0.01)
+            viewModel.perform(#selector(CreateNewChannelViewModel.search(query:)), with: text, afterDelay: 0.01)
         } else {
             viewModel.cancelSearch()
         }

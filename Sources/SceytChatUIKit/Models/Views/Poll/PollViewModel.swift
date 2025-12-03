@@ -48,28 +48,62 @@ public struct PollViewModel {
         self.allowVoteRetract = poll.allowVoteRetract
         
         let currentUserId = SceytChatUIKit.shared.currentUserId
-        
+        let isSinglePoll = !poll.allowMultipleVotes
+
+        // For single polls: find the latest pending vote across ALL options
+        let latestPendingVoteOptionId: String? = {
+            guard isSinglePoll,
+                  let pendingVotes = poll.pendingVotes,
+                  let userId = currentUserId else {
+                return nil
+            }
+
+            // Get all pending votes for current user, sorted by creation time
+            let userPendingVotes = pendingVotes
+                .filter { $0.userId == userId }
+                .sorted { $0.createdAt > $1.createdAt }
+
+            // Return the option ID of the latest pending vote if it's an add
+            return userPendingVotes.first?.isAdd == true ? userPendingVotes.first?.optionId : nil
+        }()
+
         // Calculate adjusted votes per option considering pending votes
         var adjustedVotesPerOption = poll.votesPerOption
         
         // Apply pending vote adjustments for optimistic UI
         if let pendingVotes = poll.pendingVotes, let userId = currentUserId {
-            for option in poll.options {
-                // Get latest pending vote for this option and current user
-                let relevantPendingVotes = pendingVotes
-                    .filter { $0.optionId == option.id && $0.userId == userId }
-                    .sorted { $0.createdAt > $1.createdAt }
-                
-                if let latestPendingVote = relevantPendingVotes.first {
-                    let wasVotedInServer = poll.ownVotes.contains(where: { $0.optionId == option.id })
-                    let currentCount = poll.votesPerOption[option.id] ?? 0
-                    
-                    if latestPendingVote.isAdd && !wasVotedInServer {
-                        // Adding a vote that server doesn't know about yet
-                        adjustedVotesPerOption[option.id] = currentCount + 1
-                    } else if !latestPendingVote.isAdd && wasVotedInServer {
-                        // Removing a vote that server still has
-                        adjustedVotesPerOption[option.id] = max(0, currentCount - 1)
+            if isSinglePoll {
+                // For single poll: only apply the latest pending vote
+                if let latestPendingVoteOptionId = latestPendingVoteOptionId {
+                    // Remove vote from previously voted option (if any)
+                    if let previousOwnVote = poll.ownVotes.first {
+                        let currentCount = poll.votesPerOption[previousOwnVote.optionId] ?? 0
+                        adjustedVotesPerOption[previousOwnVote.optionId] = max(0, currentCount - 1)
+                    }
+
+                    // Add vote to the pending vote option
+                    let currentCount = poll.votesPerOption[latestPendingVoteOptionId] ?? 0
+                    let wasVotedInServer = poll.ownVotes.contains(where: { $0.optionId == latestPendingVoteOptionId })
+                    if !wasVotedInServer {
+                        adjustedVotesPerOption[latestPendingVoteOptionId] = currentCount + 1
+                    }
+                }
+            } else {
+                // For multiple polls: apply pending votes per option
+                for option in poll.options {
+                    let relevantPendingVotes = pendingVotes
+                        .filter { $0.optionId == option.id && $0.userId == userId }
+                        .sorted { $0.createdAt > $1.createdAt }
+
+                    if let latestPendingVote = relevantPendingVotes.first {
+                        let wasVotedInServer = poll.ownVotes.contains(where: { $0.optionId == option.id })
+                        let currentCount = poll.votesPerOption[option.id] ?? 0
+
+                        if latestPendingVote.isAdd && !wasVotedInServer {
+                            adjustedVotesPerOption[option.id] = currentCount + 1
+                        } else if !latestPendingVote.isAdd && wasVotedInServer {
+                            adjustedVotesPerOption[option.id] = max(0, currentCount - 1)
+                        }
                     }
                 }
             }
@@ -81,7 +115,16 @@ public struct PollViewModel {
         self.options = poll.options.map { option in
             // Priority 1: Check pending votes first (optimistic UI)
             let selected: Bool
-            if let pendingVotes = poll.pendingVotes,
+            if isSinglePoll {
+                // Single poll logic: pending vote has absolute priority
+                if let latestPendingVoteOptionId = latestPendingVoteOptionId {
+                    // Show ONLY the pending vote, ignore ownVotes completely
+                    selected = option.id == latestPendingVoteOptionId
+                } else {
+                    // No pending vote, fall back to ownVotes
+                    selected = poll.ownVotes.contains(where: { option.id == $0.optionId })
+                }
+            } else if let pendingVotes = poll.pendingVotes,
                let userId = currentUserId {
                 // Filter pending votes for this option and current user, sorted by creation time
                 let relevantPendingVotes = pendingVotes

@@ -239,6 +239,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     //MARK: Database observer events
     open func startDatabaseObserver(completion: @escaping () -> Void) {
+        provider.deleteExpiredAutoDeleteMessages()
+
         messageObserver.onWillChange = { [weak self] cache, items in
             return self?.onWillChangeEvent(cache: cache, items: items)
         }
@@ -589,6 +591,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 isSearchResultsLoading = false
                 isRestartingMessageObserver = .none
             } else {
+                scrollToRepliedMessageId = 0
                 isRestartingMessageObserver = .none
             }
             
@@ -2324,6 +2327,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         scrollToRepliedMessageId = messageId
         if let (index, indexPath) = cachePosition(messageId: messageId) {
             scroll(to: indexPath, messageId: messageId)
+            scrollToRepliedMessageId = 0
             updateLastNavigatedIndexPath(indexPath: indexPath)
             if index < 5 {
                 loadPrevMessages(before: messageId)
@@ -2434,12 +2438,14 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                     else { return }
                     guard (metadata.image == nil || metadata.isThumbnailData)
                     else { return }
-                    Task {
-                        if let imageUrl = metadata.imageUrl {
-                            await linkMetadataProvider.downloadImagesIfNeeded(linkMetadata: metadata)
-                            self.provider.storeLinkMetadata(metadata, to: model.message)
-                        } else {
-                            switch await linkMetadataProvider.fetch(url: link) {
+                    if let imageUrl = metadata.imageUrl {
+                        linkMetadataProvider.downloadImagesIfNeeded(linkMetadata: metadata) { [weak self] in
+                            self?.provider.storeLinkMetadata(metadata, to: model.message)
+                        }
+                    } else {
+                        linkMetadataProvider.fetch(url: link) { [weak self] result in
+                            guard let self else { return }
+                            switch result {
                             case .success(let data):
                                 logger.verbose("Successfully loaded link Open Graph data mid: \(model.message.id) link: \(link), imageUrl: \(data.imageUrl) image: \(data.image)")
                                 self.provider.storeLinkMetadata(data, to: model.message)
@@ -2457,8 +2463,9 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             } else {
                 guard !linkMetadataProvider.isFetching(url: link)
                 else { return }
-                Task {
-                    switch await linkMetadataProvider.fetch(url: link) {
+                linkMetadataProvider.fetch(url: link) { [weak self] result in
+                    guard let self else { return }
+                    switch result {
                     case .success(let data):
                         logger.verbose("Successfully loaded link Open Graph data mid: \(model.message.id) link: \(link), imageUrl: \(data.imageUrl) image: \(data.image)")
                         self.provider.storeLinkMetadata(data, to: model.message)

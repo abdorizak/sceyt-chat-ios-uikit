@@ -56,6 +56,9 @@ extension ChannelListViewController {
         open lazy var presenceView = UIImageView()
             .withoutAutoresizingMask
         
+        open lazy var retentionBadgeView = UIImageView()
+            .withoutAutoresizingMask
+        
         lazy var separatorView = UIView()
             .withoutAutoresizingMask
         
@@ -107,6 +110,7 @@ extension ChannelListViewController {
             contentView.addSubview(badgeStackView)
             contentView.addSubview(muteView)
             contentView.addSubview(avatarView)
+            contentView.addSubview(retentionBadgeView)
             contentView.addSubview(dateLabel)
             contentView.addSubview(ticksView)
             contentView.addSubview(presenceView)
@@ -124,6 +128,12 @@ extension ChannelListViewController {
                 .bottom(-2)
             ])
             
+            retentionBadgeView.pin(to: avatarView, anchors: [
+                .trailing(4),
+                .top(-4)
+            ])
+            retentionBadgeView.resize(anchors: [.width(22), .height(22)])
+
             let topConstraint = messageStackView.topAnchor.pin(to: contentView.topAnchor, constant: 10)
             let bottomConstraint = messageStackView.bottomAnchor.pin(lessThanOrEqualTo: contentView.bottomAnchor, constant: -6)
             messageVerticalConstraints = [topConstraint, bottomConstraint]
@@ -131,7 +141,6 @@ extension ChannelListViewController {
             messageStackView.trailingAnchor.pin(lessThanOrEqualTo: dateLabel.trailingAnchor)
             messageStackViewCenterYConstraint = messageStackView.centerYAnchor.pin(to: contentView.centerYAnchor, activate: false)
             updateCenterYConstraint()
-            messageLabel.trailingAnchor.pin(lessThanOrEqualTo: dateLabel.trailingAnchor)
             messageLabel.trailingAnchor.pin(lessThanOrEqualTo: badgeStackView.leadingAnchor)
             
             muteView.centerYAnchor.pin(to: subjectLabel.centerYAnchor)
@@ -166,7 +175,13 @@ extension ChannelListViewController {
             atView.textColor = appearance.unreadMentionLabelAppearance.foregroundColor
             subjectLabel.font = appearance.subjectLabelAppearance.font
             subjectLabel.textColor = appearance.subjectLabelAppearance.foregroundColor
-            
+
+            retentionBadgeView.image = Assets.chatClock.image
+            retentionBadgeView.contentMode = .scaleAspectFit
+            retentionBadgeView.layer.borderColor = DefaultColors.background.cgColor
+            retentionBadgeView.layer.borderWidth = 2
+            retentionBadgeView.layer.cornerRadius = 11
+            retentionBadgeView.clipsToBounds = true
             
             dateLabel.clipsToBounds = true
             dateLabel.font = appearance.dateLabelAppearance.font
@@ -264,7 +279,7 @@ extension ChannelListViewController {
             pinView.isHidden = data.channel.pinnedAt == nil
             backgroundColor = data.channel.pinnedAt == nil ? .clear : appearance.backgroundColor
             ticksView.image = deliveryStatusImage(message: data.lastMessage)
-            ticksView.isHidden = data.lastMessage?.state == .deleted
+            ticksView.isHidden = !data.shouldShowDeliveryTick
             unreadCount.value = data.formattedUnreadCount
             if unreadCount.isHidden, data.channel.unread {
                 unreadCount.isHidden = false
@@ -281,6 +296,10 @@ extension ChannelListViewController {
             } else {
                 presenceView.isHidden = true
             }
+            
+            // Show retention badge if messageRetentionPeriod > 0
+            retentionBadgeView.isHidden = data.channel.messageRetentionPeriod <= 0
+            
             if data.channel.newMentionCount > 0,
                data.channel.newMessageCount > 0 {
                 atView.value = SceytChatUIKit.shared.config.mentionTriggerPrefix

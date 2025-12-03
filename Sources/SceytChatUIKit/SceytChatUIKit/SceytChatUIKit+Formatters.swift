@@ -92,6 +92,8 @@ extension SceytChatUIKit {
 
         public var unsupportedMessageShortFormatter: any UnsupportedMessageShortFormatting = UnsupportedMessageShortFormatter()
 
+        public var systemMessageBodyFormatter: any SystemMessageBodyFormatting = SystemMessageBodyFormatter()
+
         public init() {}
     }
 }

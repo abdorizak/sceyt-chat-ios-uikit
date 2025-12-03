@@ -907,6 +907,12 @@ extension ChannelMessageProvider {
                 completion(nil)
             }
         }
+
+    /// Deletes expired auto-delete messages from the database
+    /// This should be called when starting the database observer to clean up expired messages
+    open func deleteExpiredAutoDeleteMessages() {
+        Self.deleteExpiredAutoDeleteMessages()
+    }
 }
 
 private extension ChannelMessageProvider {

@@ -171,6 +171,7 @@ public class ChannelDTO: NSManagedObject {
         muted = map.muted
         muteTill = map.muteTill?.bridgeDate
         pinnedAt = map.pinnedAt?.bridgeDate
+        messageRetentionPeriod = map.messageRetentionPeriod
         
         lastDisplayedMessageId = max(lastDisplayedMessageId, Int64(map.lastDisplayedMessageId))
         lastReceivedMessageId = max(lastReceivedMessageId, Int64(map.lastReceivedMessageId))

@@ -494,6 +494,10 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.chatClear.image,
                                                      renderingMode: .template(.accent)))!
         }()
+        public static var chatClock: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.chatClock.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
         public static var chatDelete: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.chatDelete.image,
                                                      renderingMode: .template(.stateWarning)))!
