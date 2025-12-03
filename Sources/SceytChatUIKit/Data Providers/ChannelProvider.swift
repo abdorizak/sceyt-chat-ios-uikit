@@ -193,16 +193,12 @@ open class ChannelProvider: DataProvider {
         channelOperator
             .setMessageRetentionPeriod(timeInterval: timeInterval) { channel, error in
                 if let channel = channel {
+                    self.sendDisappearingMessageSystemMessage(timeInterval: timeInterval)
+                    
                     self.database.write {
                         $0.createOrUpdate(channel: channel)
                     } completion: { dbError in
                         logger.errorIfNotNil(dbError, "Store channel \(self.channelId) with messageRetentionPeriod \(timeInterval) in db")
-
-                        // Send system message after successful database update
-                        if dbError == nil {
-                            self.sendDisappearingMessageSystemMessage(timeInterval: timeInterval)
-                        }
-
                         completion?(dbError)
                     }
                 } else {
