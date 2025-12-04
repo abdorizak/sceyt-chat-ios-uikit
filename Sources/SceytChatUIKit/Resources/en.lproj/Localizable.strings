@@ -253,6 +253,8 @@
 
 //Time Intervals
 "time.interval.off" = "Off";
+"time.interval.second.one" = "1 second";
+"time.interval.second.multiple" = "%d seconds";
 "time.interval.minute.one" = "1 minute";
 "time.interval.minute.multiple" = "%d minutes";
 "time.interval.hour.one" = "1 hour";
@@ -263,6 +265,12 @@
 "time.interval.week.multiple" = "%d weeks";
 "time.interval.month.one" = "1 month";
 "time.interval.month.multiple" = "%d months";
+"time.interval.year.one" = "1 year";
+"time.interval.year.multiple" = "%d years";
+
+//Time Interval Formatting (using ListFormatter pattern)
+"time.interval.format.middle" = "%@, %@";
+"time.interval.format.end" = "%@ and %@";
 
 //Presence
 "user.presence.online" = "online";

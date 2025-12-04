@@ -2967,6 +2967,7 @@ public extension ChannelViewModel {
                 handleMentionNavigated(messageId: messageId)
             }
         } else {
+            self.searchDirection = .none
             // Message not loaded, need to load it
             if isUnreadMention {
                 findUnreadMentionMessage(messageId: messageId)
