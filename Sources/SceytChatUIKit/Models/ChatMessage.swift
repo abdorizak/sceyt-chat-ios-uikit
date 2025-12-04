@@ -520,7 +520,6 @@ public extension ChatMessage {
         let b = Message.Builder()
             .id(id)
             .tid(Int(tid))
-            .body(body)
             .type(type)
             .replyInThread(repliedInThread)
             .transient(transient)
@@ -543,6 +542,31 @@ public extension ChatMessage {
         }
         if let bodyAttributes {
             b.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
+        }
+
+        if let poll {
+            let options = poll.options
+                .map(\.text)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .map {
+                    SceytChat.PollOption.Builder()
+                        .id(UUID().uuidString)
+                        .name($0)
+                        .build()
+                }
+
+            let pollDetails = SceytChat.PollDetails.Builder()
+                .pollId(String(tid))
+                .name(poll.name)
+                .description("")
+                .options(options)
+                .allowMultipleVotes(poll.allowMultipleVotes)
+                .anonymous(poll.anonymous)
+                .allowVoteRetract(true)
+                .build()
+
+            b.poll(pollDetails)
         }
         return b
     }
