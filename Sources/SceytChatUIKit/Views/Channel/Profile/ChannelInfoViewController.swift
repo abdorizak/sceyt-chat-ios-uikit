@@ -305,7 +305,7 @@ open class ChannelInfoViewController: ViewController,
 
             // Special handling for autoDelete to show formatted time
             if action.tag == ActionTag.autoDeleteMessages {
-                cell.detailLabel.text = formatAutoDeleteTime(profileViewModel.autoDelete)
+                cell.descriptionLabel.text = formatAutoDeleteTime(profileViewModel.autoDelete)
             } else if let toggle = action.toggle {
                 cell.detailLabel.text = toggle ? L10n.Common.on : L10n.Common.off
             } else {
@@ -976,27 +976,7 @@ public extension ChannelInfoViewController {
     // MARK: - Helper Methods
 
     open func formatAutoDeleteTime(_ interval: TimeInterval) -> String {
-        if interval == 0 {
-            return L10n.Channel.Info.AutoDelete.off
-        }
-
-        let hours = Int(interval / 3600)
-        let days = hours / 24
-        let weeks = days / 7
-        let months = days / 30
-
-        if months > 0 && days % 30 == 0 {
-            return "\(months)mo"
-        } else if weeks > 0 && days % 7 == 0 {
-            return "\(weeks)w"
-        } else if days > 0 && hours % 24 == 0 {
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h"
-        } else {
-            let minutes = Int(interval / 60)
-            return "\(minutes)m"
-        }
+        return "(\(SceytChatUIKit.shared.formatters.timeIntervalFormatter.format(interval)))"
     }
 
     enum ActionTag {

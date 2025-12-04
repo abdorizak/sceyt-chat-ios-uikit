@@ -2292,7 +2292,7 @@ open class ChannelViewController: ViewController,
             var pos: CollectionView.ScrollPosition {
                 switch channelViewModel.searchDirection {
                 case .none:
-                    return .centeredHorizontally
+                    return .centeredVertically
                 case .next:
                     return .top
                 case .prev:

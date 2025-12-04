@@ -912,6 +912,16 @@ public enum L10n {
         /// 1 day
         public static let one = L10n.tr("Localizable", "time.interval.day.one", fallback: "1 day")
       }
+      public enum Format {
+        /// %@ and %@
+        public static func end(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "time.interval.format.end", String(describing: p1), String(describing: p2), fallback: "%@ and %@")
+        }
+        /// %@, %@
+        public static func middle(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "time.interval.format.middle", String(describing: p1), String(describing: p2), fallback: "%@, %@")
+        }
+      }
       public enum Hour {
         /// %d hours
         public static func multiple(_ p1: Int) -> String {
@@ -936,6 +946,14 @@ public enum L10n {
         /// 1 month
         public static let one = L10n.tr("Localizable", "time.interval.month.one", fallback: "1 month")
       }
+      public enum Second {
+        /// %d seconds
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.second.multiple", p1, fallback: "%d seconds")
+        }
+        /// 1 second
+        public static let one = L10n.tr("Localizable", "time.interval.second.one", fallback: "1 second")
+      }
       public enum Week {
         /// %d weeks
         public static func multiple(_ p1: Int) -> String {
@@ -943,6 +961,14 @@ public enum L10n {
         }
         /// 1 week
         public static let one = L10n.tr("Localizable", "time.interval.week.one", fallback: "1 week")
+      }
+      public enum Year {
+        /// %d years
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.year.multiple", p1, fallback: "%d years")
+        }
+        /// 1 year
+        public static let one = L10n.tr("Localizable", "time.interval.year.one", fallback: "1 year")
       }
     }
   }

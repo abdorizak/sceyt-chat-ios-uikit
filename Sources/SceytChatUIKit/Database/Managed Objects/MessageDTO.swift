@@ -130,10 +130,7 @@ public class MessageDTO: NSManagedObject {
         incoming = map.incoming
         body = map.body
         metadata = map.metadata
-        
-        if createdAt.bridgeDate < Date(timeIntervalSince1970: 60 * 60 * 24 * 2) {
-            createdAt = map.createdAt.bridgeDate
-        }
+        createdAt = map.createdAt.bridgeDate
         updatedAt = map.updatedAt?.bridgeDate
         autoDeleteAt = map.autoDeleteAt?.bridgeDate
         repliedInThread = map.repliedInThread

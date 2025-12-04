@@ -42,6 +42,8 @@ extension SceytChatUIKit {
 
         public var mediaDurationFormatter: any TimeIntervalFormatting = MediaDurationFormatter()
         
+        public var timeIntervalFormatter: any TimeIntervalFormatting = TimeIntervalFormatter()
+
         public var attachmentSizeFormatter: any UIntFormatting = FileSizeFormatter()
 
         public var avatarInitialsFormatter: any StringFormatting = AvatarInitialsFormatter()
