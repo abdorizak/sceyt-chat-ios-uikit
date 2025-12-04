@@ -122,6 +122,13 @@ open class ChannelMemberListViewModel: NSObject {
         }
     }
 
+    open func reloadMembers() {
+        // Reset members array and reload from beginning
+        members.removeAll()
+        provider.reset()
+        loadMembers()
+    }
+
     open func loadNextPageIfNeeded() {
         guard provider.hasNext else { return }
         loadMembers()
@@ -153,19 +160,44 @@ open class ChannelMemberListViewModel: NSObject {
 
     open func kick(memberAt indexPath: IndexPath, completion: @escaping (Error?) -> Void) {
         guard let member = member(at: indexPath) else { return }
+        let memberId = member.id
         channelProvider
             .kick(
-                members: [member.id],
-                completion: completion
+                members: [memberId],
+                completion: { [weak self] error in
+                    guard let self else { return }
+                    if error == nil {
+                        // Remove member from local array after successful kick
+                        // Find the actual index in the members array by ID (safer than relying on indexPath.row)
+                        if let memberIndex = self.members.firstIndex(where: { $0.id == memberId }) {
+                            self.members.remove(at: memberIndex)
+                            
+                            self.event = .reload
+                        }
+                    }
+                    completion(error)
+                }
             )
     }
 
     open func block(memberAt indexPath: IndexPath, completion: @escaping (Error?) -> Void) {
         guard let member = member(at: indexPath) else { return }
+        let memberId = member.id
         channelProvider
             .block(
-                members: [member.id],
-                completion: completion
+                members: [memberId],
+                completion: { [weak self] error in
+                    guard let self else { return }
+                    if error == nil {
+                        // Remove member from local array after successful block
+                        if let memberIndex = self.members.firstIndex(where: { $0.id == memberId }) {
+                            self.members.remove(at: memberIndex)
+                            // Notify UI to update
+                            self.event = .reload
+                        }
+                    }
+                    completion(error)
+                }
             )
     }
 

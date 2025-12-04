@@ -32,6 +32,17 @@ open class ChannelMemberListProvider: DataProvider {
         .build()
     }()
 
+    /// Resets the provider to initial state for reloading from scratch
+    open func reset() {
+        hasNext = true
+        isLoading = false
+        query = .Builder(channelId: channelId)
+            .order(queryOrder)
+            .limit(UInt(queryLimit))
+            .queryType(queryType)
+            .build()
+    }
+
     /// Loads next page of members from server
     open func loadMembers(completion: (([ChatChannelMember]) -> Void)? = nil) {
         guard !isLoading else {

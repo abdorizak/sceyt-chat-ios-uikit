@@ -45,6 +45,14 @@ open class ChannelMemberListViewController: ViewController,
         memberListViewModel.loadMembers()
 
         view.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onLongPress)))
+
+        // Listen for members added notification
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleMembersAdded(_:)),
+            name: .didAddChannelMembers,
+            object: nil
+        )
     }
     
     open override func setupLayout() {
@@ -267,6 +275,16 @@ open class ChannelMemberListViewController: ViewController,
         }
         if !actions.isEmpty {
             showBottomSheet(actions: actions, withCancel: true)
+        }
+    }
+
+    @objc
+    open func handleMembersAdded(_ notification: Notification) {
+        // Check if the notification is for this channel
+        if let channelId = notification.userInfo?["channelId"] as? ChannelId,
+           channelId == memberListViewModel.channel.id {
+            // Reload the member list
+            memberListViewModel.reloadMembers()
         }
     }
 }
