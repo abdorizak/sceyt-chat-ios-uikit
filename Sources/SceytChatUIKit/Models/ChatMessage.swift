@@ -520,6 +520,7 @@ public extension ChatMessage {
         let b = Message.Builder()
             .id(id)
             .tid(Int(tid))
+            .body(body)
             .type(type)
             .replyInThread(repliedInThread)
             .transient(transient)
@@ -546,13 +547,11 @@ public extension ChatMessage {
 
         if let poll {
             let options = poll.options
-                .map(\.text)
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
-                .map {
+                .filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .map { option in
                     SceytChat.PollOption.Builder()
-                        .id(UUID().uuidString)
-                        .name($0)
+                        .id(option.id)
+                        .name(option.text)
                         .build()
                 }
 
