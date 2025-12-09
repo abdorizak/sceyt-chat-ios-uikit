@@ -14,6 +14,7 @@ extension MessageInputViewController: AppearanceProviding {
         attachmentIcon: .attachment,
         sendMessageIcon: .messageSendAction,
         voiceRecordIcon: .audioPlayerMic,
+        cameraIcon: .chatActionCamera,
         sendVoiceMessageIcon: .messageSendAction,
         enableVoiceRecord: true,
         enableSendAttachment: true,
@@ -70,7 +71,10 @@ extension MessageInputViewController: AppearanceProviding {
         
         @Trackable<Appearance, UIImage>
         public var voiceRecordIcon: UIImage
-        
+
+        @Trackable<Appearance, UIImage>
+        public var cameraIcon: UIImage
+
         @Trackable<Appearance, UIImage>
         public var sendVoiceMessageIcon: UIImage
         
@@ -137,6 +141,7 @@ extension MessageInputViewController: AppearanceProviding {
             attachmentIcon: UIImage,
             sendMessageIcon: UIImage,
             voiceRecordIcon: UIImage,
+            cameraIcon: UIImage,
             sendVoiceMessageIcon: UIImage,
             enableVoiceRecord: Bool,
             enableSendAttachment: Bool,
@@ -163,6 +168,7 @@ extension MessageInputViewController: AppearanceProviding {
             self._attachmentIcon = Trackable(value: attachmentIcon)
             self._sendMessageIcon = Trackable(value: sendMessageIcon)
             self._voiceRecordIcon = Trackable(value: voiceRecordIcon)
+            self._cameraIcon = Trackable(value: cameraIcon)
             self._sendVoiceMessageIcon = Trackable(value: sendVoiceMessageIcon)
             self._enableVoiceRecord = Trackable(value: enableVoiceRecord)
             self._enableSendAttachment = Trackable(value: enableSendAttachment)
@@ -192,6 +198,7 @@ extension MessageInputViewController: AppearanceProviding {
             attachmentIcon: UIImage? = nil,
             sendMessageIcon: UIImage? = nil,
             voiceRecordIcon: UIImage? = nil,
+            cameraIcon: UIImage? = nil,
             sendVoiceMessageIcon: UIImage? = nil,
             enableVoiceRecord: Bool? = nil,
             enableSendAttachment: Bool? = nil,
@@ -218,6 +225,7 @@ extension MessageInputViewController: AppearanceProviding {
             self._attachmentIcon = Trackable(reference: reference, referencePath: \.attachmentIcon)
             self._sendMessageIcon = Trackable(reference: reference, referencePath: \.sendMessageIcon)
             self._voiceRecordIcon = Trackable(reference: reference, referencePath: \.voiceRecordIcon)
+            self._cameraIcon = Trackable(reference: reference, referencePath: \.cameraIcon)
             self._sendVoiceMessageIcon = Trackable(reference: reference, referencePath: \.sendVoiceMessageIcon)
             self._enableVoiceRecord = Trackable(reference: reference, referencePath: \.enableVoiceRecord)
             self._enableSendAttachment = Trackable(reference: reference, referencePath: \.enableSendAttachment)
@@ -244,6 +252,7 @@ extension MessageInputViewController: AppearanceProviding {
             if let attachmentIcon { self.attachmentIcon = attachmentIcon }
             if let sendMessageIcon { self.sendMessageIcon = sendMessageIcon }
             if let voiceRecordIcon { self.voiceRecordIcon = voiceRecordIcon }
+            if let cameraIcon { self.cameraIcon = cameraIcon }
             if let sendVoiceMessageIcon { self.sendVoiceMessageIcon = sendVoiceMessageIcon }
             if let enableVoiceRecord { self.enableVoiceRecord = enableVoiceRecord }
             if let enableSendAttachment { self.enableSendAttachment = enableSendAttachment }
