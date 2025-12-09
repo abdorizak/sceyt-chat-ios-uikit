@@ -193,7 +193,7 @@ open class ChannelProvider: DataProvider {
         channelOperator
             .setMessageRetentionPeriod(timeInterval: timeInterval) { channel, error in
                 if let channel = channel {
-                    self.sendDisappearingMessageSystemMessage(timeInterval: timeInterval)
+                    self.sendDisappearingMessageSystemMessage(timeInterval: timeInterval / 1000.0)
                     
                     self.database.write {
                         $0.createOrUpdate(channel: channel)
