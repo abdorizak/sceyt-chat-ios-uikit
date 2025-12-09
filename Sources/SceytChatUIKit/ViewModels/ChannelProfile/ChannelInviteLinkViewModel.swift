@@ -99,8 +99,9 @@ open class ChannelInviteLinkViewModel: NSObject {
         error = nil
         
         SceytChatUIKit.shared.chatClient.regenerateChannelInviteKey(
-            channelId: "\(channel.id)", 
-            key: channel.uri
+            channelId: "\(channel.id)",
+            key: channel.uri,
+            deletePermanently: true
         ) { [weak self] newKey, error in
             guard let self = self else { return }
             DispatchQueue.main.async {
