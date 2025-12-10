@@ -1543,6 +1543,13 @@ open class ChannelViewController: ViewController,
                 }
             case .didTapPollOption(let optionIndex, let pollViewModel):
                 self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
+            case .didTapReadMore:
+                
+                self.channelViewModel.invalidateLayout()
+                // Invalidate the collection view layout
+                self.collectionView.collectionViewLayout.invalidateLayout()
+                // Reload all data
+                self.collectionView.reloadData()
             }
         }
         cell.contextMenu = contextMenu

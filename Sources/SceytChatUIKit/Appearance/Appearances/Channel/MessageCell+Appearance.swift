@@ -378,6 +378,16 @@ extension MessageCell: AppearanceProviding {
         @Trackable<Appearance, UIColor>
         public var systemMessageTextColor: UIColor
 
+        // Read more configuration
+        @Trackable<Appearance, Int>
+        public var collapsedCharacterLimit: Int
+
+        @Trackable<Appearance, String>
+        public var readMoreText: String
+
+        @Trackable<Appearance, LabelAppearance>
+        public var readMoreButtonAppearance: LabelAppearance
+
         // Initializer with all parameters
         public init(
             // Colors
@@ -458,7 +468,13 @@ extension MessageCell: AppearanceProviding {
             messageBodyFormatter: any MessageBodyFormatting,
             unsupportedMessageFormatter: any UnsupportedMessageFormatting,
             systemMessageFont: UIFont = Fonts.semiBold.withSize(12),
-            systemMessageTextColor: UIColor = .white
+            systemMessageTextColor: UIColor = .white,
+            collapsedCharacterLimit: Int = 700,
+            readMoreText: String = L10n.Message.readMore,
+            readMoreButtonAppearance: LabelAppearance = LabelAppearance(
+                foregroundColor: SceytChatUIKit.shared.theme.colors.accent,
+                font: Fonts.medium.withSize(16)
+            )
         ) {
             // Colors
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -539,6 +555,9 @@ extension MessageCell: AppearanceProviding {
             self._unsupportedMessageFormatter = Trackable(value: unsupportedMessageFormatter)
             self._systemMessageFont = Trackable(value: systemMessageFont)
             self._systemMessageTextColor = Trackable(value: systemMessageTextColor)
+            self._collapsedCharacterLimit = Trackable(value: collapsedCharacterLimit)
+            self._readMoreText = Trackable(value: readMoreText)
+            self._readMoreButtonAppearance = Trackable(value: readMoreButtonAppearance)
         }
         
         // Initializer with optional parameters
@@ -691,6 +710,9 @@ extension MessageCell: AppearanceProviding {
             self._unsupportedMessageFormatter = Trackable(reference: reference, referencePath: \.unsupportedMessageFormatter)
             self._systemMessageFont = Trackable(reference: reference, referencePath: \.systemMessageFont)
             self._systemMessageTextColor = Trackable(reference: reference, referencePath: \.systemMessageTextColor)
+            self._collapsedCharacterLimit = Trackable(reference: reference, referencePath: \.collapsedCharacterLimit)
+            self._readMoreText = Trackable(reference: reference, referencePath: \.readMoreText)
+            self._readMoreButtonAppearance = Trackable(reference: reference, referencePath: \.readMoreButtonAppearance)
 
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let incomingBubbleColor { self.incomingBubbleColor = incomingBubbleColor }

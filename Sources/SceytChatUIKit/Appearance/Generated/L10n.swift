@@ -611,6 +611,8 @@ public enum L10n {
   public enum Message {
     /// Message was deleted.
     public static let deleted = L10n.tr("Localizable", "message.deleted", fallback: "Message was deleted.")
+    /// Read more
+    public static let readMore = L10n.tr("Localizable", "message.readMore", fallback: "Read more")
     public enum Action {
       public enum Subtitle {
         /// Delete For All

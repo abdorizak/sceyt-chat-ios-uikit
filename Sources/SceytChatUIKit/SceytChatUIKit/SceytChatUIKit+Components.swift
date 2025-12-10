@@ -129,6 +129,7 @@ extension SceytChatUIKit {
         public static var messageCellActionButtonView: MessageCell.BottomActionView.Type = MessageCell.BottomActionView.self
         public static var messageCellForwardView: MessageCell.ForwardView.Type = MessageCell.ForwardView.self
         public static var messageCellInfoView: MessageCell.InfoView.Type = MessageCell.InfoView.self
+        public static var messageCellReadMoreButton: MessageCell.ReadMoreButton.Type = MessageCell.ReadMoreButton.self
         public static var messageCellLinkPreviewView: MessageCell.LinkPreviewView.Type = MessageCell.LinkPreviewView.self
         public static var messageCellLinkStackView: MessageCell.LinkStackView.Type = MessageCell.LinkStackView.self
         public static var messageCellReactionLabel: MessageCell.ReactionLabel.Type = MessageCell.ReactionLabel.self

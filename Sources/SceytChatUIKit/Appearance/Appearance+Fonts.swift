@@ -15,6 +15,7 @@ public extension Appearance {
         public static var defaultSize: CGFloat = 10
         
         public static var regular: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .regular)
+        public static var medium: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .medium)
         public static var semiBold: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .semibold)
         public static var bold: UIFont = UIFont.systemFont(ofSize: defaultSize, weight: .bold)
         public static var monospace: UIFont = UIFont.monospacedSystemFont(ofSize: defaultSize, weight: .regular)
