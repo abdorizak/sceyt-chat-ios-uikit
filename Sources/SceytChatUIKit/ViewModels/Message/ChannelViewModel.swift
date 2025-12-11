@@ -931,7 +931,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         } else {
             if isThread || channel.lastMessage?.incoming == false || lastDisplayedMessageId == 0 {
                 logger.info("ChannelViewModel loadLastMessages (prev) channel id: \(channel.id), lastMessage id \(channel.lastMessage?.id as Any)")
-                provider.loadPrevMessages(before: channel.lastMessage?.id ?? MessageId(Int64.max))
+                let before = isInitialLoad ? MessageId(Int64.max) : channel.lastMessage?.id ?? MessageId(Int64.max)
+                provider.loadPrevMessages(before: before)
             } else {
                 logger.info("ChannelViewModel loadLastMessages (near) channel id: \(channel.id), lastDisplayedMessageId \(lastDisplayedMessageId)")
                 provider.loadNearMessages(near: lastDisplayedMessageId)

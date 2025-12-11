@@ -63,6 +63,7 @@ open class ChannelListViewModel: NSObject,
                 #keyPath(ChannelDTO.lastMessage.deliveryStatus),
                 #keyPath(ChannelDTO.lastMessage.updatedAt),
                 #keyPath(ChannelDTO.lastMessage.state),
+                #keyPath(ChannelDTO.lastMessage.metadata),
 //                #keyPath(ChannelDTO.members.user),
                 #keyPath(ChannelDTO.lastReaction.message),
                 #keyPath(ChannelDTO.lastReaction.key)
