@@ -170,12 +170,8 @@ open class ChannelListViewModel: NSObject,
     //MARK: Channel search
     open func search(channelListQuery: ChannelListQuery) {
         let predicate = ChannelDTO.predicate(query: channelListQuery)
-        do {
-            try channelObserver.restartObserver(fetchPredicate: predicate)
-            provider.loadChannels(query: channelListQuery)
-        } catch {
-            logger.errorIfNotNil(error, "restartObserver")
-        }
+        channelObserver.restartObserver(fetchPredicate: predicate)
+        provider.loadChannels(query: channelListQuery)
     }
    
     @objc
@@ -309,7 +305,6 @@ open class ChannelListViewModel: NSObject,
     
     //MARK: ChatClient delegate: Channel events
     open func channel(_ channel: Channel, didReceive channelEvent: ChannelEvent) {
-        channelEvent.user
         switch channelEvent.name {
         case ChannelEvent.startTyping:
             handleChannel(channel, didStartTyping: channelEvent.user)
