@@ -250,13 +250,22 @@ extension ChannelViewController {
                     infoView.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 10),
                     
                     linkView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    linkView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
                     linkView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
                     linkView.heightAnchor.pin(constant: layout.linkViewMeasure.height),
                     
                     infoView.topAnchor.pin(to: bubbleView.bottomAnchor, constant: -24)
                 ]
-                
+
+                if shouldDisplayReadMoreButton {
+                    layoutConstraint += [
+                        linkView.topAnchor.pin(to: readMoreButton.bottomAnchor, constant: 8)
+                    ]
+                } else {
+                    layoutConstraint += [
+                        linkView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8)
+                    ]
+                }
+
                 layoutConstraint += [ linkView.bottomAnchor.pin(lessThanOrEqualTo: infoView.topAnchor, constant: -4) ]
                 
             } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {

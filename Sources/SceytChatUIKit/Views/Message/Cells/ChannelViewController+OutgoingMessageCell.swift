@@ -175,7 +175,8 @@ extension ChannelViewController {
                     attachmentView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: 0),
                 ]
             } else if layout.contentOptions.contains(.link), layout.attachments.isEmpty {
-                let textHeight = (layout.shouldShowReadMore && !layout.isTextExpanded) ? layout.truncatedTextSize.height : layout.textSize.height
+                let shouldDisplayReadMoreButton = layout.shouldShowReadMore && !layout.isTextExpanded
+                let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
                 layoutConstraint += [
                     bubbleView.leadingAnchor.pin(to: textLabel.leadingAnchor, constant: -12),
@@ -184,9 +185,9 @@ extension ChannelViewController {
                     bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.linkViewMeasure.width + 24),
                     bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.infoViewMeasure.width + 24),
                     bubbleView.widthAnchor.pin(lessThanOrEqualToConstant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
-                    
+
                     infoView.leadingAnchor.pin(greaterThanOrEqualTo: bubbleView.leadingAnchor, constant: 10),
-                    
+
                     textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12),
                     textLabel.topAnchor.pin(to: bubbleViewTopAnchor, constant: 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
@@ -197,13 +198,20 @@ extension ChannelViewController {
                     readMoreButton.leadingAnchor.pin(to: textLabel.leadingAnchor),
 
                     linkView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    linkView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
-                    //                linkView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4),
                     linkView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
                     linkView.heightAnchor.pin(constant: layout.linkViewMeasure.height),
                 ]
-                
-                
+
+                if shouldDisplayReadMoreButton {
+                    layoutConstraint += [
+                        linkView.topAnchor.pin(to: readMoreButton.bottomAnchor, constant: 8)
+                    ]
+                } else {
+                    layoutConstraint += [
+                        linkView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8)
+                    ]
+                }
+
                 layoutConstraint += [ linkView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4) ]
             } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {
                 layoutConstraint += [
