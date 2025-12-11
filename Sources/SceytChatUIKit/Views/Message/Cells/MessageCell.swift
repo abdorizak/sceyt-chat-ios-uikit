@@ -36,7 +36,11 @@ open class MessageCell: CollectionViewCell,
     open lazy var textLabel = Components.textLabel
         .init()
         .withoutAutoresizingMask
-    
+
+    open lazy var readMoreButton = Components.messageCellReadMoreButton
+        .init()
+        .withoutAutoresizingMask
+
     open lazy var infoView = Components.messageCellInfoView
         .init()
         .withoutAutoresizingMask
@@ -104,6 +108,9 @@ open class MessageCell: CollectionViewCell,
     
     private var longPressItem: LongPressItem?
     
+    private var fullAttributedText: NSAttributedString?
+    private var truncatedAttributedText: NSAttributedString?
+
     open override func setup() {
         super.setup()
         
@@ -150,6 +157,12 @@ open class MessageCell: CollectionViewCell,
             onAction?(.didTapBottomAction)
         }
 
+        readMoreButton.addTarget(
+            self,
+            action: #selector(readMoreButtonAction(_:)),
+            for: .touchUpInside
+        )
+
         replyView.addTarget(
             self,
             action: #selector(replyViewAction(_:)),
@@ -191,6 +204,7 @@ open class MessageCell: CollectionViewCell,
         bubbleView.addSubview(forwardView)
         bubbleView.addSubview(replyView)
         bubbleView.addSubview(textLabel)
+        bubbleView.addSubview(readMoreButton)
         bubbleView.addSubview(attachmentView)
         bubbleView.addSubview(linkView)
         bubbleView.addSubview(pollView)
@@ -226,6 +240,7 @@ open class MessageCell: CollectionViewCell,
         infoView.appearance = appearance
         reactionTotalView.appearance = appearance
         bottomActionView.appearance = appearance.bottomActionViewAppearance
+        readMoreButton.appearance = appearance
         unreadMessagesSeparatorView.appearance = appearance
         checkBoxView.parentAppearance = appearance.selectionCheckboxAppearance
         
@@ -283,7 +298,24 @@ open class MessageCell: CollectionViewCell,
         let message = data.message
         showSenderInfo = data.showUserInfo
         unreadMessagesSeparatorView.isHidden = !data.isLastDisplayedMessage
-        textLabel.attributedText = data.attributedView.content
+
+        // Handle read more functionality
+        let attributedContent = data.attributedView.content
+
+        if data.shouldShowReadMore && !data.isTextExpanded {
+            // Create truncated text
+            fullAttributedText = attributedContent
+            let truncatedString = String(attributedContent.string.prefix(appearance.collapsedCharacterLimit))
+            let mutableAttributed = NSMutableAttributedString(attributedString: attributedContent)
+            mutableAttributed.mutableString.setString(truncatedString + "...")
+            truncatedAttributedText = mutableAttributed
+            textLabel.attributedText = attributedContent
+            readMoreButton.isHidden = false
+        } else {
+            textLabel.attributedText = attributedContent
+            readMoreButton.isHidden = true
+        }
+
         infoView.data = data
         nameLabel.text = appearance.senderNameFormatter.format(message.user)
         nameLabel.textColor = appearance.senderNameLabelAppearance.foregroundColor ?? appearance.senderNameColorProvider.provideVisual(for: message.user)
@@ -374,6 +406,9 @@ open class MessageCell: CollectionViewCell,
         highlightMode = .none
         longPressItem = nil
         deliveryStatus = .pending
+        fullAttributedText = nil
+        truncatedAttributedText = nil
+        readMoreButton.isHidden = true
         NSLayoutConstraint.deactivate(contentView.constraints + containerView.constraints + (contentConstraints ?? []))
         imageTask?.cancel()
         contextMenu?.disconnect(from: bubbleView, identifier: .init(value: data))
@@ -487,6 +522,21 @@ open class MessageCell: CollectionViewCell,
     }
 
     // MARK: Actions
+    @objc
+    open func readMoreButtonAction(_ sender: ReadMoreButton) {
+        guard !data.isTextExpanded, let fullAttributedText = fullAttributedText else { return }
+
+        // Update the layout model
+        data.updateTextSizeForExpanded()
+
+        // Update the UI
+        textLabel.attributedText = fullAttributedText
+        readMoreButton.isHidden = true
+
+        // Notify to update cell height
+        onAction?(.didTapReadMore)
+    }
+
     @objc
     open func replyCountAction(_ sender: UIButton) {
         onAction?(.showThread)
@@ -755,6 +805,7 @@ public extension MessageCell {
         case didSwipe
         case didTapPollOption(Int, PollViewModel)
         case didTapBottomAction
+        case didTapReadMore
     }
 
     enum Measure {

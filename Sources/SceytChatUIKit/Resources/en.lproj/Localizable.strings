@@ -214,6 +214,7 @@
 "message.list.borders-today" = "Today";
 "message.deleted" = "Message was deleted.";
 "message.info.edited" = "edited";
+"message.readMore" = "Read more";
 "message.attachment.image" = "Photo";
 "message.attachment.video" = "Video";
 "message.attachment.link" = "Link";

@@ -64,7 +64,11 @@ open class MessageLayoutModel {
     public private(set) var messageUserTitleSize: CGSize = .zero
     public private(set) var parentMessageUserTitleSize: CGSize
     public private(set) var textSize: CGSize
+    public private(set) var truncatedTextSize: CGSize = .zero
     public private(set) var parentTextSize: CGSize
+    public var isTextExpanded: Bool = false
+    public var shouldShowReadMore: Bool = false
+    public private(set) var readMoreButtonHeight: CGFloat = 0
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
     public private(set) var pollViewMeasure: CGSize = .zero
@@ -189,7 +193,29 @@ open class MessageLayoutModel {
         }
         textSize = size.textSize
         lastCharRect = size.lastCharRect
-        
+
+        // Calculate truncated text size and read more button height
+        let textLength = attributedView.content.string.count
+        if textLength > appearance.collapsedCharacterLimit {
+            shouldShowReadMore = true
+            let truncatedString = String(attributedView.content.string.prefix(appearance.collapsedCharacterLimit))
+            let mutableAttributed = NSMutableAttributedString(attributedString: attributedView.content)
+            mutableAttributed.mutableString.setString(truncatedString)
+
+            let truncatedSize = Self.textSizeMeasure.calculateSize(
+                of: mutableAttributed,
+                config: .init(restrictingWidth: restrictingTextWidth))
+            truncatedTextSize = truncatedSize.textSize
+
+            // Calculate read more button height (font line height + padding)
+            let buttonFont = appearance.readMoreButtonAppearance.font
+            readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+        } else {
+            shouldShowReadMore = false
+            truncatedTextSize = .zero
+            readMoreButtonHeight = 0
+        }
+
         if textSize != .zero {
             contentOptions.insert(.text)
         }
@@ -1357,7 +1383,17 @@ extension MessageLayoutModel: Hashable, Equatable {
     public func hash(into hasher: inout Hasher) {
         hasher.combine(message)
     }
-    
+
+    // MARK: - Read More Functionality
+    open func updateTextSizeForExpanded() {
+        guard contentOptions.contains(.text), shouldShowReadMore, !isTextExpanded else { return }
+
+        // Text is already at full size, just need to mark as expanded
+        isTextExpanded = true
+
+        // Recalculate measure size (this will use full textSize instead of truncatedTextSize)
+        measureSize = measure()
+    }
 }
 
 extension MessageLayoutModel: Comparable {
