@@ -209,7 +209,7 @@ open class MessageLayoutModel {
 
             // Calculate read more button height (font line height + padding)
             let buttonFont = appearance.readMoreButtonAppearance.font
-            readMoreButtonHeight = buttonFont.lineHeight // 8 = top(4) + bottom(4) padding
+            readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
         } else {
             shouldShowReadMore = false
             truncatedTextSize = .zero
