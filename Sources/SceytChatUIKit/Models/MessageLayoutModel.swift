@@ -69,6 +69,13 @@ open class MessageLayoutModel {
     public var isTextExpanded: Bool = false
     public var shouldShowReadMore: Bool = false
     public private(set) var readMoreButtonHeight: CGFloat = 0
+
+    /// Determines if the read more button should be displayed
+    /// Returns true only if the message has long text that should be truncated,
+    /// is not currently expanded, and is not deleted
+    public var shouldDisplayReadMoreButton: Bool {
+        shouldShowReadMore && !isTextExpanded && message.state != .deleted
+    }
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
     public private(set) var pollViewMeasure: CGSize = .zero
@@ -196,24 +203,31 @@ open class MessageLayoutModel {
 
         // Calculate truncated text size and read more button height
         let textLength = attributedView.content.string.count
-        if textLength > appearance.collapsedCharacterLimit {
-            shouldShowReadMore = true
-            let truncatedString = String(attributedView.content.string.prefix(appearance.collapsedCharacterLimit))
-            let mutableAttributed = NSMutableAttributedString(attributedString: attributedView.content)
-            mutableAttributed.mutableString.setString(truncatedString)
-
-            let truncatedSize = Self.textSizeMeasure.calculateSize(
-                of: mutableAttributed,
-                config: .init(restrictingWidth: restrictingTextWidth))
-            truncatedTextSize = truncatedSize.textSize
-
-            // Calculate read more button height (font line height + padding)
-            let buttonFont = appearance.readMoreButtonAppearance.font
-            readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
-        } else {
+        if message.state == .deleted {
+            isTextExpanded = false
             shouldShowReadMore = false
             truncatedTextSize = .zero
             readMoreButtonHeight = 0
+        } else {
+            if textLength > appearance.collapsedCharacterLimit {
+                shouldShowReadMore = true
+                let truncatedString = String(attributedView.content.string.prefix(appearance.collapsedCharacterLimit))
+                let mutableAttributed = NSMutableAttributedString(attributedString: attributedView.content)
+                mutableAttributed.mutableString.setString(truncatedString)
+
+                let truncatedSize = Self.textSizeMeasure.calculateSize(
+                    of: mutableAttributed,
+                    config: .init(restrictingWidth: restrictingTextWidth))
+                truncatedTextSize = truncatedSize.textSize
+
+                // Calculate read more button height (font line height + padding)
+                let buttonFont = appearance.readMoreButtonAppearance.font
+                readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+            } else {
+                shouldShowReadMore = false
+                truncatedTextSize = .zero
+                readMoreButtonHeight = 0
+            }
         }
 
         if textSize != .zero {

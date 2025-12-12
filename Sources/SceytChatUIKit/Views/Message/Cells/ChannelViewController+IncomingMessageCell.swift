@@ -136,7 +136,7 @@ extension ChannelViewController {
             }
             
             if options == .text {
-                let shouldDisplayReadMoreButton = layout.shouldShowReadMore && !layout.isTextExpanded
+                let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
                 let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
                 layoutConstraint += [
@@ -225,7 +225,7 @@ extension ChannelViewController {
                     layoutConstraint += [attachmentView.topAnchor.pin(to: bubbleViewTopAnchor, constant: layout.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)]
                 }
             } else if layout.contentOptions.contains(.link), layout.attachments.isEmpty {
-                let shouldDisplayReadMoreButton = layout.shouldShowReadMore && !layout.isTextExpanded
+                let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
                 let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
                 layoutConstraint += [
@@ -321,7 +321,7 @@ extension ChannelViewController {
                 infoView.displayedLabel.textColor = infoView.dateLabel.textColor
                 infoView.eyeView.tintColor = infoView.dateLabel.textColor
 
-                let shouldDisplayReadMoreButton = layout.shouldShowReadMore && !layout.isTextExpanded
+                let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
                 let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
                 layoutConstraint += [
@@ -485,7 +485,8 @@ extension ChannelViewController {
             
             if options == .text {
                 // Use truncated text size if text is not expanded
-                let shouldDisplayReadMoreButton = model.shouldShowReadMore && !model.isTextExpanded
+                // For deleted messages, always use current textSize regardless of isTextExpanded state
+                let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
                 textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.width = max(textSize.width, model.parentTextSize.width - 70)
                 textSize.height += (model.isForwarded || showName) ? 2 : 8
@@ -532,7 +533,8 @@ extension ChannelViewController {
                 let linkSize = model.linkViewMeasure
 
                 // Use truncated text size if text is not expanded
-                let shouldDisplayReadMoreButton = model.shouldShowReadMore && !model.isTextExpanded
+                // For deleted messages, always use current textSize regardless of isTextExpanded state
+                let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
                 textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.width = max(textSize.width, model.parentTextSize.width - 70)
                 bubbleSize = textSize
@@ -591,7 +593,8 @@ extension ChannelViewController {
                 bubbleSize.width += 4
 
                 // Use truncated text size if text is not expanded
-                let shouldDisplayReadMoreButton = model.shouldShowReadMore && !model.isTextExpanded
+                // For deleted messages, always use current textSize regardless of isTextExpanded state
+                let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
                 textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.height += (model.isForwarded || model.showUserInfo) ? 2 : 8
 

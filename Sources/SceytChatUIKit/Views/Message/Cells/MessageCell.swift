@@ -107,9 +107,6 @@ open class MessageCell: CollectionViewCell,
     public private(set) var contentConstraints: [NSLayoutConstraint]?
     
     private var longPressItem: LongPressItem?
-    
-    private var fullAttributedText: NSAttributedString?
-    private var truncatedAttributedText: NSAttributedString?
 
     open override func setup() {
         super.setup()
@@ -299,21 +296,11 @@ open class MessageCell: CollectionViewCell,
         showSenderInfo = data.showUserInfo
         unreadMessagesSeparatorView.isHidden = !data.isLastDisplayedMessage
 
-        // Handle read more functionality
-        let attributedContent = data.attributedView.content
+        readMoreButton.isHidden = true
+        textLabel.attributedText = data.attributedView.content
 
-        if data.shouldShowReadMore && !data.isTextExpanded {
-            // Create truncated text
-            fullAttributedText = attributedContent
-            let truncatedString = String(attributedContent.string.prefix(appearance.collapsedCharacterLimit))
-            let mutableAttributed = NSMutableAttributedString(attributedString: attributedContent)
-            mutableAttributed.mutableString.setString(truncatedString + "...")
-            truncatedAttributedText = mutableAttributed
-            textLabel.attributedText = attributedContent
+        if data.shouldShowReadMore && !data.isTextExpanded && data.message.state != .deleted {
             readMoreButton.isHidden = false
-        } else {
-            textLabel.attributedText = attributedContent
-            readMoreButton.isHidden = true
         }
 
         infoView.data = data
@@ -406,8 +393,6 @@ open class MessageCell: CollectionViewCell,
         highlightMode = .none
         longPressItem = nil
         deliveryStatus = .pending
-        fullAttributedText = nil
-        truncatedAttributedText = nil
         readMoreButton.isHidden = true
         NSLayoutConstraint.deactivate(contentView.constraints + containerView.constraints + (contentConstraints ?? []))
         imageTask?.cancel()
@@ -524,13 +509,12 @@ open class MessageCell: CollectionViewCell,
     // MARK: Actions
     @objc
     open func readMoreButtonAction(_ sender: ReadMoreButton) {
-        guard !data.isTextExpanded, let fullAttributedText = fullAttributedText else { return }
+        guard !data.isTextExpanded else { return }
 
         // Update the layout model
         data.updateTextSizeForExpanded()
 
         // Update the UI
-        textLabel.attributedText = fullAttributedText
         readMoreButton.isHidden = true
 
         // Notify to update cell height
