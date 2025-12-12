@@ -291,6 +291,8 @@ public enum L10n {
       public enum Segment {
         /// Files
         public static let files = L10n.tr("Localizable", "channel.info.segment.files", fallback: "Files")
+        /// Groups
+        public static let groups = L10n.tr("Localizable", "channel.info.segment.groups", fallback: "Groups")
         /// Links
         public static let links = L10n.tr("Localizable", "channel.info.segment.links", fallback: "Links")
         /// Media
@@ -302,6 +304,12 @@ public enum L10n {
         public enum Files {
           /// No file items yet
           public static let noItems = L10n.tr("Localizable", "channel.info.segment.files.noItems", fallback: "No file items yet")
+        }
+        public enum Groups {
+          /// Groups in common will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.groups.noItemsSubTitle", fallback: "Groups in common will appear here.")
+          /// No groups in common
+          public static let noItemsTitle = L10n.tr("Localizable", "channel.info.segment.groups.noItemsTitle", fallback: "No groups in common")
         }
         public enum Links {
           /// No link items yet

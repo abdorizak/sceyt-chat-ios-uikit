@@ -83,10 +83,13 @@
 "channel.info.segment.files" = "Files";
 "channel.info.segment.links" = "Links";
 "channel.info.segment.voice" = "Voice";
+"channel.info.segment.groups" = "Groups";
 "channel.info.segment.medias.noItems" = "No media items yet";
 "channel.info.segment.files.noItems" = "No file items yet";
 "channel.info.segment.links.noItems" = "No link items yet";
 "channel.info.segment.voice.noItems" = "No voice items yet";
+"channel.info.segment.groups.noItemsTitle" = "No groups in common";
+"channel.info.segment.groups.noItemsSubTitle" = "Groups in common will appear here.";
 
 "channel.profile.qrCodeTitle" = "QR Code for Invites";
 "channel.profile.qrCodeShare" = "Share QR Code";
