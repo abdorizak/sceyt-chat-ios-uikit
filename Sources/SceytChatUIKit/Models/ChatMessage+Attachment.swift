@@ -232,36 +232,34 @@ extension ChatMessage {
 }
 
 extension ChatMessage.Attachment: Hashable {
-    
-    public static func == (lhs: ChatMessage.Attachment, rhs: ChatMessage.Attachment) -> Bool {
-        if lhs.id != 0, rhs.id != 0 {
-            return lhs.id == rhs.id
+
+    private var identityKey: AnyHashable {
+        if id != 0 { return AnyHashable(id) }
+        if tid != 0 { return AnyHashable(tid) }
+
+        if let url {
+            return AnyHashable(url)
         }
-        if lhs.tid != 0, rhs.tid != 0 {
-            return lhs.tid == rhs.tid
-        }
-        var isFile = true
-        
-        if lhs.url != nil, rhs.url != nil {
-            isFile = lhs.url == rhs.url
-        } else if let lFilePath = lhs.filePath as? NSString, let rFilePath = rhs.filePath as? NSString {
-            isFile = lFilePath.lastPathComponent.lowercased() == rFilePath.lastPathComponent.lowercased()
-        }
-        
-        return isFile && lhs.type.lowercased() == rhs.type.lowercased() && lhs.name?.lowercased() == rhs.name?.lowercased()
+
+        // Match your equality logic: lastPathComponent lowercased
+        let last = (filePath as? NSString)?
+            .lastPathComponent
+            .lowercased()
+
+        // Include the same normalized fields you compare in ==
+        return AnyHashable([
+            (last ?? ""),
+            type.lowercased(),
+            (name ?? "").lowercased()
+        ])
     }
     
+    public static func == (lhs: ChatMessage.Attachment, rhs: ChatMessage.Attachment) -> Bool {
+        lhs.identityKey == rhs.identityKey
+    }
+
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-        hasher.combine(tid)
-        hasher.combine(name)
-        hasher.combine(type)
-        
-        if let url {
-            hasher.combine(url)
-        } else {
-            hasher.combine(filePath)
-        }
+        hasher.combine(identityKey)
     }
 }
 
