@@ -69,7 +69,16 @@ extension MessageCell {
         }
 
         @objc func didTapActionButton() {
-            onAction?()
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseInOut], animations: {
+                self.actionButton.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+                self.actionButton.alpha = 0.6
+            }) { _ in
+                UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseInOut], animations: {
+                    self.actionButton.transform = .identity
+                    self.actionButton.alpha = 1.0
+                })
+                self.onAction?()
+            }
         }
 
         open class func measure(
