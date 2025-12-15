@@ -56,7 +56,7 @@ extension SceytChatUIKit {
         
         public var syncChannelsAfterConnect: Bool = true
 
-        public var showGroupsSegmentInChannelInfo: Bool = false
+        public var showGroupsInCommon: Bool = false
 
         public var channelListOrder: ChannelListOrder = .lastMessage
         

@@ -41,7 +41,9 @@ extension ChannelInfoViewController {
         open override func setup() {
             super.setup()
 
-            noItemsMessage = "No Groups"
+            noItemsMessage = L10n.Channel.Info.Segment.Groups.noItems
+            noItemsMessageSubTitle = L10n.Channel.Info.Segment.Groups.noItemsSubTitle
+            noItemsIcon = UIImage.emptyGroups
             register(Components.channelInfoGroupCell.self)
             delegate = self
             dataSource = self

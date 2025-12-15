@@ -17,6 +17,30 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.noChannels.image,
                                                      renderingMode: .template(.accent)))!
         }()
+        public static var emptyMedia: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.noMedia.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        public static var emptyLinks: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.noLink.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        public static var emptyVoice: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.noVoice.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        public static var emptyDocuments: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.noDocument.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        public static var emptyGroups: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.noGroups.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+        public static var emptyFiles: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.noFiles.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
         public static var mute: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.mute.image,
                                                      renderingMode: .template(.iconInactive)))!
@@ -609,6 +633,12 @@ public extension Appearance {
 
 extension UIImage {
     public static var emptyChannelList: UIImage { Images.emptyChannelList }
+    public static var emptyMedia: UIImage { Images.emptyMedia }
+    public static var emptyLinks: UIImage { Images.emptyLinks }
+    public static var emptyVoice: UIImage { Images.emptyVoice }
+    public static var emptyDocuments: UIImage { Images.emptyDocuments }
+    public static var emptyGroups: UIImage { Images.emptyGroups }
+    public static var emptyFiles: UIImage { Images.emptyFiles }
     public static var noMessages: UIImage { Images.noMessages }
     public static var noResultsSearch: UIImage { Images.noResultsSearch }
     public static var mute: UIImage { Images.mute }

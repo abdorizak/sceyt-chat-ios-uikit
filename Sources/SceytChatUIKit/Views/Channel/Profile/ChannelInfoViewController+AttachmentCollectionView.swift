@@ -14,6 +14,15 @@ extension ChannelInfoViewController {
             set { emptyStateView.title = newValue }
             get { emptyStateView.title }
         }
+        open var noItemsMessageSubTitle: String? {
+            set { emptyStateView.message = newValue }
+            get { emptyStateView.message }
+        }
+        open var noItemsIcon: UIImage? {
+            set { emptyStateView.icon = newValue }
+            get { emptyStateView.icon }
+        }
+
         open lazy var emptyStateView = EmptyStateStackView()
             .withoutAutoresizingMask
 
