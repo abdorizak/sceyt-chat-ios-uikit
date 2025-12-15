@@ -55,7 +55,9 @@ extension SceytChatUIKit {
         public var channelInviteDeepLinkConfig: ChannelInviteDeepLinkConfig?
         
         public var syncChannelsAfterConnect: Bool = true
-        
+
+        public var showGroupsSegmentInChannelInfo: Bool = false
+
         public var channelListOrder: ChannelListOrder = .lastMessage
         
         public var defaultAvatarBackgroundColors: [UIColor] = [

@@ -171,8 +171,6 @@ extension ChannelInfoViewController {
                     self.hasMore = channels.count >= self.pageLimit
 
                     // Insert new items
-//                    let indexPaths = (startIndex..<self.groups.count).map { IndexPath(item: $0, section: 0) }
-//                    self.insertItems(at: indexPaths)
                     self.reloadData()
                     self.updateNoItems()
                 }

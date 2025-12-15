@@ -51,7 +51,8 @@ open class ChannelInfoViewController: ViewController,
         ]
 
         // Only show groups tab for direct channels
-        if profileViewModel.channel.isDirect && !profileViewModel.channel.isSelfChannel {
+        if SceytChatUIKit.shared.config.showGroupsSegmentInChannelInfo &&
+           profileViewModel.channel.isDirect && !profileViewModel.channel.isSelfChannel {
             items.append(.init(content: groupListViewController,
                               title: L10n.Channel.Info.Segment.groups))
         }
