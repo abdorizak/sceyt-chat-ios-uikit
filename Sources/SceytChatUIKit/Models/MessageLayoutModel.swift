@@ -542,6 +542,33 @@ open class MessageLayoutModel {
         reactions = newReactions
         attachmentsContainerSize = calculateAttachmentsContainerSize()
         if isUpdated || force {
+            let textLength = attributedView.content.string.count
+            if message.state == .deleted {
+                isTextExpanded = false
+                shouldShowReadMore = false
+                truncatedTextSize = .zero
+                readMoreButtonHeight = 0
+            } else {
+                if textLength > appearance.collapsedCharacterLimit {
+                    shouldShowReadMore = true
+                    let truncatedString = String(attributedView.content.string.prefix(appearance.collapsedCharacterLimit))
+                    let mutableAttributed = NSMutableAttributedString(attributedString: attributedView.content)
+                    mutableAttributed.mutableString.setString(truncatedString)
+
+                    let truncatedSize = Self.textSizeMeasure.calculateSize(
+                        of: mutableAttributed,
+                        config: .init(restrictingWidth: restrictingTextWidth))
+                    truncatedTextSize = truncatedSize.textSize
+
+                    // Calculate read more button height (font line height + padding)
+                    let buttonFont = appearance.readMoreButtonAppearance.font
+                    readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+                } else {
+                    shouldShowReadMore = false
+                    truncatedTextSize = .zero
+                    readMoreButtonHeight = 0
+                }
+            }
             measureSize = measure()
         }
         return true
