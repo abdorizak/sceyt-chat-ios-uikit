@@ -508,17 +508,27 @@ open class MessageCell: CollectionViewCell,
 
     // MARK: Actions
     @objc
-    open func readMoreButtonAction(_ sender: ReadMoreButton) {
+    open func readMoreButtonAction(_ sender: UIView) {
         guard !data.isTextExpanded else { return }
 
-        // Update the layout model
-        data.updateTextSizeForExpanded()
+        UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseInOut], animations: {
+            sender.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+            sender.alpha = 0.6
+        }) { _ in
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseInOut], animations: {
+                sender.transform = .identity
+                sender.alpha = 1.0
+            })
+            
+            // Update the layout model
+            self.data.updateTextSizeForExpanded()
 
-        // Update the UI
-        readMoreButton.isHidden = true
+            // Update the UI
+            self.readMoreButton.isHidden = true
 
-        // Notify to update cell height
-        onAction?(.didTapReadMore)
+            // Notify to update cell height
+            self.onAction?(.didTapReadMore)
+        }
     }
 
     @objc
