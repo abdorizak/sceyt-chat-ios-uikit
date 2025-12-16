@@ -17,9 +17,6 @@ open class ChannelMemberListViewModel: NSObject {
     public let provider: ChannelMemberListProvider
     public let channelProvider: ChannelProvider
 
-    // Direct members array from server
-    private var members: [ChatChannelMember] = []
-
     public var addTitle: String {
         if shouldShowOnlyAdmins {
             return L10n.Channel.Add.Admins.title
@@ -45,6 +42,27 @@ open class ChannelMemberListViewModel: NSObject {
     }
     
     @Published public var event: Event?
+    
+    public lazy var defaultPredicate: NSPredicate = {
+        var predicate = NSPredicate(format: "channelId == %lld", channel.id)
+        if let filterMembersByRole {
+            predicate = predicate.and(predicate: .init(format: "role.name == %@", filterMembersByRole))
+        }
+        return predicate
+    }()
+
+    public private(set) lazy var memberObserver: DatabaseObserver<MemberDTO, ChatChannelMember> = {
+        return DatabaseObserver<MemberDTO, ChatChannelMember>(
+            request: MemberDTO.fetchRequest()
+                .fetch(predicate: defaultPredicate)
+                .sort(descriptors: [
+                    .init(keyPath: \MemberDTO.user?.firstName, ascending: true),
+                    .init(keyPath: \MemberDTO.user?.lastName, ascending: true),
+                    .init(keyPath: \MemberDTO.channelId, ascending: true)
+                ]),
+            context: SceytChatUIKit.shared.database.viewContext
+        ) { $0.convert() }
+    }()
 
     public required init(channel: ChatChannel,
                          filterMembersByRole: String? = nil) {
@@ -74,13 +92,41 @@ open class ChannelMemberListViewModel: NSObject {
         return canAddMembers && SceytChatUIKit.shared.config.channelInviteDeepLinkConfig != nil
     }
 
+    open func startDatabaseObserver() {
+        if channel.memberCount > provider.queryLimit {
+            deleteMembersFromDatabase()
+        }
+        memberObserver.onDidChange = {[weak self] in
+            self?.onDidChangeEvent(items: $0)
+        }
+        do {
+            try memberObserver.startObserver()
+        } catch {
+            logger.errorIfNotNil(error, "observer.startObserver")
+        }
+    }
+
+    open func deleteMembersFromDatabase() {
+        provider.database.write { context in
+            let predicate = NSPredicate(format: "channelId == %lld", self.channel.id)
+            context.deleteMembers(predicate: predicate)
+        } completion: { error in
+            if let error = error {
+                logger.errorIfNotNil(error, "Failed to delete members from database")
+            }
+        }
+    }
+
     open var shouldShowOnlyAdmins: Bool {
         filterMembersByRole == SceytChatUIKit.shared.config.memberRolesConfig.admin
     }
+    
+    open func onDidChangeEvent(items: DBChangeItemPaths) {
+        event = .change(.init(changes: items, section: hasActionRows ? 1 : 0))
+    }
 
     open func member(at indexPath: IndexPath) -> ChatChannelMember? {
-        guard indexPath.row < members.count else { return nil }
-        return members[indexPath.row]
+        return memberObserver.item(at: .init(row: indexPath.row, section: 0))
     }
     
     open var numberOfSections: Int {
@@ -103,7 +149,7 @@ open class ChannelMemberListViewModel: NSObject {
         case (0, true):
             return numberOfActionRows
         case (1, true), (0, false):
-            return members.count
+            return memberObserver.numberOfItems(in: 0)
         default:
             return 0
 
@@ -111,31 +157,11 @@ open class ChannelMemberListViewModel: NSObject {
     }
     
     var numberOfMembers: Int {
-        members.count
+        memberObserver.numberOfItems(in: 0)
     }
 
     open func loadMembers() {
-        provider.loadMembers { [weak self] fetchedMembers in
-            guard let self = self, fetchedMembers.count > 0 else { return }
-            self.members.append(contentsOf: fetchedMembers)
-            self.event = .reload
-        }
-    }
-
-    open func reloadMembers() {
-        // Reset members array and reload from beginning
-        members.removeAll()
-        provider.reset()
-        loadMembers()
-    }
-
-    open func loadNextPageIfNeeded() {
-        guard provider.hasNext else { return }
-        loadMembers()
-    }
-
-    open var hasMoreMembers: Bool {
-        provider.hasNext
+        provider.loadMembers()
     }
 
     open func canChangeMemberRoleToOwner(memberAt indexPath: IndexPath) -> Bool {
@@ -160,44 +186,19 @@ open class ChannelMemberListViewModel: NSObject {
 
     open func kick(memberAt indexPath: IndexPath, completion: @escaping (Error?) -> Void) {
         guard let member = member(at: indexPath) else { return }
-        let memberId = member.id
         channelProvider
             .kick(
-                members: [memberId],
-                completion: { [weak self] error in
-                    guard let self else { return }
-                    if error == nil {
-                        // Remove member from local array after successful kick
-                        // Find the actual index in the members array by ID (safer than relying on indexPath.row)
-                        if let memberIndex = self.members.firstIndex(where: { $0.id == memberId }) {
-                            self.members.remove(at: memberIndex)
-                            
-                            self.event = .reload
-                        }
-                    }
-                    completion(error)
-                }
+                members: [member.id],
+                completion: completion
             )
     }
 
     open func block(memberAt indexPath: IndexPath, completion: @escaping (Error?) -> Void) {
         guard let member = member(at: indexPath) else { return }
-        let memberId = member.id
         channelProvider
             .block(
-                members: [memberId],
-                completion: { [weak self] error in
-                    guard let self else { return }
-                    if error == nil {
-                        // Remove member from local array after successful block
-                        if let memberIndex = self.members.firstIndex(where: { $0.id == memberId }) {
-                            self.members.remove(at: memberIndex)
-                            // Notify UI to update
-                            self.event = .reload
-                        }
-                    }
-                    completion(error)
-                }
+                members: [member.id],
+                completion: completion
             )
     }
 

@@ -37,22 +37,15 @@ open class ChannelMemberListViewController: ViewController,
         tableView.separatorStyle = .none
         tableView.sectionFooterHeight = 0
         tableView.sectionHeaderHeight = 0
+        memberListViewModel.startDatabaseObserver()
         memberListViewModel.$event
             .compactMap { $0 }
             .sink { [weak self] in
                 self?.onEvent($0)
             }.store(in: &subscriptions)
         memberListViewModel.loadMembers()
-
+        
         view.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onLongPress)))
-
-        // Listen for members added notification
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleMembersAdded(_:)),
-            name: .didAddChannelMembers,
-            object: nil
-        )
     }
     
     open override func setupLayout() {
@@ -89,7 +82,7 @@ open class ChannelMemberListViewController: ViewController,
                     tableView.reloadRows(at: paths.updates, with: .none)
                     tableView.deleteRows(at: paths.deletes + paths.moves.map { $0.from }, with: .none)
                 }
-            }   
+            }
         }
     }
     
@@ -108,6 +101,10 @@ open class ChannelMemberListViewController: ViewController,
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
+        if indexPath.item > memberListViewModel.numberOfMembers - 10 {
+            memberListViewModel.loadMembers()
+        }
+
         if indexPath.section == 0, memberListViewModel.hasActionRows {
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: Components.channelAddMemberCell.self)
             cell.parentAppearance = appearance.addCellAppearance
@@ -161,21 +158,6 @@ open class ChannelMemberListViewController: ViewController,
                     self.showAlert(error: error)
                 }
             }
-        }
-    }
-
-    open func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        // Determine the member section based on whether there are action rows
-        let memberSection = memberListViewModel.hasActionRows ? 1 : 0
-
-        // Only check for pagination in the member section
-        guard indexPath.section == memberSection else { return }
-
-        let totalMembers = memberListViewModel.numberOfItems(section: memberSection)
-
-        // Load next page when displaying the last cell
-        if indexPath.row == totalMembers - 1 {
-            memberListViewModel.loadMembers()
         }
     }
     
@@ -277,14 +259,5 @@ open class ChannelMemberListViewController: ViewController,
             showBottomSheet(actions: actions, withCancel: true)
         }
     }
-
-    @objc
-    open func handleMembersAdded(_ notification: Notification) {
-        // Check if the notification is for this channel
-        if let channelId = notification.userInfo?["channelId"] as? ChannelId,
-           channelId == memberListViewModel.channel.id {
-            // Reload the member list
-            memberListViewModel.reloadMembers()
-        }
-    }
 }
+
