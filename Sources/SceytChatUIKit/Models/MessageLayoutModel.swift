@@ -210,7 +210,6 @@ open class MessageLayoutModel {
             readMoreButtonHeight = 0
         } else {
             if textLength > appearance.collapsedCharacterLimit {
-                shouldShowReadMore = true
                 let truncatedString = String(attributedView.content.string.prefix(appearance.collapsedCharacterLimit))
                 let mutableAttributed = NSMutableAttributedString(attributedString: attributedView.content)
                 mutableAttributed.mutableString.setString(truncatedString)
@@ -220,9 +219,17 @@ open class MessageLayoutModel {
                     config: .init(restrictingWidth: restrictingTextWidth))
                 truncatedTextSize = truncatedSize.textSize
 
-                // Calculate read more button height (font line height + padding)
-                let buttonFont = appearance.readMoreButtonAppearance.font
-                readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+                // Only show read more if truncation actually results in different height
+                // This prevents showing "Read More" when text fits without visual truncation
+                if truncatedTextSize.height < textSize.height {
+                    shouldShowReadMore = true
+                    // Calculate read more button height (font line height + padding)
+                    let buttonFont = appearance.readMoreButtonAppearance.font
+                    readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+                } else {
+                    shouldShowReadMore = false
+                    readMoreButtonHeight = 0
+                }
             } else {
                 shouldShowReadMore = false
                 truncatedTextSize = .zero
@@ -550,7 +557,6 @@ open class MessageLayoutModel {
                 readMoreButtonHeight = 0
             } else {
                 if textLength > appearance.collapsedCharacterLimit {
-                    shouldShowReadMore = true
                     let truncatedString = String(attributedView.content.string.prefix(appearance.collapsedCharacterLimit))
                     let mutableAttributed = NSMutableAttributedString(attributedString: attributedView.content)
                     mutableAttributed.mutableString.setString(truncatedString)
@@ -560,9 +566,17 @@ open class MessageLayoutModel {
                         config: .init(restrictingWidth: restrictingTextWidth))
                     truncatedTextSize = truncatedSize.textSize
 
-                    // Calculate read more button height (font line height + padding)
-                    let buttonFont = appearance.readMoreButtonAppearance.font
-                    readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+                    // Only show read more if truncation actually results in different height
+                    // This prevents showing "Read More" when text fits without visual truncation
+                    if truncatedTextSize.height < textSize.height {
+                        shouldShowReadMore = true
+                        // Calculate read more button height (font line height + padding)
+                        let buttonFont = appearance.readMoreButtonAppearance.font
+                        readMoreButtonHeight = buttonFont.lineHeight + 8 // 8 = top(4) + bottom(4) padding
+                    } else {
+                        shouldShowReadMore = false
+                        readMoreButtonHeight = 0
+                    }
                 } else {
                     shouldShowReadMore = false
                     truncatedTextSize = .zero

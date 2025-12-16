@@ -469,7 +469,7 @@ extension MessageCell: AppearanceProviding {
             unsupportedMessageFormatter: any UnsupportedMessageFormatting,
             systemMessageFont: UIFont = Fonts.semiBold.withSize(12),
             systemMessageTextColor: UIColor = .white,
-            collapsedCharacterLimit: Int = 700,
+            collapsedCharacterLimit: Int = Int.max,
             readMoreText: String = L10n.Message.readMore,
             readMoreButtonAppearance: LabelAppearance = LabelAppearance(
                 foregroundColor: SceytChatUIKit.shared.theme.colors.accent,
