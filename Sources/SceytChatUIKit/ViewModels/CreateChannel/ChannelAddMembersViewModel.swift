@@ -52,7 +52,7 @@ open class ChannelAddMembersViewModel: SelectChannelMembersViewModel {
 //        hud.isLoading = true
 
         provider
-            .add(members: newMembers) { [weak self] error in
+            .add(members: newMembers) { [weak self] members, error in
 //                hud.isLoading = false
                 if let error = error {
                     self?.event1 = .error(error)

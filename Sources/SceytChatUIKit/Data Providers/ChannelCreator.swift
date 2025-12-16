@@ -23,7 +23,7 @@ open class ChannelCreator: DataProvider {
         metadata: String? = nil,
         avatarUrl: String? = nil,
         members: [Member]? = nil,
-        completion: ((ChatChannel?, Error?) -> Void)? = nil
+        completion: ((ChatChannel?, [Member]?, Error?) -> Void)? = nil
     ) {
         Channel
             .create(
@@ -37,7 +37,7 @@ open class ChannelCreator: DataProvider {
                 guard let channel = channel
                 else {
                     logger.errorIfNotNil(error, "Create channel")
-                    completion?(nil, error)
+                    completion?(nil, [], error)
                     return
                 }
                 var chatChannel: ChatChannel?
@@ -46,7 +46,7 @@ open class ChannelCreator: DataProvider {
                         .convert()
                 }  completion: { error in
                     logger.errorIfNotNil(error, "Store created channel in db")
-                    completion?(chatChannel, nil)
+                    completion?(chatChannel, channel.members, nil)
                 }
             }
     }
@@ -94,7 +94,7 @@ open class ChannelCreator: DataProvider {
         metadata: String? = nil,
         avatarUrl: String? = nil,
         userIds: [UserId]?,
-        completion: ((ChatChannel?, Error?) -> Void)? = nil
+        completion: ((ChatChannel?, [Member]?, Error?) -> Void)? = nil
     ) {
         let members: [Member]? = userIds?.map {
             Member.Builder(id: $0).build()

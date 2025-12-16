@@ -443,7 +443,7 @@ open class ChannelProvider: DataProvider {
     
     open func add(
         members: [Member],
-        completion: ((Error?) -> Void)? = nil
+        completion: (([Member]?, Error?) -> Void)? = nil
     ) {
         channelOperator
             .add(members: members)
@@ -456,11 +456,11 @@ open class ChannelProvider: DataProvider {
                     $0.add(members: members, channelId: channel.id)
                 }  completion: { error in
                     logger.errorIfNotNil(error, "Store channel [members] \(self.channelId) in db")
-                    completion?(error)
+                    completion?(members, error)
                 }
             } else {
                 logger.errorIfNotNil(error, "Add members Role \(self.channelId)")
-                completion?(error)
+                completion?(members, error)
             }
         }
     }

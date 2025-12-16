@@ -90,7 +90,7 @@ open class CreatePublicChannelViewModel {
                     subject: subject,
                     metadata: metadata,
                     avatarUrl: uploadedAvatarUrl?.absoluteString)
-            { [weak self] channel, error in
+            { [weak self] channel, _, error in
                     if let error = error {
                         self?.lastValidURI = (false, uri)
                         if  error.sceytChatCode == .channelAlreadyExists {
