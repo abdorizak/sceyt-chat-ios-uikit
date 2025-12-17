@@ -17,20 +17,22 @@ internal class SimpleSinglePlayer: NSObject {
     private static var currentStopBlock: StopBlock?
     private static var currentDurationBlock: DurationBlock?
     private static var timeObserver: Any?
-    private static var speedForPlayer: [String: Float] = [:]
+    private static var speedForPlayer: [Int64: Float] = [:]
     private(set) static var isPlaying = false
     private(set) static var duration: Double = 0
     private(set) static var currentTime: Double = 0
+    internal static var currentId: Int64?
     static var progress: Double { currentTime / duration }
     static var url: URL? { (currentPlayer?.currentItem?.asset as? AVURLAsset)?.url }
     
-    static func play(_ url: URL, durationBlock: DurationBlock?, stopBlock: StopBlock?) {
+    static func play(_ url: URL, id: Int64, durationBlock: DurationBlock?, stopBlock: StopBlock?) {
         guard url != self.url else {
             if !isPlaying {
                 isPlaying = true
+                currentId = id
                 currentPlayer?.play()
                 // Apply stored speed if available
-                if let storedRate = speedForPlayer[url.absoluteString] {
+                if let storedRate = speedForPlayer[id], id != 0 {
                     currentPlayer?.rate = storedRate
                 }
             }
@@ -63,7 +65,7 @@ internal class SimpleSinglePlayer: NSObject {
             isPlaying = true
             player.play()
             // Apply stored speed if available
-            if let storedRate = speedForPlayer[url.absoluteString] {
+            if let storedRate = speedForPlayer[id] {
                 player.rate = storedRate
             }
         } catch {
@@ -97,6 +99,7 @@ internal class SimpleSinglePlayer: NSObject {
             currentPlayer?.removeTimeObserver(timeObserver)
         }
         timeObserver = nil
+        currentId = nil
         currentStopBlock?()
         currentStopBlock = nil
         
@@ -105,12 +108,12 @@ internal class SimpleSinglePlayer: NSObject {
         }
     }
     
-    static func setRate(_ rate: Float, for url: URL) {
-        speedForPlayer[url.absoluteString] = rate
-        
-        // Only apply to current player if this URL is currently playing
-        guard url == self.url else { return }
-        
+    static func setRate(_ rate: Float, for id: Int64) {
+        speedForPlayer[id] = rate
+
+        // Only apply to current player if this tId is currently playing
+        guard id == currentId else { return }
+
         guard currentPlayer?.rate != rate
         else { return }
         
@@ -120,8 +123,8 @@ internal class SimpleSinglePlayer: NSObject {
         }
     }
 
-    static func getSpeed(for url: URL?) -> Float? {
-        guard let url = url else { return nil }
-        return speedForPlayer[url.absoluteString]
+    static func getSpeed(for tid: Int64?) -> Float? {
+        guard let tid = tid else { return nil }
+        return speedForPlayer[tid]
     }
 }
