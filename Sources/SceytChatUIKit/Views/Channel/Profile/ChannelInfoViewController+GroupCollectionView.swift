@@ -81,6 +81,7 @@ extension ChannelInfoViewController {
             // Create query for mutual groups
             query = ChannelListQuery.Builder()
                 .mutual(withUserId: peerId)
+                .excludeTypes(["direct"])
                 .limit(UInt(pageLimit))
                 .build()
 
