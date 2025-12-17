@@ -17,6 +17,7 @@ internal class SimpleSinglePlayer: NSObject {
     private static var currentStopBlock: StopBlock?
     private static var currentDurationBlock: DurationBlock?
     private static var timeObserver: Any?
+    private static var speedForPlayer: [String: Float] = [:]
     private(set) static var isPlaying = false
     private(set) static var duration: Double = 0
     private(set) static var currentTime: Double = 0
@@ -28,6 +29,10 @@ internal class SimpleSinglePlayer: NSObject {
             if !isPlaying {
                 isPlaying = true
                 currentPlayer?.play()
+                // Apply stored speed if available
+                if let storedRate = speedForPlayer[url.absoluteString] {
+                    currentPlayer?.rate = storedRate
+                }
             }
             set(durationBlock: durationBlock, stopBlock: stopBlock)
             return
@@ -57,6 +62,10 @@ internal class SimpleSinglePlayer: NSObject {
             }
             isPlaying = true
             player.play()
+            // Apply stored speed if available
+            if let storedRate = speedForPlayer[url.absoluteString] {
+                player.rate = storedRate
+            }
         } catch {
             logger.errorIfNotNil(error, "")
         }
@@ -96,7 +105,12 @@ internal class SimpleSinglePlayer: NSObject {
         }
     }
     
-    static func setRate(_ rate: Float) {
+    static func setRate(_ rate: Float, for url: URL) {
+        speedForPlayer[url.absoluteString] = rate
+        
+        // Only apply to current player if this URL is currently playing
+        guard url == self.url else { return }
+        
         guard currentPlayer?.rate != rate
         else { return }
         
@@ -104,5 +118,10 @@ internal class SimpleSinglePlayer: NSObject {
         if !isPlaying {
             currentPlayer?.pause()
         }
+    }
+
+    static func getSpeed(for url: URL?) -> Float? {
+        guard let url = url else { return nil }
+        return speedForPlayer[url.absoluteString]
     }
 }
