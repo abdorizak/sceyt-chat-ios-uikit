@@ -566,11 +566,6 @@ extension ChannelViewController {
             } else if options.contains(.poll) {
                 let pollSize = model.pollViewMeasure
                 bubbleSize = pollSize
-                if userNameSize == .zero {
-                    bubbleSize.height += 18
-                } else {
-                    bubbleSize.height += 2
-                }
 
                 bubbleSize.height += 20.0
                 let infoViewSize = InfoView.measure(model: model, appearance: appearance)
