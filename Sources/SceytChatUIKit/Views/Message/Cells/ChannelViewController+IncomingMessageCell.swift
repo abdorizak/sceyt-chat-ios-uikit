@@ -504,7 +504,10 @@ extension ChannelViewController {
                 let maxSpace = infoViewSize.width + 12
                 let effectiveTextSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
 
-                if model.lastCharRect.maxX + maxSpace <= effectiveTextSize.width {
+                if shouldDisplayReadMoreButton {
+                    // Always add infoView height on new line when read more button is shown
+                    bubbleSize.height += infoViewSize.height
+                } else if model.lastCharRect.maxX + maxSpace <= effectiveTextSize.width {
 
                 } else if model.lastCharRect.maxX + maxSpace <= Components.messageLayoutModel.defaults.messageWidth - 12 * 2 {
 
