@@ -126,7 +126,10 @@ extension ChannelInfoViewController {
                 dateLabel.text = appearance.subtitleFormatter.format(attachment)
                 
                 reset()
-                if let fileUrl = attachment.fileUrl, fileUrl == SimpleSinglePlayer.url, SimpleSinglePlayer.isPlaying {
+                
+                // Check attachment ID for correct state
+                if attachment.playerId == SimpleSinglePlayer.currentId,
+                   SimpleSinglePlayer.isPlaying {
                     isPlaying = true
                     SimpleSinglePlayer.set(durationBlock: setDuration, stopBlock: stop)
                 } else {
@@ -148,7 +151,9 @@ extension ChannelInfoViewController {
         
         open func play() {
             guard let fileUrl = data?.attachment.fileUrl else { return }
-            SimpleSinglePlayer.play(fileUrl, durationBlock: setDuration, stopBlock: stop)
+            guard let attachment = data?.attachment else { return }
+
+            SimpleSinglePlayer.play(fileUrl, id: attachment.playerId, durationBlock: setDuration, stopBlock: stop)
         }
         
         open func pause() {

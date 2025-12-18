@@ -348,4 +348,10 @@ public extension ChatMessage.Attachment {
             handler(filePath)
         }
     }
+
+    /// Returns a unique identifier for attachment used for audio player tracking.
+    /// Uses tid if available (non-zero), otherwise falls back to messageId.
+    var playerId: Int64 {
+        tid != 0 ? tid : Int64(messageId)
+    }
 }
