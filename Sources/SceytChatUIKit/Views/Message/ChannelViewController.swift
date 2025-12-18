@@ -8,6 +8,7 @@
 
 import SceytChat
 import UIKit
+import UniformTypeIdentifiers
 
 open class ChannelViewController: ViewController,
                       UIGestureRecognizerDelegate,
@@ -1928,10 +1929,25 @@ open class ChannelViewController: ViewController,
     }
     
     open func copy(layoutModel: MessageLayoutModel) {
-        do {
-            try UIPasteboard.general.set(layoutModel.attributedView.content)
-        } catch {
-            UIPasteboard.general.string = layoutModel.message.body
+        let attr = layoutModel.attributedView.content
+        let pb = UIPasteboard.general
+
+        // Store custom attributed string with all attributes preserved
+        if let archivedData = try? NSKeyedArchiver.archivedData(withRootObject: attr, requiringSecureCoding: false) {
+            if #available(iOS 14.0, *) {
+                pb.items = [[
+                    "com.sceyt.attributedstring": archivedData,  // Custom type for full attributes
+                    UTType.plainText.identifier: attr.string      // Plain text fallback
+                ]]
+            } else {
+                do {
+                    try UIPasteboard.general.set(layoutModel.attributedView.content)
+                } catch {
+                    UIPasteboard.general.string = layoutModel.message.body
+                }
+            }
+        } else {
+            pb.string = layoutModel.message.body
         }
     }
     
