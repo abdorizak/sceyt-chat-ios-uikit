@@ -2304,7 +2304,7 @@ open class ChannelViewController: ViewController,
             }
             
             lastAnimatedIndexPath = indexPath
-            collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: true)
+            collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: mode != .mention)
             searchControlsView
                 .update(
                     with: channelViewModel.searchResult,
