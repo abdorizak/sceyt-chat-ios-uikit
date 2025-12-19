@@ -94,4 +94,21 @@ open class ChannelProfileRouter: Router<ChannelInfoViewController> {
         channelViewController?.channelViewModel.startMessagesSearch()
         goChannelViewController()
     }
+
+    open func showChannel(_ channel: ChatChannel) {
+        let viewController = Components.channelViewController.init()
+        viewController.hidesBottomBarWhenPushed = true
+        viewController.channelViewModel = Components.channelViewModel
+            .init(channel: channel)
+        rootViewController.show(viewController, sender: self)
+    }
+    
+    open func topToChannelListShowChannel(_ channel: ChatChannel) {
+        if let channelListVC = channelListViewController {
+            channelListVC.navigationController?.popToViewController(channelListVC, animated: false)
+            channelListVC.channelListRouter.showChannelViewController(channel: channel, animated: true)
+        } else {
+            showChannel(channel)
+        }
+    }
 }

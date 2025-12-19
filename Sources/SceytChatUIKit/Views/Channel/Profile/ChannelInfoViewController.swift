@@ -34,9 +34,12 @@ open class ChannelInfoViewController: ViewController,
     
     open lazy var linkListViewController = Components.channelInfoLinkCollectionView
         .init()
-    
-    open lazy var segmentViewController = Components.segmentedControlView
-        .init(items: [
+
+    open lazy var groupListViewController = Components.channelInfoGroupCollectionView
+        .init()
+
+    open lazy var segmentViewController: SegmentedControlView = {
+        var items: [SegmentedControlView.SectionItem] = [
             .init(content: mediaListViewController,
                   title: L10n.Channel.Info.Segment.medias),
             .init(content: fileListViewController,
@@ -45,7 +48,17 @@ open class ChannelInfoViewController: ViewController,
                   title: L10n.Channel.Info.Segment.voice),
             .init(content: linkListViewController,
                   title: L10n.Channel.Info.Segment.links)
-        ]).withoutAutoresizingMask
+        ]
+
+        // Only show groups tab for direct channels
+        if SceytChatUIKit.shared.config.showGroupsInCommon &&
+           profileViewModel.channel.isDirect && !profileViewModel.channel.isSelfChannel {
+            items.append(.init(content: groupListViewController,
+                              title: L10n.Channel.Info.Segment.groups))
+        }
+
+        return Components.segmentedControlView.init(items: items).withoutAutoresizingMask
+    }()
     
     public var sections = [Sections]()
     
@@ -72,6 +85,7 @@ open class ChannelInfoViewController: ViewController,
         fileListViewController.fileViewModel = profileViewModel.fileListViewModel
         linkListViewController.linkViewModel = profileViewModel.linkListViewModel
         voiceListViewController.voiceViewModel = profileViewModel.voiceListViewModel
+        groupListViewController.channel = profileViewModel.channel
         tableView.register(Components.channelInfoDetailsCell.self)
         tableView.register(Components.channelInfoDescriptionCell.self)
         tableView.register(Components.channelInfoOptionCell.self)
@@ -92,7 +106,12 @@ open class ChannelInfoViewController: ViewController,
                 router.showAttachment(attachment)
             }
         }
-        
+
+        groupListViewController.onSelect = { [weak self] channelModel in
+            guard let self else { return }
+            router.topToChannelListShowChannel(channelModel.channel)
+        }
+
         segmentViewController.parentScrollView = tableView
         segmentViewController.items
             .compactMap { $0.content as? ChannelInfoViewController.AttachmentCollectionView }
@@ -159,6 +178,7 @@ open class ChannelInfoViewController: ViewController,
         fileListViewController.parentAppearance = appearance.fileCollectionAppearance
         voiceListViewController.parentAppearance = appearance.voiceCollectionAppearance
         linkListViewController.parentAppearance = appearance.linkCollectionAppearance
+        groupListViewController.parentAppearance = appearance.groupCollectionAppearance
     }
     
     override open func viewSafeAreaInsetsDidChange() {
@@ -167,6 +187,7 @@ open class ChannelInfoViewController: ViewController,
         fileListViewController.contentInset.bottom = view.safeAreaInsets.bottom
         linkListViewController.contentInset.bottom = view.safeAreaInsets.bottom
         voiceListViewController.contentInset.bottom = view.safeAreaInsets.bottom
+        groupListViewController.contentInset.bottom = view.safeAreaInsets.bottom
     }
     
     open func onEvent(_ event: ChannelProfileViewModel.Event) {

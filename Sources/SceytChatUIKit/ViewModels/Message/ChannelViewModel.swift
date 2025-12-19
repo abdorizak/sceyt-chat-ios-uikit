@@ -931,7 +931,8 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         } else {
             if isThread || channel.lastMessage?.incoming == false || lastDisplayedMessageId == 0 {
                 logger.info("ChannelViewModel loadLastMessages (prev) channel id: \(channel.id), lastMessage id \(channel.lastMessage?.id as Any)")
-                provider.loadPrevMessages(before: channel.lastMessage?.id ?? MessageId(Int64.max))
+                let before = isInitialLoad ? MessageId(Int64.max) : channel.lastMessage?.id ?? MessageId(Int64.max)
+                provider.loadPrevMessages(before: before)
             } else {
                 logger.info("ChannelViewModel loadLastMessages (near) channel id: \(channel.id), lastDisplayedMessageId \(lastDisplayedMessageId)")
                 provider.loadNearMessages(near: lastDisplayedMessageId)
@@ -1159,12 +1160,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         else { return }
         
         markMessagesTaskStarted = true
-        
+
+        // Capture currentUserId before dispatching to background queue to avoid thread safety issues
+        let currentUserId = SceytChatUIKit.shared.currentUserId
+
         markMessagesQueue.async { [weak self] in
             guard let self else { return }
             let filteredMessages = messages.filter {
                 return !$0.incoming ? false :
-                $0.userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == marker.rawValue } ) == true ? false : true
+                $0.userMarkers?.contains(where: { $0.user?.id == currentUserId && $0.name == marker.rawValue } ) == true ? false : true
             }
             guard !filteredMessages.isEmpty,
                     let max = filteredMessages.max(by: { $0.id < $1.id }),
@@ -1194,13 +1198,16 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
                 !messages.isEmpty
         else { return }
         
+        // Capture currentUserId before dispatching to background queue to avoid thread safety issues
+        let currentUserId = SceytChatUIKit.shared.currentUserId
+        
         markMessagesQueue.async { [weak self] in
             guard let self
             else { return }
             
             let message = messages.filter {
                 return !$0.incoming ? false :
-                $0.userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == DefaultMarker.displayed.rawValue } ) == true ? false : true
+                $0.userMarkers?.contains(where: { $0.user?.id == currentUserId && $0.name == DefaultMarker.displayed.rawValue } ) == true ? false : true
             }.max(by: { $0.id < $1.id })
             
             guard let message, self.lasMarkDisplayedMessageId != message.id

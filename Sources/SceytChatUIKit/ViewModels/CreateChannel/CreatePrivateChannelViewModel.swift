@@ -51,7 +51,7 @@ open class CreatePrivateChannelViewModel {
                     metadata: metadataObj,
                     avatarUrl: uploadedAvatarUrl?.absoluteString,
                     userIds: users.map { $0.id })
-            { [weak self] channel, error in
+            { [weak self] channel, _, error in
                     if let error = error {
                         self?.event = .createChannelError(error)
                     } else {

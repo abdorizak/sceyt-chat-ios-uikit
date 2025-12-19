@@ -8,6 +8,7 @@
 
 import SceytChat
 import UIKit
+import UniformTypeIdentifiers
 
 open class ChannelViewController: ViewController,
                       UIGestureRecognizerDelegate,
@@ -1543,6 +1544,13 @@ open class ChannelViewController: ViewController,
                 }
             case .didTapPollOption(let optionIndex, let pollViewModel):
                 self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
+            case .didTapReadMore:
+                
+                self.channelViewModel.invalidateLayout()
+                // Invalidate the collection view layout
+                self.collectionView.collectionViewLayout.invalidateLayout()
+                // Reload all data
+                self.collectionView.reloadData()
             }
         }
         cell.contextMenu = contextMenu
@@ -1921,10 +1929,25 @@ open class ChannelViewController: ViewController,
     }
     
     open func copy(layoutModel: MessageLayoutModel) {
-        do {
-            try UIPasteboard.general.set(layoutModel.attributedView.content)
-        } catch {
-            UIPasteboard.general.string = layoutModel.message.body
+        let attr = layoutModel.attributedView.content
+        let pb = UIPasteboard.general
+
+        // Store custom attributed string with all attributes preserved
+        if let archivedData = try? NSKeyedArchiver.archivedData(withRootObject: attr, requiringSecureCoding: false) {
+            if #available(iOS 14.0, *) {
+                pb.items = [[
+                    "com.sceyt.attributedstring": archivedData,  // Custom type for full attributes
+                    UTType.plainText.identifier: attr.string      // Plain text fallback
+                ]]
+            } else {
+                do {
+                    try UIPasteboard.general.set(layoutModel.attributedView.content)
+                } catch {
+                    UIPasteboard.general.string = layoutModel.message.body
+                }
+            }
+        } else {
+            pb.string = layoutModel.message.body
         }
     }
     
@@ -2281,7 +2304,7 @@ open class ChannelViewController: ViewController,
             }
             
             lastAnimatedIndexPath = indexPath
-            collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: true)
+            collectionView.scrollToItem(at: indexPath, pos: .centeredVertically, animated: mode != .mention)
             searchControlsView
                 .update(
                     with: channelViewModel.searchResult,
@@ -2686,7 +2709,7 @@ open class ChannelViewController: ViewController,
     }
     
     deinit {
-        SimpleSinglePlayer.stop()
+        SimpleSinglePlayer.reset()
         avatarTask?.cancel()
         navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         NotificationCenter.default.removeObserver(self)

@@ -9,9 +9,15 @@
 import UIKit
 
 open class EmptyStateView: View {
-    open lazy var iconView = UIImageView().withoutAutoresizingMask
-    open lazy var titleLabel = UILabel().withoutAutoresizingMask
-    open lazy var messageLabel = UILabel().withoutAutoresizingMask
+    open lazy var iconView = UIImageView()
+        .withoutAutoresizingMask
+    
+    open lazy var titleLabel = UILabel()
+        .withoutAutoresizingMask
+    
+    open lazy var messageLabel = UILabel()
+        .withoutAutoresizingMask
+    
     open lazy var vStack = UIStackView(column: [iconView, titleLabel, messageLabel], alignment: .center)
         .withoutAutoresizingMask
     
@@ -67,7 +73,8 @@ open class EmptyStateView: View {
         messageLabel.font = appearance.messageLabelAppearance?.font
         titleLabel.textColor = appearance.titleLabelAppearance?.foregroundColor
         messageLabel.textColor = appearance.messageLabelAppearance?.foregroundColor
-        
+
+        titleLabel.textAlignment = .center
         messageLabel.textAlignment = .center
     }
 }

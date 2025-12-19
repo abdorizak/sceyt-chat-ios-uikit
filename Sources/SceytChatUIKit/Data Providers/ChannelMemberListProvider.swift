@@ -32,54 +32,28 @@ open class ChannelMemberListProvider: DataProvider {
         .build()
     }()
 
-    /// Resets the provider to initial state for reloading from scratch
-    open func reset() {
-        hasNext = true
-        isLoading = false
-        query = .Builder(channelId: channelId)
-            .order(queryOrder)
-            .limit(UInt(queryLimit))
-            .queryType(queryType)
-            .build()
+    open func loadMembers() {
+        if !hasNext || query.loading {
+            return
+        }
+        query.loadNext { _, members, _ in
+            if (members?.count ?? 0) < Int(self.queryLimit) {
+                self.hasNext = false
+            }
+            guard let members = members,
+                  !members.isEmpty
+            else { return }
+            
+            self.store(members: members)
+        }
     }
 
-    /// Loads next page of members from server
-    open func loadMembers(completion: (([ChatChannelMember]) -> Void)? = nil) {
-        guard !isLoading else {
-            completion?([])
-            return
-        }
-        guard hasNext else {
-            completion?([])
-            return
-        }
-
-        isLoading = true
-
-        query.loadNext { [weak self] _, members, error in
-            guard let self = self else {
-                completion?([])
-                return
-            }
-
-            self.isLoading = false
-
-            if let error = error {
-                logger.errorIfNotNil(error, "Failed to load members")
-                completion?([])
-                return
-            }
-            
-            if (members?.count ?? 0) < queryLimit {
-                hasNext = false
-            }
-
-            if let members = members {
-                let chatMembers = members.map { ChatChannelMember(member: $0) }
-                completion?(chatMembers)
-            } else {
-                completion?([])
-            }
+    open func store(members: [Member]) {
+        database.write {
+            $0.createOrUpdate(
+                members: members, channelId: self.channelId)
+        } completion: { error in
+            logger.debug(error?.localizedDescription ?? "")
         }
     }
 }

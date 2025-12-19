@@ -83,10 +83,17 @@
 "channel.info.segment.files" = "Files";
 "channel.info.segment.links" = "Links";
 "channel.info.segment.voice" = "Voice";
-"channel.info.segment.medias.noItems" = "No media items yet";
-"channel.info.segment.files.noItems" = "No file items yet";
-"channel.info.segment.links.noItems" = "No link items yet";
-"channel.info.segment.voice.noItems" = "No voice items yet";
+"channel.info.segment.groups" = "Groups";
+"channel.info.segment.medias.noItems" = "No Media";
+"channel.info.segment.medias.noItemsSubTitle" = "Shared media will appear here.";
+"channel.info.segment.files.noItems" = "No Files";
+"channel.info.segment.files.noItemsSubTitle" = "Shared files will appear here.";
+"channel.info.segment.links.noItems" = "No links";
+"channel.info.segment.links.noItemsSubTitle" = "Shared links will appear here.";
+"channel.info.segment.voice.noItems" = "No voice messages";
+"channel.info.segment.voice.noItemsSubTitle" = "Shared voice messages will appear here.";
+"channel.info.segment.groups.noItems" = "No groups in common";
+"channel.info.segment.groups.noItemsSubTitle" = "Groups in common will appear here.";
 
 "channel.profile.qrCodeTitle" = "QR Code for Invites";
 "channel.profile.qrCodeShare" = "Share QR Code";
@@ -214,6 +221,7 @@
 "message.list.borders-today" = "Today";
 "message.deleted" = "Message was deleted.";
 "message.info.edited" = "edited";
+"message.readMore" = "Read more";
 "message.attachment.image" = "Photo";
 "message.attachment.video" = "Video";
 "message.attachment.link" = "Link";

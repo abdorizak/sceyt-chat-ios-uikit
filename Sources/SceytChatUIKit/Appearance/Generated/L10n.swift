@@ -291,6 +291,8 @@ public enum L10n {
       public enum Segment {
         /// Files
         public static let files = L10n.tr("Localizable", "channel.info.segment.files", fallback: "Files")
+        /// Groups
+        public static let groups = L10n.tr("Localizable", "channel.info.segment.groups", fallback: "Groups")
         /// Links
         public static let links = L10n.tr("Localizable", "channel.info.segment.links", fallback: "Links")
         /// Media
@@ -300,20 +302,34 @@ public enum L10n {
         /// Voice
         public static let voice = L10n.tr("Localizable", "channel.info.segment.voice", fallback: "Voice")
         public enum Files {
-          /// No file items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.files.noItems", fallback: "No file items yet")
+          /// No Files
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.files.noItems", fallback: "No Files")
+          /// Shared files will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.files.noItemsSubTitle", fallback: "Shared files will appear here.")
+        }
+        public enum Groups {
+          /// No groups in common
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.groups.noItems", fallback: "No groups in common")
+          /// Groups in common will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.groups.noItemsSubTitle", fallback: "Groups in common will appear here.")
         }
         public enum Links {
-          /// No link items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.links.noItems", fallback: "No link items yet")
+          /// No links
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.links.noItems", fallback: "No links")
+          /// Shared links will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.links.noItemsSubTitle", fallback: "Shared links will appear here.")
         }
         public enum Medias {
-          /// No media items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.medias.noItems", fallback: "No media items yet")
+          /// No Media
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.medias.noItems", fallback: "No Media")
+          /// Shared media will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.medias.noItemsSubTitle", fallback: "Shared media will appear here.")
         }
         public enum Voice {
-          /// No voice items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.voice.noItems", fallback: "No voice items yet")
+          /// No voice messages
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.voice.noItems", fallback: "No voice messages")
+          /// Shared voice messages will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.voice.noItemsSubTitle", fallback: "Shared voice messages will appear here.")
         }
       }
     }
@@ -611,6 +627,8 @@ public enum L10n {
   public enum Message {
     /// Message was deleted.
     public static let deleted = L10n.tr("Localizable", "message.deleted", fallback: "Message was deleted.")
+    /// Read more
+    public static let readMore = L10n.tr("Localizable", "message.readMore", fallback: "Read more")
     public enum Action {
       public enum Subtitle {
         /// Delete For All

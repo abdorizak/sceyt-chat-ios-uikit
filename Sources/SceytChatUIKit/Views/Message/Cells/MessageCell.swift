@@ -36,7 +36,11 @@ open class MessageCell: CollectionViewCell,
     open lazy var textLabel = Components.textLabel
         .init()
         .withoutAutoresizingMask
-    
+
+    open lazy var readMoreButton = Components.messageCellReadMoreButton
+        .init()
+        .withoutAutoresizingMask
+
     open lazy var infoView = Components.messageCellInfoView
         .init()
         .withoutAutoresizingMask
@@ -103,7 +107,7 @@ open class MessageCell: CollectionViewCell,
     public private(set) var contentConstraints: [NSLayoutConstraint]?
     
     private var longPressItem: LongPressItem?
-    
+
     open override func setup() {
         super.setup()
         
@@ -150,6 +154,12 @@ open class MessageCell: CollectionViewCell,
             onAction?(.didTapBottomAction)
         }
 
+        readMoreButton.addTarget(
+            self,
+            action: #selector(readMoreButtonAction(_:)),
+            for: .touchUpInside
+        )
+
         replyView.addTarget(
             self,
             action: #selector(replyViewAction(_:)),
@@ -191,6 +201,7 @@ open class MessageCell: CollectionViewCell,
         bubbleView.addSubview(forwardView)
         bubbleView.addSubview(replyView)
         bubbleView.addSubview(textLabel)
+        bubbleView.addSubview(readMoreButton)
         bubbleView.addSubview(attachmentView)
         bubbleView.addSubview(linkView)
         bubbleView.addSubview(pollView)
@@ -226,6 +237,7 @@ open class MessageCell: CollectionViewCell,
         infoView.appearance = appearance
         reactionTotalView.appearance = appearance
         bottomActionView.appearance = appearance.bottomActionViewAppearance
+        readMoreButton.appearance = appearance
         unreadMessagesSeparatorView.appearance = appearance
         checkBoxView.parentAppearance = appearance.selectionCheckboxAppearance
         
@@ -283,7 +295,14 @@ open class MessageCell: CollectionViewCell,
         let message = data.message
         showSenderInfo = data.showUserInfo
         unreadMessagesSeparatorView.isHidden = !data.isLastDisplayedMessage
+
+        readMoreButton.isHidden = true
         textLabel.attributedText = data.attributedView.content
+
+        if data.shouldShowReadMore && !data.isTextExpanded && data.message.state != .deleted {
+            readMoreButton.isHidden = false
+        }
+
         infoView.data = data
         nameLabel.text = appearance.senderNameFormatter.format(message.user)
         nameLabel.textColor = appearance.senderNameLabelAppearance.foregroundColor ?? appearance.senderNameColorProvider.provideVisual(for: message.user)
@@ -374,6 +393,7 @@ open class MessageCell: CollectionViewCell,
         highlightMode = .none
         longPressItem = nil
         deliveryStatus = .pending
+        readMoreButton.isHidden = true
         NSLayoutConstraint.deactivate(contentView.constraints + containerView.constraints + (contentConstraints ?? []))
         imageTask?.cancel()
         contextMenu?.disconnect(from: bubbleView, identifier: .init(value: data))
@@ -487,6 +507,30 @@ open class MessageCell: CollectionViewCell,
     }
 
     // MARK: Actions
+    @objc
+    open func readMoreButtonAction(_ sender: UIView) {
+        guard !data.isTextExpanded else { return }
+
+        UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseInOut], animations: {
+            sender.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+            sender.alpha = 0.6
+        }) { _ in
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.curveEaseInOut], animations: {
+                sender.transform = .identity
+                sender.alpha = 1.0
+            })
+            
+            // Update the layout model
+            self.data.updateTextSizeForExpanded()
+
+            // Update the UI
+            self.readMoreButton.isHidden = true
+
+            // Notify to update cell height
+            self.onAction?(.didTapReadMore)
+        }
+    }
+
     @objc
     open func replyCountAction(_ sender: UIButton) {
         onAction?(.showThread)
@@ -755,6 +799,7 @@ public extension MessageCell {
         case didSwipe
         case didTapPollOption(Int, PollViewModel)
         case didTapBottomAction
+        case didTapReadMore
     }
 
     enum Measure {

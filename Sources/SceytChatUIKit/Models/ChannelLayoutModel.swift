@@ -98,7 +98,8 @@ open class ChannelLayoutModel {
             channel.lastMessage?.updatedAt != selfChannel.lastMessage?.updatedAt ||
             channel.lastReaction?.id != selfChannel.lastReaction?.id ||
             channel.lastReaction?.message?.id != selfChannel.lastReaction?.message?.id ||
-            channel.lastMessage?.deliveryStatus != selfChannel.lastMessage?.deliveryStatus
+            channel.lastMessage?.deliveryStatus != selfChannel.lastMessage?.deliveryStatus ||
+            channel.lastMessage?.metadata != selfChannel.lastMessage?.metadata
             
             if !update, let p1 = channel.peer, let p2 = selfChannel.peer, p1 !~= p2 {
                 update = true

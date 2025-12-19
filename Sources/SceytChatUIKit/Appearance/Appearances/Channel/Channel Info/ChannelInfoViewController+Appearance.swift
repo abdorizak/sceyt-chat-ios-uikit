@@ -53,6 +53,7 @@ extension ChannelInfoViewController: AppearanceProviding {
         fileCollectionAppearance: SceytChatUIKit.Components.channelInfoFileCollectionView.appearance,
         voiceCollectionAppearance: SceytChatUIKit.Components.channelInfoVoiceCollectionView.appearance,
         linkCollectionAppearance: SceytChatUIKit.Components.channelInfoLinkCollectionView.appearance,
+        groupCollectionAppearance: SceytChatUIKit.Components.channelInfoGroupCollectionView.appearance,
         moreIcon: .channelProfileMore
     )
     
@@ -104,7 +105,10 @@ extension ChannelInfoViewController: AppearanceProviding {
         
         @Trackable<Appearance, LinkCollectionView.Appearance>
         public var linkCollectionAppearance: LinkCollectionView.Appearance
-        
+
+        @Trackable<Appearance, GroupCollectionView.Appearance>
+        public var groupCollectionAppearance: GroupCollectionView.Appearance
+
         @Trackable<Appearance, UIImage>
         public var moreIcon: UIImage
         
@@ -125,6 +129,7 @@ extension ChannelInfoViewController: AppearanceProviding {
             fileCollectionAppearance: FileCollectionView.Appearance,
             voiceCollectionAppearance: VoiceCollectionView.Appearance,
             linkCollectionAppearance: LinkCollectionView.Appearance,
+            groupCollectionAppearance: GroupCollectionView.Appearance,
             moreIcon: UIImage
         ) {
             self._navigationBarAppearance = Trackable(value: navigationBarAppearance)
@@ -143,6 +148,7 @@ extension ChannelInfoViewController: AppearanceProviding {
             self._fileCollectionAppearance = Trackable(value: fileCollectionAppearance)
             self._voiceCollectionAppearance = Trackable(value: voiceCollectionAppearance)
             self._linkCollectionAppearance = Trackable(value: linkCollectionAppearance)
+            self._groupCollectionAppearance = Trackable(value: groupCollectionAppearance)
             self._moreIcon = Trackable(value: moreIcon)
         }
         
@@ -164,6 +170,7 @@ extension ChannelInfoViewController: AppearanceProviding {
             fileCollectionAppearance: FileCollectionView.Appearance? = nil,
             voiceCollectionAppearance: VoiceCollectionView.Appearance? = nil,
             linkCollectionAppearance: LinkCollectionView.Appearance? = nil,
+            groupCollectionAppearance: GroupCollectionView.Appearance? = nil,
             moreIcon: UIImage? = nil
         ) {
             self._navigationBarAppearance = Trackable(reference: reference, referencePath: \.navigationBarAppearance)
@@ -182,6 +189,7 @@ extension ChannelInfoViewController: AppearanceProviding {
             self._fileCollectionAppearance = Trackable(reference: reference, referencePath: \.fileCollectionAppearance)
             self._voiceCollectionAppearance = Trackable(reference: reference, referencePath: \.voiceCollectionAppearance)
             self._linkCollectionAppearance = Trackable(reference: reference, referencePath: \.linkCollectionAppearance)
+            self._groupCollectionAppearance = Trackable(reference: reference, referencePath: \.groupCollectionAppearance)
             self._moreIcon = Trackable(reference: reference, referencePath: \.moreIcon)
             
             if let navigationBarAppearance { self.navigationBarAppearance = navigationBarAppearance }
@@ -200,6 +208,7 @@ extension ChannelInfoViewController: AppearanceProviding {
             if let fileCollectionAppearance { self.fileCollectionAppearance = fileCollectionAppearance }
             if let voiceCollectionAppearance { self.voiceCollectionAppearance = voiceCollectionAppearance }
             if let linkCollectionAppearance { self.linkCollectionAppearance = linkCollectionAppearance }
+            if let groupCollectionAppearance { self.groupCollectionAppearance = groupCollectionAppearance }
             if let moreIcon { self.moreIcon = moreIcon }
         }
     }

@@ -40,7 +40,7 @@ open class ChannelProfileViewModel: NSObject {
     public required init(channel: ChatChannel, appearance: MessageCell.Appearance) {
         self.channel = channel
         self.appearance = appearance
-        self.autoDelete = channel.messageRetentionPeriod
+        self.autoDelete = channel.messageRetentionPeriod / 1000
         channelProvider = Components.channelProvider
             .init(channelId: channel.id)
         userProvider = Components.userProvider
@@ -221,13 +221,13 @@ open class ChannelProfileViewModel: NSObject {
         guard self.channel.messageRetentionPeriod != timeInterval else {
             return
         }
-        self.autoDelete = timeInterval
+        self.autoDelete = timeInterval / 1000.0
         channelProvider.setMessageRetentionPeriod(timeInterval: timeInterval) { [weak self] error in
             guard let self = self else { return }
 
             if let error = error {
                 // Revert to old value on error
-                self.autoDelete = self.channel.messageRetentionPeriod
+                self.autoDelete = self.channel.messageRetentionPeriod / 1000.0
                 // Send error event
                 self.event = .error(error)
             } else {
@@ -237,7 +237,7 @@ open class ChannelProfileViewModel: NSObject {
                         return
                     }
                     self.channel = updatedChannel
-                    self.autoDelete = updatedChannel.messageRetentionPeriod
+                    self.autoDelete = updatedChannel.messageRetentionPeriod / 1000.0
                     // Send update event to reload table
                     self.event = .autoDeleteUpdated
                 }

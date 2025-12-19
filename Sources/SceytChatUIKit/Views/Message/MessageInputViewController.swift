@@ -21,7 +21,10 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     open lazy var recordButton = UIImageView()
         .contentMode(.center)
         .withoutAutoresizingMask
-    
+
+    open lazy var cameraButton = UIButton()
+        .withoutAutoresizingMask
+
     open lazy var separatorViewTop = UIView()
         .withoutAutoresizingMask
     
@@ -93,6 +96,16 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         }
     }
 
+    open var shouldHideCameraButton = true {
+        didSet {
+            updateState()
+        }
+    }
+    
+    open var cameraButtonWidth: CGFloat { 48.0 }
+    open var recordButtonWidth: CGFloat { 52.0 }
+    open var sendButtonWidth: CGFloat { 52.0 }
+
     open var shouldHidePollOption = false
 
     public var canRunMentionUserLogic = true
@@ -127,6 +140,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     public private(set) var didUserDismissLinkPreview = false
     private var actionViewHeightLayoutConstraint: NSLayoutConstraint!
     private var inputTextViewLeadingConstraint: NSLayoutConstraint?
+    open var inputTextViewTrailingConstraint: NSLayoutConstraint?
     
     deinit {
         recorderView.stop()
@@ -203,12 +217,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
         }
         
-        updateState()
-        
         actionView.cancelButton.addTarget(self, action: #selector(actionViewCancelAction), for: .touchUpInside)
         addMediaButton.addTarget(self, action: #selector(addMediaButtonAction(_:)), for: .touchUpInside)
         sendButton.addTarget(self, action: #selector(sendButtonAction(_:)), for: .touchUpInside)
-        
+        cameraButton.addTarget(self, action: #selector(cameraButtonAction(_:)), for: .touchUpInside)
+
         let longPress = UILongPressGestureRecognizer(target: recorderView, action: #selector(Components.messageInputVoiceRecorderView.onLongPress))
         longPress.minimumPressDuration = 0.05
         recordButton.isUserInteractionEnabled = true
@@ -226,6 +239,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         addMediaButton.setImage(appearance.attachmentIcon, for: .normal)
         sendButton.setImage(appearance.sendMessageIcon, for: .normal)
         recordButton.image = appearance.voiceRecordIcon
+        cameraButton.setImage(appearance.cameraIcon, for: .normal)
         separatorViewTop.backgroundColor = appearance.separatorColor
         separatorViewCenter.backgroundColor = appearance.separatorColor
         recorderView.parentAppearance = appearance.voiceRecorderAppearance
@@ -244,6 +258,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         view.addSubview(addMediaButton)
         view.addSubview(sendButton)
         view.addSubview(recordButton)
+        view.addSubview(cameraButton)
         view.addSubview(recordedView)
         view.addSubview(separatorViewCenter)
         view.addSubview(separatorViewTop)
@@ -269,21 +284,29 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         
         addMediaButton.pin(to: view, anchors: [.leading(), .bottom()])
         addMediaButton.resize(anchors: [.height(52), .width(52)])
-        
+
         sendButton.pin(to: view, anchors: [.trailing(), .bottom()])
-        sendButton.resize(anchors: [.height(52), .width(52)])
-        
-        recordButton.pin(to: sendButton)
-        
+        sendButton.resize(anchors: [.height(52), .width(sendButtonWidth)])
+
+        recordButton.pin(to: view, anchors: [.trailing(), .bottom()])
+        recordButton.resize(anchors: [.height(52), .width(recordButtonWidth)])
+
+        cameraButton.trailingAnchor.pin(to: recordButton.leadingAnchor)
+        cameraButton.pin(to: view, anchors: [.bottom()])
+        cameraButton.resize(anchors: [.height(52), .width(cameraButtonWidth)])
+
         updateMediaButtonAppearance(isHidden: shouldHideMediaButton, animated: false)
-        inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
-        inputTextView.trailingAnchor.pin(to: recordButton.leadingAnchor)
+
+        // Initial trailing constraint (will be updated by updateTrailingInputButtons)
+        inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
         inputTextView.topAnchor.pin(to: selectedMediaView.bottomAnchor, constant: 8).priority(.defaultLow)
         inputTextView.heightAnchor.pin(greaterThanOrEqualToConstant: 36)
         inputTextView.bottomAnchor.pin(to: view.bottomAnchor, constant: -8)
         
         recordedView.pin(to: view, anchors: [.leading, .trailing, .top])
         recordedView.isHidden = true
+        
+        updateState()
     }
     
     open override func setupDone() {
@@ -294,17 +317,47 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
     
     open func updateState() {
-        sendButton.isHidden = inputTextView.text.replacingOccurrences(of: "\u{fffc}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedMediaView.items.isEmpty
+        updateTrailingInputButtons()
+
         style = selectedMediaView.items.count > 0 ? .large : .small
         separatorViewCenter.isHidden = selectedMediaView.items.count == 0
         if sendButton.isHidden {
             sendButton.cancelTracking(with: nil)
         }
-        recordButton.isHidden = !sendButton.isHidden || shouldHideRecordButton
+
         if !selectedMediaView.items.isEmpty, lastDetectedLinkMetadata != nil {
             removeActionView()
         } else if selectedMediaView.items.isEmpty {
             findLink()
+        }
+    }
+    
+    open func updateTrailingInputButtons() {
+        let shouldShowSendButton = !inputTextView.text.replacingOccurrences(of: "\u{fffc}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !selectedMediaView.items.isEmpty
+
+        // Update button visibility
+        sendButton.isHidden = !shouldShowSendButton
+        cameraButton.isHidden = shouldShowSendButton || shouldHideCameraButton
+        recordButton.isHidden = shouldShowSendButton || shouldHideRecordButton
+
+        // Guard: Only update constraint if buttons are in view hierarchy (setupLayout has been called)
+        guard inputTextViewTrailingConstraint != nil else { return }
+
+        // Update inputTextView trailing constraint based on visible buttons
+        if let inputTextViewTrailingConstraint {
+            view.removeConstraint(inputTextViewTrailingConstraint)
+        }
+
+        // Connect to the first visible trailing button
+        if !sendButton.isHidden {
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
+        } else if !cameraButton.isHidden {
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: cameraButton.leadingAnchor)
+        } else if !recordButton.isHidden {
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: recordButton.leadingAnchor)
+        } else {
+            // If all buttons are hidden, connect to view trailing
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: view.trailingAnchor, constant: -8)
         }
     }
     
@@ -584,7 +637,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
         }
     }
-    
+
+    @objc
+    open func cameraButtonAction(_ sender: UIButton) {
+        inputTextView.resignFirstResponder()
+        openCameraPicker()
+    }
+
     open func openPhotoPicker() {
         logger.verbose("[ATTACHMENT] openPhotoPicker")
         router.showPhotos(selectedPhotoAssetIdentifiers: selectedPhotoAssetIdentifiers)

@@ -124,8 +124,8 @@ extension MessageCell {
             didSet {
                 audioWaveformView.data = data.voiceWaveform
                 displayDuration = data.mediaDuration
-                
-                if let fileUrl = data.attachment.fileUrl, fileUrl == SimpleSinglePlayer.url {
+
+                if data.attachment.playerId == SimpleSinglePlayer.currentId {
                     state = SimpleSinglePlayer.isPlaying ? .playing : .paused
                     SimpleSinglePlayer.set(durationBlock: setDuration, stopBlock: stop)
                 } else {
@@ -146,22 +146,23 @@ extension MessageCell {
             switch state {
             case .stopped:
                 state = .playing
-                SimpleSinglePlayer.play(fileUrl, durationBlock: setDuration, stopBlock: stop)
-                setPlayerSpeed(speed)
+                SimpleSinglePlayer.play(fileUrl, id: data.attachment.playerId, durationBlock: setDuration, stopBlock: stop)
                 onPlayed(fileUrl)
             case .playing:
                 state = .paused
                 SimpleSinglePlayer.pause()
             case .paused:
                 state = .playing
-                SimpleSinglePlayer.play(fileUrl, durationBlock: setDuration, stopBlock: stop)
-                setPlayerSpeed(speed)
+                SimpleSinglePlayer.play(fileUrl, id: data.attachment.playerId, durationBlock: setDuration, stopBlock: stop)
             }
         }
         
         func stop() {
             state = .stopped
             displayDuration = data.mediaDuration
+            if let storedSpeed = SimpleSinglePlayer.getSpeed(for: data.attachment.playerId) {
+                speed = .x1
+            }
         }
         
         @objc
@@ -177,13 +178,16 @@ extension MessageCell {
         }
         
         func setPlayerSpeed(_ playerSpeed: Speed) {
+            // Guard against nil data (can happen during setup before data is assigned)
+            guard let fileUrl = data?.attachment.fileUrl else { return }
+
             switch playerSpeed {
             case .x1:
-                SimpleSinglePlayer.setRate(1)
+                SimpleSinglePlayer.setRate(1, for: data.attachment.playerId)
             case .x1_5:
-                SimpleSinglePlayer.setRate(1.5)
+                SimpleSinglePlayer.setRate(1.5, for: data.attachment.playerId)
             case .x2:
-                SimpleSinglePlayer.setRate(2)
+                SimpleSinglePlayer.setRate(2, for: data.attachment.playerId)
             }
         }
         

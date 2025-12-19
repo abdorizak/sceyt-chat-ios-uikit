@@ -43,6 +43,8 @@ extension ChannelInfoViewController {
         open override func setup() {
             super.setup()
             noItemsMessage = L10n.Channel.Info.Segment.Medias.noItems
+            noItemsMessageSubTitle = L10n.Channel.Info.Segment.Medias.noItemsSubTitle
+            noItemsIcon = UIImage.emptyMedia
             register(Components.channelInfoImageAttachmentCell.self)
             register(Components.channelInfoVideoAttachmentCell.self)
             register(Components.channelInfoDateSeparatorView.self, kind: .header)

@@ -175,12 +175,27 @@ open class ChannelMessageSender: DataProvider {
                         let message = MessageDTO.lastMessage(predicate: predicate, context: $0)
                         let channel = ChannelDTO.fetch(id: self.channelId, context: $0)
                         let lastMessageId = message?.id
+
+                        // Preserve pending votes from the original message
+                        var pendingVotes: NSSet? = nil
+                        if chatMessage.poll?.pendingVotes != nil {
+                            let existingMessageDTO = MessageDTO.fetch(tid: Int64(chatMessage.tid), context: $0)
+                            pendingVotes = existingMessageDTO?.poll?.pendingVotes
+                        }
                         
                         $0.createOrUpdate(
                             message: sentMessage,
                             channelId: self.channelId
                         )
-                        
+
+                        // Restore pending votes to the updated message
+                        if let pendingVotes = pendingVotes, pendingVotes.count > 0 {
+                            if let updatedMessageDTO = MessageDTO.fetch(id: sentMessage.id, context: $0),
+                               let pollDTO = updatedMessageDTO.poll {
+                                pollDTO.pendingVotes = pendingVotes
+                            }
+                        }
+
                         if let channel {
                             let min = min(sentMessage.id, MessageId(lastMessageId ?? Int64(sentMessage.id)))
                             let max = max(sentMessage.id, MessageId(lastMessageId ?? Int64(sentMessage.id)))
