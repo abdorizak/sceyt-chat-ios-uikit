@@ -26,10 +26,9 @@ internal class SimpleSinglePlayer: NSObject {
     static var url: URL? { (currentPlayer?.currentItem?.asset as? AVURLAsset)?.url }
     
     static func play(_ url: URL, id: Int64, durationBlock: DurationBlock?, stopBlock: StopBlock?) {
-        guard url != self.url else {
+        guard id != self.currentId || currentPlayer == nil else {
             if !isPlaying {
                 isPlaying = true
-                currentId = id
                 currentPlayer?.play()
                 // Apply stored speed if available
                 if let storedRate = speedForPlayer[id], id != 0 {
@@ -40,6 +39,15 @@ internal class SimpleSinglePlayer: NSObject {
             return
         }
         
+        // Reset previous audio's speed to 1x when switching to different audio
+        if let previousId = currentId, previousId != id {
+            speedForPlayer[previousId] = 1.0
+        }
+
+        currentId = id
+        // Reset playback state BEFORE stop() so callbacks read clean values
+        duration = 0
+        currentTime = 0
         stop(resumeBackgroundPlayback: false)
         set(durationBlock: durationBlock, stopBlock: stopBlock)
         
@@ -58,6 +66,8 @@ internal class SimpleSinglePlayer: NSObject {
                     currentTime = max(0, CMTimeGetSeconds(player.currentTime()))
                     currentDurationBlock?(currentTime, progress)
                     if currentTime >= duration {
+                        // Don't clear currentId - keep it so we can reset speed when switching to different audio
+                        speedForPlayer[id] = 1.0
                         stop(resumeBackgroundPlayback: true)
                     }
                 }
@@ -93,19 +103,34 @@ internal class SimpleSinglePlayer: NSObject {
         isPlaying = false
         if let currentPlayer {
             currentPlayer.pause()
+            // Remove time observer BEFORE setting currentPlayer to nil
+            if let timeObserver {
+                currentPlayer.removeTimeObserver(timeObserver)
+            }
         }
         currentPlayer = nil
-        if let timeObserver {
-            currentPlayer?.removeTimeObserver(timeObserver)
-        }
         timeObserver = nil
-        currentId = nil
         currentStopBlock?()
         currentStopBlock = nil
         
         if resumeBackgroundPlayback {
             try? Components.audioSession.notifyOthersOnDeactivation()
         }
+    }
+
+    static func reset() {
+        // Stop playback and cleanup
+        stop(resumeBackgroundPlayback: true)
+
+        // Clear current tracking
+        currentId = nil
+
+        // Clear all stored speeds
+        speedForPlayer.removeAll()
+
+        // Reset playback state
+        duration = 0
+        currentTime = 0
     }
     
     static func setRate(_ rate: Float, for id: Int64) {

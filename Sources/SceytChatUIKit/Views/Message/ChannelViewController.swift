@@ -2709,7 +2709,7 @@ open class ChannelViewController: ViewController,
     }
     
     deinit {
-        SimpleSinglePlayer.stop()
+        SimpleSinglePlayer.reset()
         avatarTask?.cancel()
         navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         NotificationCenter.default.removeObserver(self)
