@@ -60,6 +60,24 @@ public final class SyncService: NSObject {
             .fetchPendingMessages { messages in
                 logger.verbose("SyncService: makeMessageResendOperations fetched \(messages.count) messages")
                 let groupByChannel = Dictionary(grouping: messages, by: { $0.channelId })
+
+                // Count total messages to resend
+                let totalMessagesToResend = groupByChannel.values.reduce(0) { count, channelMessages in
+                    count + channelMessages.filter { message in
+                        message.attachments?.contains(where: { $0.status == .pauseDownloading || $0.status == .pauseUploading }) != true
+                    }.count
+                }
+
+                guard totalMessagesToResend > 0 else {
+                    // No messages to resend, send pending poll votes immediately
+                    logger.verbose("SyncService: No messages to resend, sending pending poll votes")
+                    sendPendingPollVotes()
+                    return
+                }
+
+                var completedCount = 0
+                let lock = NSLock()
+
                 groupByChannel.forEach { item in
                     let sender = Components.channelMessageSender.init(channelId: item.key)
                     let provider = Components.channelMessageProvider.init(channelId: item.key)
@@ -73,6 +91,17 @@ public final class SyncService: NSObject {
                         sender.resendMessage(message) {error in
                             if error?.sceytChatCode == .channelNotExists {
                                 provider.deletePending(message: message.tid)
+                            }
+
+                            // Track completion
+                            lock.lock()
+                            completedCount += 1
+                            let shouldSendPollVotes = completedCount == totalMessagesToResend
+                            lock.unlock()
+
+                            if shouldSendPollVotes {
+                                logger.verbose("SyncService: All pending messages sent, sending pending poll votes")
+                                sendPendingPollVotes()
                             }
                         }
                     }
@@ -190,7 +219,6 @@ public final class SyncService: NSObject {
             Components.channelMessageMarkerProvider.canMarkMessage = false
             Self.isSyncing = true
             Self.sendPendingReactions()
-            Self.sendPendingPollVotes()
             
             let channelSyncQueue = OperationQueue()
             channelSyncQueue.maxConcurrentOperationCount = 1
