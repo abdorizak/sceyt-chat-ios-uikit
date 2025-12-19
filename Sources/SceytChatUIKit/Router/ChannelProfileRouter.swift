@@ -102,4 +102,13 @@ open class ChannelProfileRouter: Router<ChannelInfoViewController> {
             .init(channel: channel)
         rootViewController.show(viewController, sender: self)
     }
+    
+    open func topToChannelListShowChannel(_ channel: ChatChannel) {
+        if let channelListVC = channelListViewController {
+            channelListVC.navigationController?.popToViewController(channelListVC, animated: false)
+            channelListVC.channelListRouter.showChannelViewController(channel: channel, animated: true)
+        } else {
+            showChannel(channel)
+        }
+    }
 }
