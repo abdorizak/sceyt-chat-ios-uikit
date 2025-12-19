@@ -131,21 +131,6 @@ extension MessageCell {
                 } else {
                     state = .stopped
                 }
-
-                // Load stored speed for this recording on cell reuse
-                if let storedSpeed = SimpleSinglePlayer.getSpeed(for: data.attachment.playerId) {
-                    // Update speed property and UI without triggering didSet
-                    switch storedSpeed {
-                    case 1.5:
-                        speed = .x1_5
-                    case 2:
-                        speed = .x2
-                    default:
-                        speed = .x1
-                    }
-                } else {
-                    speed = .x1
-                }
             }
         }
         
@@ -162,7 +147,6 @@ extension MessageCell {
             case .stopped:
                 state = .playing
                 SimpleSinglePlayer.play(fileUrl, id: data.attachment.playerId, durationBlock: setDuration, stopBlock: stop)
-                setPlayerSpeed(speed)
                 onPlayed(fileUrl)
             case .playing:
                 state = .paused
@@ -170,13 +154,15 @@ extension MessageCell {
             case .paused:
                 state = .playing
                 SimpleSinglePlayer.play(fileUrl, id: data.attachment.playerId, durationBlock: setDuration, stopBlock: stop)
-                setPlayerSpeed(speed)
             }
         }
         
         func stop() {
             state = .stopped
             displayDuration = data.mediaDuration
+            if let storedSpeed = SimpleSinglePlayer.getSpeed(for: data.attachment.playerId) {
+                speed = .x1
+            }
         }
         
         @objc
