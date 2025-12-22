@@ -72,31 +72,50 @@ public extension Database {
         resetStalenessInterval: Bool = true,
         completion: (() -> Void)? = nil
     ) {
-        
-        if resetStalenessInterval {
-            self.backgroundPerformContext.stalenessInterval = 0
+        let group = DispatchGroup()
+
+        // Background Perform Context - use perform (async)
+        group.enter()
+        backgroundPerformContext.perform {
+            if resetStalenessInterval {
+                self.backgroundPerformContext.stalenessInterval = 0
+            }
+            self.backgroundPerformContext.refreshAllObjects()
+            if resetStalenessInterval {
+                self.backgroundPerformContext.stalenessInterval = -1
+            }
+            group.leave()
         }
-        self.backgroundPerformContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.backgroundPerformContext.stalenessInterval = -1
+
+        // Background Read-Only Observable Context
+        group.enter()
+        backgroundReadOnlyObservableContext.perform {
+            if resetStalenessInterval {
+                self.backgroundReadOnlyObservableContext.stalenessInterval = 0
+            }
+            self.backgroundReadOnlyObservableContext.refreshAllObjects()
+            if resetStalenessInterval {
+                self.backgroundReadOnlyObservableContext.stalenessInterval = -1
+            }
+            group.leave()
         }
-        
-        if resetStalenessInterval {
-            self.backgroundReadOnlyObservableContext.stalenessInterval = 0
+
+        // View Context - must run on main thread
+        group.enter()
+        DispatchQueue.main.async {
+            if resetStalenessInterval {
+                self.viewContext.stalenessInterval = 0
+            }
+            self.viewContext.refreshAllObjects()
+            if resetStalenessInterval {
+                self.viewContext.stalenessInterval = -1
+            }
+            group.leave()
         }
-        self.backgroundReadOnlyObservableContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.backgroundReadOnlyObservableContext.stalenessInterval = -1
+
+        group.notify(queue: .main) {
+            completion?()
         }
-        
-        if resetStalenessInterval {
-            self.viewContext.stalenessInterval = 0
-        }
-        self.viewContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.viewContext.stalenessInterval = -1
-        }
-        completion?()
     }
     
     func deleteAll() {
