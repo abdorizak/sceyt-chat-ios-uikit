@@ -130,6 +130,7 @@ open class ChannelMemberListViewModel: NSObject {
 
     open func startDatabaseObserver() {
         if shouldShowOnlyAdmins {
+            deleteAdminsFromDatabase()
             // Use the original single observer when filtering by role
             memberObserver.onDidChange = {[weak self] in
                 self?.onDidChangeEvent(items: $0)
@@ -168,6 +169,19 @@ open class ChannelMemberListViewModel: NSObject {
         } completion: { error in
             if let error = error {
                 logger.errorIfNotNil(error, "Failed to delete members from database")
+            }
+        }
+    }
+
+    open func deleteAdminsFromDatabase() {
+        provider.database.write { context in
+            let predicate = NSPredicate(format: "channelId == %lld AND role.name == %@",
+                                       self.channel.id,
+                                       SceytChatUIKit.shared.config.memberRolesConfig.admin)
+            context.deleteMembers(predicate: predicate)
+        } completion: { error in
+            if let error = error {
+                logger.errorIfNotNil(error, "Failed to delete admins from database")
             }
         }
     }
