@@ -243,6 +243,12 @@ open class MessageLayoutModel {
         if messageUserTitleSize != .zero {
             contentOptions.insert(.name)
         }
+
+        // Hide text for viewOnce messages
+        if message.viewOnce && (message.attachments?.count ?? 0) == 1 {
+            contentOptions.remove(.text)
+            textSize = .zero
+        }
         
         for attachment in attachments {
             switch attachment.type {
@@ -476,6 +482,13 @@ open class MessageLayoutModel {
         if messageUserTitleSize != .zero {
             contentOptions.insert(.name)
         }
+
+        // Hide text for viewOnce messages
+        if message.viewOnce && (message.attachments?.count ?? 0) == 1 {
+            contentOptions.remove(.text)
+            textSize = .zero
+        }
+
         if self.message.user.avatarUrl != message.user.avatarUrl,
            !updateOptions.contains(.user) {
             updateOptions.insert(.user)
