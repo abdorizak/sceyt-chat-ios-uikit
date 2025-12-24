@@ -625,9 +625,14 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.refresh.image,
                                                      renderingMode: .template(.accent)))!
         }()
-        
+
+        public static var addCircleDashed: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconAddCircleDashed.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+
         public init() { }
-        
+
     }
 }
 
@@ -772,6 +777,7 @@ extension UIImage {
     public static var replyPlay: UIImage { Images.replyPlay }
     public static var closeIcon: UIImage { Images.closeIcon }
     public static var messageFile: UIImage { Images.messageFile }
-    
+
     public static var refreshIcon: UIImage { Images.refreshIcon }
+    public static var addCircleDashed: UIImage { Images.addCircleDashed }
 }

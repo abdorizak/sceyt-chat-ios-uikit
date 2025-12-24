@@ -47,6 +47,8 @@ public class ChatMessage {
     public let forwardingDetails: ForwardingDetails?
     public let bodyAttributes: [BodyAttribute]?
     public let poll: PollDetails?
+    
+    public var viewOnce: Bool = false
 
     var hasDisplayedFromMe: Bool {
         userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == DeliveryStatus.displayed.rawValue} ) == true

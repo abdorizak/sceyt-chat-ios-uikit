@@ -14,6 +14,7 @@ extension UIImageView {
         weak var from: UIViewController?
         var previewer: (() -> PreviewDataSource?)?
         var item: PreviewItem?
+        var viewOnce: Bool = false
     }
     
     private var viewController: UIViewController? {
@@ -25,12 +26,13 @@ extension UIImageView {
     func setup(
         previewer: (() -> AttachmentPreviewDataSource?)?,
         item: PreviewItem?,
-        from: UIViewController? = nil) {
+        from: UIViewController? = nil,
+        viewOnce: Bool = false) {
         var _tapRecognizer: TapWithDataRecognizer? = gestureRecognizers?.first(where: { $0 is TapWithDataRecognizer }) as? TapWithDataRecognizer
-            
+
         isUserInteractionEnabled = true
         clipsToBounds = true
-            
+
         if _tapRecognizer == nil {
             _tapRecognizer = TapWithDataRecognizer(
                 target: self, action: #selector(showImageViewer(_:)))
@@ -41,6 +43,7 @@ extension UIImageView {
         _tapRecognizer!.previewer = previewer
         _tapRecognizer!.item = item
         _tapRecognizer!.from = from
+        _tapRecognizer!.viewOnce = viewOnce
         addGestureRecognizer(_tapRecognizer!)
     }
     
@@ -56,11 +59,11 @@ extension UIImageView {
            let idx = previewer.indexOfItem(item) {
             initialIndex = idx
         }
-        
         let imageCarousel = Components.mediaPreviewerCarouselViewController.init(
                 sourceView: sourceView,
                 previewDataSource: previewer,
-                initialIndex: initialIndex)
+                initialIndex: initialIndex,
+                viewOnce: sender.viewOnce)
         UIApplication.shared.sendAction(#selector(resignFirstResponder), to: nil, from: nil, for: nil)
         let presentFromViewController = sender.from ?? viewController
         presentFromViewController?.present(Components.mediaPreviewerNavigationController.init(imageCarousel), animated: true)

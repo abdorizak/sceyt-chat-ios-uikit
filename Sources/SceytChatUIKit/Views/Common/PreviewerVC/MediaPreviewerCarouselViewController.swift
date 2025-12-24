@@ -33,6 +33,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
     public var previewDataSource: PreviewDataSource?
     
     private let initialIndex: Int
+    public var viewOnce: Bool = false
     
     open var imageContentMode: UIView.ContentMode = .scaleAspectFit
     open lazy var backgroundView = UIView().withoutAutoresizingMask
@@ -51,14 +52,16 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         title: String? = nil,
         subtitle: String? = nil,
         previewDataSource: PreviewDataSource,
-        initialIndex: Int = 0)
+        initialIndex: Int = 0,
+        viewOnce: Bool = false)
     {
         self.initialSourceView = sourceView
         self.sourceFrameRelativeToWindow = sourceView.frameRelativeToWindow()
         self.initialIndex = initialIndex
         self.previewDataSource = previewDataSource
+        self.viewOnce = viewOnce
         let pageOptions = [UIPageViewController.OptionsKey.interPageSpacing: 20]
-            
+
         super.init(
             transitionStyle: .scroll,
             navigationOrientation: .horizontal,
@@ -76,6 +79,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         setupAppearance()
         setupLayout()
         setupDone()
+        updateRightBarButtonItems()
     }
     
     open lazy var backButton = UIBarButtonItem(
@@ -89,15 +93,20 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         style: .plain,
         target: self,
         action: #selector(shareButtonAction(_:)))
-    
+
+    open lazy var oneTimeButton = UIBarButtonItem(
+        image: Images.addCircleDashed,
+        style: .plain,
+        target: self,
+        action: #selector(oneTimeButtonAction(_:)))
+
     public let appearance = Components.mediaPreviewerViewController.appearance
     
     open func setup() {
         navigationItem.leftBarButtonItem = backButton
-        navigationItem.rightBarButtonItem = shareButton
         navigationItem.titleView = titleView
         navigationController?.navigationBar.alpha = 0.0
-        
+
         dataSource = self
         delegate = self
     }
@@ -162,7 +171,27 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
     open func shareButtonAction(_ sender: UIBarButtonItem) {
         (viewControllers?.first as? MediaPreviewerViewController)?.shareButtonAction(sender)
     }
-    
+
+    @objc
+    open func oneTimeButtonAction(_ sender: UIBarButtonItem) {
+        // TODO: Implement one-time button action
+        logger.debug("[MediaPreviewerCarouselViewController] One-time button tapped")
+    }
+
+    open func updateRightBarButtonItems() {
+        var items: [UIBarButtonItem] = []
+        if shouldShowOneTimeButton() {
+            items.append(oneTimeButton)
+        } else {
+            items.append(shareButton)
+        }
+        navigationItem.rightBarButtonItems = items
+    }
+
+    open func shouldShowOneTimeButton() -> Bool {
+        return viewOnce
+    }
+
     override open var preferredStatusBarStyle: UIStatusBarStyle {
         .lightContent
     }
