@@ -36,7 +36,8 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var disableMentionsCount: Bool
     @NSManaged public var replied: Bool
     @NSManaged public var unlisted: Bool
-    
+    @NSManaged public var viewOnce: Bool
+
     @NSManaged public var markerTotal: [String: Int]?
     @NSManaged public var reactionTotal: Set<ReactionTotalDTO>?
     @NSManaged public var userMarkers: Set<MarkerDTO>?

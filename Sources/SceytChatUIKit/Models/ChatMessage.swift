@@ -30,7 +30,8 @@ public class ChatMessage {
     public let replyCount: Int
     public let displayCount: Int
     public var disableMentionsCount: Bool
-    
+    public let viewOnce: Bool
+
     public let attachments: [Attachment]?
     public let userReactions: [Reaction]?
     public let userPendingReactions: [Reaction]?
@@ -47,8 +48,6 @@ public class ChatMessage {
     public let forwardingDetails: ForwardingDetails?
     public let bodyAttributes: [BodyAttribute]?
     public let poll: PollDetails?
-    
-    public var viewOnce: Bool = false
 
     var hasDisplayedFromMe: Bool {
         userMarkers?.contains(where: { $0.user?.id == SceytChatUIKit.shared.currentUserId && $0.name == DeliveryStatus.displayed.rawValue} ) == true
@@ -72,6 +71,7 @@ public class ChatMessage {
                 replyCount: Int = 0,
                 displayCount: Int = 0,
                 disableMentionsCount: Bool = false,
+                viewOnce: Bool = false,
                 attachments: [ChatMessage.Attachment]? = nil,
                 userReactions: [ChatMessage.Reaction]? = nil,
                 userPendingReactions: [ChatMessage.Reaction]? = nil,
@@ -104,6 +104,7 @@ public class ChatMessage {
         self.replyCount = replyCount
         self.displayCount = displayCount
         self.disableMentionsCount = disableMentionsCount
+        self.viewOnce = viewOnce
         self.attachments = attachments
         self.userReactions = userReactions
         self.userPendingReactions = userPendingReactions
@@ -147,6 +148,7 @@ public class ChatMessage {
         replyCount = Int(dto.replyCount)
         displayCount = Int(dto.displayCount)
         disableMentionsCount = dto.disableMentionsCount
+        viewOnce = dto.viewOnce
         markerCount = dto.markerTotal
         if let user = dto.user {
             self.user = user.convert()
@@ -279,6 +281,7 @@ public class ChatMessage {
             replyCount: message.replyCount,
             displayCount: message.displayCount,
             disableMentionsCount: message.disableMentionsCount,
+            viewOnce: message.viewOnce,
             attachments: message.attachments?.map { ChatMessage.Attachment(attachment: $0)},
             userReactions: message.userReactions?.map { ChatMessage.Reaction(reaction: $0)},
             reactionTotals: message.reactionTotals?.map { .init(reaction: $0)},

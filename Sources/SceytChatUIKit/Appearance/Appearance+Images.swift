@@ -631,6 +631,11 @@ public extension Appearance {
                                                      renderingMode: .template(.accent)))!
         }()
 
+        public static var fire: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconFire.image,
+                                                     renderingMode: .original))!
+        }()
+
         public init() { }
 
     }
@@ -780,4 +785,5 @@ extension UIImage {
 
     public static var refreshIcon: UIImage { Images.refreshIcon }
     public static var addCircleDashed: UIImage { Images.addCircleDashed }
+    public static var fire: UIImage { Images.fire }
 }
