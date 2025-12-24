@@ -141,8 +141,6 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         backgroundView.backgroundColor = appearance.backgroundColor
         backgroundView.alpha = 1
         
-        backButton.imageInsets = .init(top: 0, left: -8, bottom: 0, right: 0)
-        
         titleLabel.font = appearance.titleLabelAppearance.font
         titleLabel.textColor = appearance.titleLabelAppearance.foregroundColor
         

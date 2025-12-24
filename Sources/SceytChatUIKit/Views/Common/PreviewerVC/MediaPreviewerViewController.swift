@@ -38,6 +38,9 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     open lazy var playerControlView = UIStackView(row: currentTimeLabel, slider, durationLabel)
         .withoutAutoresizingMask
     
+    open lazy var containerView = UIView()
+        .withoutAutoresizingMask
+    
     open lazy var playerControlContainerView = UIView()
         .withoutAutoresizingMask
     
@@ -90,6 +93,7 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     private var isViewDidAppear = false
     private var isConfiguredPlayer = false
     private var isFirstAppear = true
+    private var isScreenshotProtectionConfigured = false
     
     private var timeObserver: Any?
 
@@ -161,13 +165,29 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         playPauseButton.setImage(appearance.playIcon, for: [])
     }
     
+    lazy var screenShotProtectedScrollView = ScreenshotProtectController(content: self.containerView)
+
     override open func setupLayout() {
         super.setupLayout()
-        view.addSubview(playerView)
-        playerView.pin(to: view, anchors: [.leading, .trailing, .top, .bottom])
         
-        view.addSubview(playerControlContainerView)
-        playerControlContainerView.pin(to: view, anchors: [.leading, .trailing, .bottom])
+        let contentView: UIView = viewOnce ? self.containerView : self.view
+        
+        if viewOnce {
+            view.addSubview(screenShotProtectedScrollView.container)
+            screenShotProtectedScrollView.container.translatesAutoresizingMaskIntoConstraints = false
+            
+            screenShotProtectedScrollView.container.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            screenShotProtectedScrollView.container.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+            screenShotProtectedScrollView.container.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+            screenShotProtectedScrollView.container.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            screenShotProtectedScrollView.setupContentAsHiddenInScreenshotMode()
+        }
+        
+        contentView.addSubview(playerView)
+        playerView.pin(to: contentView, anchors: [.leading, .trailing, .top, .bottom])
+        
+        contentView.addSubview(playerControlContainerView)
+        playerControlContainerView.pin(to: contentView, anchors: [.leading, .trailing, .bottom])
         
         playerControlContainerView.addSubview(playerControlView)
         playerControlContainerView.addSubview(playPauseButton)
@@ -180,14 +200,9 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         currentTimeLabel.resize(anchors: [.width(44), .height(28)])
         durationLabel.resize(anchors: [.width(44), .height(28)])
         
-        view.addSubview(scrollView)
-        scrollView.pin(to: view)
+        contentView.addSubview(scrollView)
+        scrollView.pin(to: contentView)
         
-        if viewOnce {
-            DispatchQueue.main.async {
-                self.view.setScreenCaptureProtection()
-            }
-        }
     }
     
     override open func setupDone() {
@@ -243,8 +258,9 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     
     open func layout() {
         playerLayer?.frame = playerView.bounds
-        scrollView.updateConstraintsForSize(scrollView.bounds.size)
-        scrollView.updateMinMaxZoomScaleForSize(scrollView.bounds.size)
+        
+        scrollView.updateConstraintsForSize(view.bounds.size)
+        scrollView.updateMinMaxZoomScaleForSize(view.bounds.size)
     }
     
     open func onEvent(_ event: PreviewerViewModel.Event) {
