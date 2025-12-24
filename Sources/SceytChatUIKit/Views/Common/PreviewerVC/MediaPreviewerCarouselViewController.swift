@@ -35,6 +35,16 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
     private let initialIndex: Int
     public var viewOnce: Bool = false
     
+    private var screenshotObserver: NSObjectProtocol?
+    private lazy var blurEffectView: UIVisualEffectView = {
+        let blurEffect = UIBlurEffect(style: .dark)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.frame = view.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        blurView.alpha = 0
+        return blurView
+    }()
+    
     open var imageContentMode: UIView.ContentMode = .scaleAspectFit
     open lazy var backgroundView = UIView().withoutAutoresizingMask
     open lazy var titleLabel = UILabel()
@@ -45,6 +55,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         logger.debug("[PreviewerCarouselViewController] deinit")
         
         initialSourceView?.alpha = 1.0
+        NotificationCenter.default.removeObserver(self)
     }
     
     public required init(
@@ -80,6 +91,10 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         setupLayout()
         setupDone()
         updateRightBarButtonItems()
+
+        if viewOnce {
+            setupScreenshotDetection()
+        }
     }
     
     open lazy var backButton = UIBarButtonItem(
@@ -140,6 +155,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
            let previewItem = previewDataSource.previewItem(at: initialIndex)
         {
             let initialViewController = Components.mediaPreviewerViewController.init()
+            initialViewController.viewOnce = self.viewOnce
             initialViewController.imageContentMode = imageContentMode
             initialViewController.viewModel = Components.previewerViewModel
                 .init(
@@ -151,7 +167,58 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         
         view.subviews.forEach { ($0 as? UIScrollView)?.delaysContentTouches = false }
     }
+
+    private func setupScreenshotDetection() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleScreenshot),
+            name: UIApplication.userDidTakeScreenshotNotification,
+            object: nil)
+        
+        guard viewOnce else { return }
+        // Add blur effect view to the view hierarchy
+        view.addSubview(blurEffectView)
+        view.bringSubviewToFront(blurEffectView)
+        // Listen for app going to background to hide sensitive content
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(hideContent),
+            name: UIApplication.willResignActiveNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(showContent),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    @objc
+    private func handleScreenshot() {
+        showScreenshotAlert()
+    }
+
+    private func showScreenshotAlert() {
+        self.showAlert(title: "Screenshot Blocked",
+                       message: "Screen capture has been restricted to ensure user privacy.",
+                       actions: [SheetAction(title: L10n.Alert.Button.ok)])
+    }
     
+    @objc
+    private func hideContent() {
+        UIView.animate(withDuration: 0.2) {
+            self.blurEffectView.alpha = 1
+        }
+    }
+    
+    @objc
+    private func showContent() {
+        UIView.animate(withDuration: 0.2) {
+            self.blurEffectView.alpha = 0
+        }
+    }
+
     override open func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isBeingDismissed,
@@ -200,6 +267,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         _ pageViewController: UIPageViewController,
         viewControllerBefore viewController: UIViewController) -> UIViewController?
     {
+        guard !viewOnce else { return nil }
         guard let viewController = viewController as? MediaPreviewerViewController else { return nil }
         guard let previewDataSource = previewDataSource else { return nil }
         let index = viewController.viewModel.index
@@ -215,6 +283,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         _ pageViewController: UIPageViewController,
         viewControllerAfter viewController: UIViewController) -> UIViewController?
     {
+        guard !viewOnce else { return nil }
         guard let viewController = viewController as? MediaPreviewerViewController else { return nil }
         let index = viewController.viewModel.index
         guard index > 0

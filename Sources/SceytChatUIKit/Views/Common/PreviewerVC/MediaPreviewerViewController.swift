@@ -15,6 +15,7 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         .init(rootViewController: self)
     
     open var viewModel: PreviewerViewModel!
+    open var viewOnce: Bool = false
     
     var targetView: UIImageView {
         if !scrollView.isHidden {
@@ -181,6 +182,12 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         
         view.addSubview(scrollView)
         scrollView.pin(to: view)
+        
+        if viewOnce {
+            DispatchQueue.main.async {
+                self.view.setScreenCaptureProtection()
+            }
+        }
     }
     
     override open func setupDone() {
