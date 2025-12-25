@@ -198,8 +198,8 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
     }
 
     private func showScreenshotAlert() {
-        self.showAlert(title: "Screenshot Blocked",
-                       message: "Screen capture has been restricted to ensure user privacy.",
+        self.showAlert(title: L10n.ViewOnce.Screenshot.Alert.title,
+                       message: L10n.ViewOnce.Screenshot.Alert.message,
                        actions: [SheetAction(title: L10n.Alert.Button.ok)])
     }
     

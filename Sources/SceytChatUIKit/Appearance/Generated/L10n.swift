@@ -1042,6 +1042,14 @@ public enum L10n {
       /// View once messages
       public static let title = L10n.tr("Localizable", "viewOnce.info.title", fallback: "View once messages")
     }
+    public enum Screenshot {
+      public enum Alert {
+        /// Screen capture has been restricted to ensure user privacy.
+        public static let message = L10n.tr("Localizable", "viewOnce.screenshot.alert.message", fallback: "Screen capture has been restricted to ensure user privacy.")
+        /// Screenshot Blocked
+        public static let title = L10n.tr("Localizable", "viewOnce.screenshot.alert.title", fallback: "Screenshot Blocked")
+      }
+    }
   }
 }
 // swiftlint:enable explicit_type_interface function_parameter_count identifier_name line_length
