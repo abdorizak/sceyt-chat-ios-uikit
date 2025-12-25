@@ -2871,6 +2871,7 @@ public extension ChannelViewModel {
         case media
         case file
         case link
+        case view_once
     }
     
     enum AttachmentType: String {

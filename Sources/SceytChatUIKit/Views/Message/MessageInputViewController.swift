@@ -114,7 +114,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     open var cameraButtonWidth: CGFloat { 48.0 }
     open var recordButtonWidth: CGFloat { 52.0 }
     open var sendButtonWidth: CGFloat { 52.0 }
-    open var viewOnceButtonWidth: CGFloat { 48.0 }
+    open var viewOnceButtonWidth: CGFloat { 28.0 }
 
     open var shouldHidePollOption = false
 
@@ -314,7 +314,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         cameraButton.pin(to: view, anchors: [.bottom()])
         cameraButton.resize(anchors: [.height(52), .width(cameraButtonWidth)])
 
-        viewOnceButton.trailingAnchor.pin(to: inputTextView.trailingAnchor)
+        viewOnceButton.trailingAnchor.pin(to: inputTextView.trailingAnchor, constant: -4.0)
         viewOnceButton.pin(to: view, anchors: [.bottom()])
         viewOnceButton.resize(anchors: [.height(52), .width(viewOnceButtonWidth)])
 
@@ -390,7 +390,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
 
     open func updateInputTextViewPadding(viewOnceButtonVisible: Bool) {
-        let rightPadding: CGFloat = viewOnceButtonVisible ? 52 : 12
+        let rightPadding: CGFloat = viewOnceButtonVisible ? 34 : 12
         inputTextView.textContainerInset = .init(
             top: inputTextView.textContainerInset.top,
             left: inputTextView.textContainerInset.left,

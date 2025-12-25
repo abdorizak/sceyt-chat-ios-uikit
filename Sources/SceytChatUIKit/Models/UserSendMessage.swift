@@ -42,6 +42,11 @@ open class UserSendMessage {
         self.attachments = attachments
         self.linkMetadata = linkMetadata
         self.viewOnce = viewOnce
+
+        // Set type to view_once when viewOnce is enabled
+        if viewOnce {
+            self.type = ChannelViewModel.MessageType.view_once.rawValue
+        }
         
         let nsString = sendText.string as NSString
         var users = [(id: UserId, displayName: String)]()
