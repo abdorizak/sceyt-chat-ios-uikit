@@ -308,7 +308,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         cameraButton.pin(to: view, anchors: [.bottom()])
         cameraButton.resize(anchors: [.height(52), .width(cameraButtonWidth)])
 
-        viewOnceButton.trailingAnchor.pin(to: sendButton.leadingAnchor)
+        viewOnceButton.trailingAnchor.pin(to: inputTextView.trailingAnchor)
         viewOnceButton.pin(to: view, anchors: [.bottom()])
         viewOnceButton.resize(anchors: [.height(52), .width(viewOnceButtonWidth)])
 
@@ -360,6 +360,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         cameraButton.isHidden = shouldShowSendButton || shouldHideCameraButton
         recordButton.isHidden = shouldShowSendButton || shouldHideRecordButton
 
+        // Update inputTextView right padding based on viewOnceButton visibility
+        updateInputTextViewPadding(viewOnceButtonVisible: !viewOnceButton.isHidden)
+
         // Guard: Only update constraint if buttons are in view hierarchy (setupLayout has been called)
         guard inputTextViewTrailingConstraint != nil else { return }
 
@@ -368,11 +371,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             view.removeConstraint(inputTextViewTrailingConstraint)
         }
 
-        // Connect to the first visible trailing button - NEW PRIORITY ORDER
-        if !viewOnceButton.isHidden {
-            // View-once button is visible (1 attachment), connect to it
-            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: viewOnceButton.leadingAnchor)
-        } else if !sendButton.isHidden {
+        if !sendButton.isHidden {
             inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
         } else if !cameraButton.isHidden {
             inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: cameraButton.leadingAnchor)
@@ -382,6 +381,16 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             // If all buttons are hidden, connect to view trailing
             inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: view.trailingAnchor, constant: -8)
         }
+    }
+
+    open func updateInputTextViewPadding(viewOnceButtonVisible: Bool) {
+        let rightPadding: CGFloat = viewOnceButtonVisible ? 52 : 12
+        inputTextView.textContainerInset = .init(
+            top: inputTextView.textContainerInset.top,
+            left: inputTextView.textContainerInset.left,
+            bottom: inputTextView.textContainerInset.bottom,
+            right: rightPadding
+        )
     }
     
     open func updateMediaButtonAppearance(isHidden: Bool, animated: Bool = true) {
@@ -410,7 +419,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
 
     open func updateViewOnceButtonAppearance() {
         viewOnceButton.backgroundColor = .clear
-        viewOnceButton.setImage(isViewOnceEnabled ? appearance.viewOnceActiveIcon : appearance.viewOnceIcon, for: .normal)
+        if isViewOnceEnabled {
+            viewOnceButton.setImage(appearance.viewOnceActiveIcon, for: .normal)
+        } else {
+            viewOnceButton.setImage(appearance.viewOnceIcon, for: .normal)
+        }
     }
 
     open func updateViewOnceButtonVisibility() {
