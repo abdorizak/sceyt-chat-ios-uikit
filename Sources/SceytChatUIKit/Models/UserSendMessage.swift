@@ -27,6 +27,7 @@ open class UserSendMessage {
     open var type: String = ChannelViewModel.MessageType.text.rawValue
     open var linkMetadata: LinkMetadata?
     open var didUserDismissLinkPreview: Bool = false
+    open var viewOnce: Bool = false
 
     open var linkAttachments: [AttachmentModel] {
         Self.createLinkAttachmentsFrom(text: text, linkMetaData: linkMetadata, didUserDismissLinkPreview: didUserDismissLinkPreview)
@@ -34,11 +35,13 @@ open class UserSendMessage {
     
     public required init(sendText: NSAttributedString,
                          attachments: [AttachmentModel]? = nil,
-                         linkMetadata: LinkMetadata? = nil
+                         linkMetadata: LinkMetadata? = nil,
+                         viewOnce: Bool = false
     ) {
         let sendText = sendText.trimWhitespacesAndNewlines().mutableCopy() as! NSMutableAttributedString
         self.attachments = attachments
         self.linkMetadata = linkMetadata
+        self.viewOnce = viewOnce
         
         let nsString = sendText.string as NSString
         var users = [(id: UserId, displayName: String)]()

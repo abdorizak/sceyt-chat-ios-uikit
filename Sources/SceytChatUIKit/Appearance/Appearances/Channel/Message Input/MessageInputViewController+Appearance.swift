@@ -15,6 +15,8 @@ extension MessageInputViewController: AppearanceProviding {
         sendMessageIcon: .messageSendAction,
         voiceRecordIcon: .audioPlayerMic,
         cameraIcon: .chatActionCamera,
+        viewOnceIcon: .addCircleDashed,
+        viewOnceActiveIcon: .iconViewOnceSelected,
         sendVoiceMessageIcon: .messageSendAction,
         enableVoiceRecord: true,
         enableSendAttachment: true,
@@ -74,6 +76,12 @@ extension MessageInputViewController: AppearanceProviding {
 
         @Trackable<Appearance, UIImage>
         public var cameraIcon: UIImage
+
+        @Trackable<Appearance, UIImage>
+        public var viewOnceIcon: UIImage
+
+        @Trackable<Appearance, UIImage>
+        public var viewOnceActiveIcon: UIImage
 
         @Trackable<Appearance, UIImage>
         public var sendVoiceMessageIcon: UIImage
@@ -142,6 +150,8 @@ extension MessageInputViewController: AppearanceProviding {
             sendMessageIcon: UIImage,
             voiceRecordIcon: UIImage,
             cameraIcon: UIImage,
+            viewOnceIcon: UIImage,
+            viewOnceActiveIcon: UIImage,
             sendVoiceMessageIcon: UIImage,
             enableVoiceRecord: Bool,
             enableSendAttachment: Bool,
@@ -169,6 +179,8 @@ extension MessageInputViewController: AppearanceProviding {
             self._sendMessageIcon = Trackable(value: sendMessageIcon)
             self._voiceRecordIcon = Trackable(value: voiceRecordIcon)
             self._cameraIcon = Trackable(value: cameraIcon)
+            self._viewOnceIcon = Trackable(value: viewOnceIcon)
+            self._viewOnceActiveIcon = Trackable(value: viewOnceActiveIcon)
             self._sendVoiceMessageIcon = Trackable(value: sendVoiceMessageIcon)
             self._enableVoiceRecord = Trackable(value: enableVoiceRecord)
             self._enableSendAttachment = Trackable(value: enableSendAttachment)
@@ -199,6 +211,8 @@ extension MessageInputViewController: AppearanceProviding {
             sendMessageIcon: UIImage? = nil,
             voiceRecordIcon: UIImage? = nil,
             cameraIcon: UIImage? = nil,
+            viewOnceIcon: UIImage? = nil,
+            viewOnceActiveIcon: UIImage? = nil,
             sendVoiceMessageIcon: UIImage? = nil,
             enableVoiceRecord: Bool? = nil,
             enableSendAttachment: Bool? = nil,
@@ -226,6 +240,8 @@ extension MessageInputViewController: AppearanceProviding {
             self._sendMessageIcon = Trackable(reference: reference, referencePath: \.sendMessageIcon)
             self._voiceRecordIcon = Trackable(reference: reference, referencePath: \.voiceRecordIcon)
             self._cameraIcon = Trackable(reference: reference, referencePath: \.cameraIcon)
+            self._viewOnceIcon = Trackable(reference: reference, referencePath: \.viewOnceIcon)
+            self._viewOnceActiveIcon = Trackable(reference: reference, referencePath: \.viewOnceActiveIcon)
             self._sendVoiceMessageIcon = Trackable(reference: reference, referencePath: \.sendVoiceMessageIcon)
             self._enableVoiceRecord = Trackable(reference: reference, referencePath: \.enableVoiceRecord)
             self._enableSendAttachment = Trackable(reference: reference, referencePath: \.enableSendAttachment)
@@ -253,6 +269,8 @@ extension MessageInputViewController: AppearanceProviding {
             if let sendMessageIcon { self.sendMessageIcon = sendMessageIcon }
             if let voiceRecordIcon { self.voiceRecordIcon = voiceRecordIcon }
             if let cameraIcon { self.cameraIcon = cameraIcon }
+            if let viewOnceIcon { self.viewOnceIcon = viewOnceIcon }
+            if let viewOnceActiveIcon { self.viewOnceActiveIcon = viewOnceActiveIcon }
             if let sendVoiceMessageIcon { self.sendVoiceMessageIcon = sendVoiceMessageIcon }
             if let enableVoiceRecord { self.enableVoiceRecord = enableVoiceRecord }
             if let enableSendAttachment { self.enableSendAttachment = enableSendAttachment }

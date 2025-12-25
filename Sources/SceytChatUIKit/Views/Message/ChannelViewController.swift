@@ -1675,7 +1675,8 @@ open class ChannelViewController: ViewController,
         let m = UserSendMessage(
             sendText: shouldClearText ? inputTextView.attributedText : .init(),
             attachments: selectedMediaView.items,
-            linkMetadata: linkMetadata
+            linkMetadata: linkMetadata,
+            viewOnce: customInputViewController.isViewOnceEnabled
         )
 
         m.didUserDismissLinkPreview = customInputViewController.didUserDismissLinkPreview

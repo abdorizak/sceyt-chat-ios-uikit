@@ -148,7 +148,8 @@ public class ChatMessage {
         replyCount = Int(dto.replyCount)
         displayCount = Int(dto.displayCount)
         disableMentionsCount = dto.disableMentionsCount
-        viewOnce = dto.viewOnce
+//        viewOnce = dto.viewOnce
+        viewOnce = true
         markerCount = dto.markerTotal
         if let user = dto.user {
             self.user = user.convert()

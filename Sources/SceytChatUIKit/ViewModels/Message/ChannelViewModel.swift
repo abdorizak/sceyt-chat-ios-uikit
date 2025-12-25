@@ -1293,6 +1293,11 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
             builder.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
         }
 
+        // View once setting
+        if userMessage.viewOnce {
+            builder.viewOnce(true)
+        }
+
         return builder
     }
 
