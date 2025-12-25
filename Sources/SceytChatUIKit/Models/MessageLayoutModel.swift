@@ -1380,7 +1380,9 @@ extension MessageLayoutModel {
                         deletedLabelAppearance: appearance.replyMessageAppearance.deletedLabelAppearance,
                         attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
                         attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
-                        mentionUserNameFormatter: appearance.mentionUserNameFormatter
+                        mentionUserNameFormatter: appearance.mentionUserNameFormatter,
+                        
+                        replyUserNameFormatter: SceytChatUIKit.shared.formatters.replyUserNameFormatter
                     )
                 )
                 icon = makeIcon()
