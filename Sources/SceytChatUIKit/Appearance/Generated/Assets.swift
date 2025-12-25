@@ -136,6 +136,7 @@ internal enum Assets {
   internal static let iconAddCircleDashed = ImageAsset(name: "icon_add_circle_dashed")
   internal static let iconFire = ImageAsset(name: "icon_fire")
   internal static let iconMention = ImageAsset(name: "icon_mention")
+  internal static let iconOnceMessages = ImageAsset(name: "icon_once_messages")
   internal static let link2 = ImageAsset(name: "link_2")
   internal static let messageFile1 = ImageAsset(name: "message_file_1")
   internal static let messageForward = ImageAsset(name: "message_forward")

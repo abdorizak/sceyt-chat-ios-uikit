@@ -239,8 +239,18 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
 
     @objc
     open func oneTimeButtonAction(_ sender: UIBarButtonItem) {
-        // TODO: Implement one-time button action
-        logger.debug("[MediaPreviewerCarouselViewController] One-time button tapped")
+        let viewOnceInfoVC = ViewOnceInfoViewController()
+        viewOnceInfoVC.modalPresentationStyle = .pageSheet
+
+        if #available(iOS 15.0, *) {
+            if let sheet = viewOnceInfoVC.sheetPresentationController {
+                sheet.detents = [.medium()]
+                sheet.prefersGrabberVisible = false
+                sheet.preferredCornerRadius = 10
+            }
+        }
+
+        present(viewOnceInfoVC, animated: true)
     }
 
     open func updateRightBarButtonItems() {

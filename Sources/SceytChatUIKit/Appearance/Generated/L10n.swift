@@ -1034,6 +1034,15 @@ public enum L10n {
       public static let online = L10n.tr("Localizable", "user.presence.online", fallback: "online")
     }
   }
+  public enum ViewOnce {
+    public enum Info {
+      /// Any photo, video, or voice message you send will disappear from the chat after it's been opened.
+      /// To keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.
+      public static let description = L10n.tr("Localizable", "viewOnce.info.description", fallback: "Any photo, video, or voice message you send will disappear from the chat after it's been opened.\nTo keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.")
+      /// View once messages
+      public static let title = L10n.tr("Localizable", "viewOnce.info.title", fallback: "View once messages")
+    }
+  }
 }
 // swiftlint:enable explicit_type_interface function_parameter_count identifier_name line_length
 // swiftlint:enable nesting type_body_length type_name vertical_whitespace_opening_braces

@@ -406,3 +406,6 @@
 "poll.endPoll.alert.message" = "Are you sure you want to end this poll? People will no longer be able to vote.";
 "poll.endPoll.alert.end" = "End";
 "message.unsupported.text" = "This message is not supported.";
+
+"viewOnce.info.title" = "View once messages";
+"viewOnce.info.description" = "Any photo, video, or voice message you send will disappear from the chat after it's been opened.\nTo keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.";
