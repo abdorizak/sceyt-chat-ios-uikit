@@ -17,6 +17,7 @@ import Foundation
 /// - "link": Link messages
 /// - "system": System messages
 /// - "poll": Poll messages
+/// - "view_once": View once messages
 ///
 /// Any other message type is considered unsupported.
 ///
@@ -29,7 +30,7 @@ public struct MessageTypeSupportProvider: MessageTypeSupportProviding {
     
     /// Initializes a new provider with default supported types
     public init() {
-        self.supportedTypes = ["text", "media", "file", "link", "system", "poll"]
+        self.supportedTypes = ["text", "media", "file", "link", "system", "poll", "view_once"]
     }
     
     /// Initializes a new provider with custom supported types

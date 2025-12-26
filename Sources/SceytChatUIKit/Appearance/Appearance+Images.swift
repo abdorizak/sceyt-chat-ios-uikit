@@ -641,6 +641,11 @@ public extension Appearance {
                                                      renderingMode: .original))!
         }()
 
+        public static var iconViewOnce: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconViewOnce.image,
+                                                     renderingMode: .original))!
+        }()
+
         public static var iconViewOnceSelected: UIImage = {
             AssetComposer.shared.compose(from: .init(image: Assets.iconViewOnceSelected.image,
                                                      renderingMode: .original))!
@@ -795,6 +800,7 @@ extension UIImage {
 
     public static var refreshIcon: UIImage { Images.refreshIcon }
     public static var addCircleDashed: UIImage { Images.addCircleDashed }
+    public static var iconViewOnce: UIImage { Images.iconViewOnce }
     public static var iconViewOnceSelected: UIImage { Images.iconViewOnceSelected }
     public static var fire: UIImage { Images.fire }
     public static var iconOnceMessages: UIImage { Images.iconOnceMessages }

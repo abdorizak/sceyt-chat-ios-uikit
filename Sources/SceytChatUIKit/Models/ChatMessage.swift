@@ -586,6 +586,7 @@ public extension ChatMessage {
         public static let link = "link"
         public static let system = "system"
         public static let poll = "poll"
+        public static let viewOnce = "view_once"
     }
 
     /// Returns true if this is a system message
@@ -596,6 +597,10 @@ public extension ChatMessage {
     /// Returns true if this is a poll message
     var isPollMessage: Bool {
         return type == MessageType.poll && poll != nil
+    }
+    
+    var isViewOnceMessage: Bool {
+        return type == MessageType.viewOnce
     }
 }
 

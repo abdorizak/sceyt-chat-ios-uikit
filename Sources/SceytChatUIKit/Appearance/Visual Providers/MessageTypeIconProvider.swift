@@ -22,6 +22,14 @@ public struct DefaultMessageTypeIconProvider: MessageTypeIconProviding {
     public init() {}
 
     public func provideVisual(for message: ChatMessage) -> UIImage? {
+        // Check for view_once message type
+        if message.isViewOnceMessage {
+            let viewOnceIcon = UIImage.iconViewOnce
+            let targetSize = CGSize(width: 16, height: 16)
+            let resizedIcon = resizeImage(viewOnceIcon, to: targetSize)
+            return resizedIcon?.withRenderingMode(.alwaysTemplate)
+        }
+
         // Check for poll first
         if message.poll != nil && message.type == "poll" {
             // Resize and recolor poll icon to match attachment icons

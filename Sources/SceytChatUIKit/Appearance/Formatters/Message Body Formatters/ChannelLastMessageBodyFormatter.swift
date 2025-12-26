@@ -42,7 +42,7 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
             var content = message.body.replacingOccurrences(of: "\n", with: " ")
             content = content.trimmingCharacters(in: .whitespacesAndNewlines)
             
-            let text = NSMutableAttributedString(
+            var text = NSMutableAttributedString(
                 attributedString: NSAttributedString(
                     string: content,
                     attributes: [
@@ -168,12 +168,41 @@ open class ChannelLastMessageBodyFormatter: LastMessageBodyFormatting {
                     attributes: [.font: bodyFont]
                 ))
 
-                // If there's text, insert the icon at the beginning
-                if !text.isEmpty {
+                // For view_once messages, replace text with attachment type name
+                if message.isViewOnceMessage {
+                    // Get the attachment type name
+                    var attachmentTypeName = ""
+                    if let attachment = message.attachments?.first {
+                        switch attachment.type {
+                        case "image":
+                            attachmentTypeName = L10n.Attachment.image
+                        case "video":
+                            attachmentTypeName = L10n.Attachment.video
+                        case "file":
+                            attachmentTypeName = L10n.Attachment.file
+                        case "voice":
+                            attachmentTypeName = L10n.Attachment.voice
+                        default:
+                            attachmentTypeName = ""
+                        }
+                    }
+
+                    text = NSMutableAttributedString(
+                        string: attachmentTypeName,
+                        attributes: [
+                            .font: bodyFont,
+                            .foregroundColor: bodyColor
+                        ]
+                    )
                     text.insert(attributedAttachmentMessage, at: 0)
                 } else {
-                    // For poll or attachment-only messages, just show the icon
-                    text.append(attributedAttachmentMessage)
+                    // If there's text, insert the icon at the beginning
+                    if !text.isEmpty {
+                        text.insert(attributedAttachmentMessage, at: 0)
+                    } else {
+                        // For poll or attachment-only messages, just show the icon
+                        text.append(attributedAttachmentMessage)
+                    }
                 }
             }
             if let lastReaction = messageBodyAttributes.lastReaction {
