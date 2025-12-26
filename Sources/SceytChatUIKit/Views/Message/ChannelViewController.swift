@@ -1957,25 +1957,103 @@ open class ChannelViewController: ViewController,
     }
     
     open func copy(layoutModel: MessageLayoutModel) {
-        let attr = layoutModel.attributedView.content
-        let pb = UIPasteboard.general
+        guard !layoutModel.message.body.isEmpty else {
+            UIPasteboard.general.string = ""
+            return
+        }
+        
+        let attributedText = prepareAttributedTextForCopy(from: layoutModel)
+        copyToPasteboard(attributedText, fallbackText: layoutModel.message.body)
+    }
+    
+    /// Prepares attributed text for copying by normalizing colors and removing underlines from URLs
+    /// - Parameter layoutModel: The message layout model containing the content
+    /// - Returns: A mutable attributed string ready for copying
+    private func prepareAttributedTextForCopy(from layoutModel: MessageLayoutModel) -> NSMutableAttributedString {
+        let attr = layoutModel.attributedView.content.mutableCopy() as! NSMutableAttributedString
 
-        // Store custom attributed string with all attributes preserved
-        if let archivedData = try? NSKeyedArchiver.archivedData(withRootObject: attr, requiringSecureCoding: false) {
-            if #available(iOS 14.0, *) {
-                pb.items = [[
-                    "com.sceyt.attributedstring": archivedData,  // Custom type for full attributes
-                    UTType.plainText.identifier: attr.string      // Plain text fallback
-                ]]
-            } else {
-                do {
-                    try UIPasteboard.general.set(layoutModel.attributedView.content)
-                } catch {
-                    UIPasteboard.general.string = layoutModel.message.body
+        // Process links and phone numbers
+        for item in layoutModel.attributedView.items {
+            let range = item.range
+            guard isValidRange(item.range, in: attr.length) else { continue }
+            
+            switch item {
+            case .link(_, let url):
+                if let url = url {
+                    resetLinkTextColor(from: attr, at: item.range)
+                    removeUnderline(from: attr, at: item.range)
                 }
+                
+            case .phone(_, let phoneNumber):
+                if let phoneNumber = phoneNumber, !phoneNumber.isEmpty {
+                    resetLinkTextColor(from: attr, at: item.range)
+                    removeUnderline(from: attr, at: item.range)
+                }
+                break
+            case .mention:
+                break
             }
+        }
+        return attr
+    }
+    
+    /// Validates that a range is within the bounds of the string
+    /// - Parameters:
+    ///   - range: The range to validate
+    ///   - length: The length of the string
+    /// - Returns: True if the range is valid, false otherwise
+    private func isValidRange(_ range: NSRange, in length: Int) -> Bool {
+        return range.location >= 0 &&
+               range.length > 0 &&
+               range.location + range.length <= length
+    }
+    
+    /// Removes underline styling from the specified range in the attributed string
+    /// - Parameters:
+    ///   - attributedString: The attributed string to modify
+    ///   - range: The range where underline should be removed
+    private func removeUnderline(from attributedString: NSMutableAttributedString, at range: NSRange) {
+        if attributedString.attribute(.underlineStyle, at: range.location, effectiveRange: nil) != nil {
+            attributedString.removeAttribute(.underlineStyle, range: range)
+            attributedString.removeAttribute(.underlineColor, range: range)
+        }
+    }
+    
+    /// Resets link styling color from the specified range in the attributed string
+    /// - Parameters:
+    ///   - attributedString: The attributed string to modify
+    ///   - range: The range where link should be reseted
+    private func resetLinkTextColor(from attributedString: NSMutableAttributedString, at range: NSRange) {
+        if attributedString.attribute(.underlineStyle, at: range.location, effectiveRange: nil) != nil {
+            attributedString.removeAttribute(.foregroundColor, range: range)
+            attributedString.addAttribute(.foregroundColor, value: inputTextView.textColor, range: range)
+        }
+    }
+    
+    /// Copies attributed text to the pasteboard with multiple format support
+    /// - Parameters:
+    ///   - attributedText: The attributed text to copy
+    ///   - fallbackText: Plain text fallback if archiving fails
+    private func copyToPasteboard(_ attributedText: NSAttributedString, fallbackText: String) {
+        let pasteboard = UIPasteboard.general
+        
+        guard let archivedData = try? NSKeyedArchiver.archivedData(withRootObject: attributedText, requiringSecureCoding: false) else {
+            pasteboard.string = fallbackText
+            return
+        }
+        
+        if #available(iOS 14.0, *) {
+            var items: [String: Any] = [
+                UTType.plainText.identifier: attributedText.string,
+                "com.sceyt.attributedstring": archivedData
+            ]
+            pasteboard.items = [items]
         } else {
-            pb.string = layoutModel.message.body
+            do {
+                try pasteboard.set(attributedText)
+            } catch {
+                pasteboard.string = fallbackText
+            }
         }
     }
     
