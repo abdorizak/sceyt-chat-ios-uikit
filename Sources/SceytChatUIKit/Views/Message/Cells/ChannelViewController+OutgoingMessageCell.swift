@@ -95,7 +95,7 @@ extension ChannelViewController {
                 bubbleViewTopAnchor = bubbleView.topAnchor
             }
             
-            if layout.contentOptions == .text {
+            if layout.contentOptions == .text || layout.message.hasOpenedMarker {
                 let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
                 let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
@@ -411,7 +411,7 @@ extension ChannelViewController {
             } else {
                 replySize = .zero
             }
-            if model.contentOptions == .text {
+            if model.contentOptions == .text || model.message.hasOpenedMarker {
                 // Use truncated text size if text is not expanded
                 // For deleted messages, always use current textSize regardless of isTextExpanded state
                 let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton

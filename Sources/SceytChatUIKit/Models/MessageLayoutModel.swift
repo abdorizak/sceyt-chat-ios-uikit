@@ -298,6 +298,14 @@ open class MessageLayoutModel {
             textSize = .zero
         }
 
+        if message.hasOpenedMarker {
+            contentOptions.remove(.image)
+            contentOptions.remove(.file)
+            contentOptions.remove(.voice)
+            contentOptions.remove(.link)
+            contentOptions.remove(.poll)
+        }
+        
         if attachments.isEmpty {
             for link in Self.createLinkPreviews(message: message, linkAttachments: linkAttachments) {
                 addLinkPreview(linkMetadata: link)

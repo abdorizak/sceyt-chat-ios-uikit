@@ -600,6 +600,14 @@ open class ChannelViewController: ViewController,
             object: nil
         )
 
+        // Listen for opened marker notification to force reload collection view
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(didReceiveOpenedMarker(_:)),
+            name: .didReceiveOpenedMarker,
+            object: nil
+        )
+
         ApplicationStateObserver()
             .didBecomeActive { [weak self] _ in
                 self?.isAppActive = true
@@ -984,6 +992,23 @@ open class ChannelViewController: ViewController,
             // Reload all data
             self.collectionView.reloadData()
         }
+    }
+
+    @objc
+    open func didReceiveOpenedMarker(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let channelId = userInfo["channelId"] as? ChannelId,
+              let messageIds = userInfo["messageIds"] as? [UInt64],
+              channelId == channelViewModel.channel.id else {
+            return
+        }
+        
+        // TODO: Improve this part
+        self.channelViewModel.invalidateLayout()
+        // Invalidate the collection view layout
+        self.collectionView.collectionViewLayout.invalidateLayout()
+        // Reload all data
+        self.collectionView.reloadData()
     }
 
     //MARK: Gesture actions

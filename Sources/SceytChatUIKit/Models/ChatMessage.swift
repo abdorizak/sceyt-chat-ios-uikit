@@ -609,7 +609,25 @@ public extension ChatMessage {
     }
 
     var hasOpenedMarker: Bool {
-        return markerCount?[DefaultMarker.opened.rawValue] ?? 0 > 0
+        // If it's my message (outgoing)
+        if !incoming {
+            // Check if markerCount > 0 OR if any other user has opened it
+            if markerCount?[DefaultMarker.opened.rawValue] ?? 0 > 0 {
+                return true
+            }
+
+            // Check if userMarkers contains any marker from users OTHER than me
+            return userMarkers?.contains(where: {
+                $0.user?.id != SceytChatUIKit.shared.currentUserId &&
+                $0.name == DefaultMarker.opened.rawValue
+            }) == true
+        } else {
+            // If it's not my message, check if I have opened it
+            return userMarkers?.contains(where: {
+                $0.user?.id == SceytChatUIKit.shared.currentUserId &&
+                $0.name == DefaultMarker.opened.rawValue
+            }) == true
+        }
     }
 }
 

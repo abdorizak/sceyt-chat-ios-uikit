@@ -135,7 +135,7 @@ extension ChannelViewController {
                 ]
             }
             
-            if options == .text {
+            if options == .text || layout.message.hasOpenedMarker {
                 let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
                 let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
@@ -483,7 +483,7 @@ extension ChannelViewController {
                 userNameSize = .zero
             }
             
-            if options == .text {
+            if options == .text || model.message.hasOpenedMarker {
                 // Use truncated text size if text is not expanded
                 // For deleted messages, always use current textSize regardless of isTextExpanded state
                 let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton

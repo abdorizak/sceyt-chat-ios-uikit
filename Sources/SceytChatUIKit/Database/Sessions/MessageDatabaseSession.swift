@@ -595,6 +595,10 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         )
         
         messages.forEach {
+            if $0.userMarkers == nil {
+                $0.userMarkers = .init()
+            }
+
             let markerDTO = MarkerDTO.fetchOrCreate(
                 messageId: MessageId($0.id),
                 name: messageMarkers.name,
@@ -603,6 +607,19 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             )
             markerDTO.createdAt = messageMarkers.createdAt.bridgeDate
             markerDTO.user = UserDTO.fetchOrCreate(id: messageMarkers.user.id, context: self).map(messageMarkers.user)
+
+            // Insert the marker into the message's userMarkers set
+            $0.userMarkers?.insert(markerDTO)
+
+            // Update markerTotal count
+            if $0.markerTotal == nil {
+                $0.markerTotal = .init()
+            }
+            if let currentCount = $0.markerTotal?[messageMarkers.name] {
+                $0.markerTotal![messageMarkers.name] = currentCount + 1
+            } else {
+                $0.markerTotal![messageMarkers.name] = 1
+            }
         }
         return messages
     }
