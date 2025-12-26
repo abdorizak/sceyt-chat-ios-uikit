@@ -77,6 +77,11 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     private var playerLayer: AVPlayerLayer?
     private var player: AVPlayer?
     private var isPreparingToPlay = false
+
+    private var videoOutput: AVPlayerItemVideoOutput?
+    private var displayLink: CADisplayLink?
+    private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    private var videoTransform: CGAffineTransform = .identity
     
     public var backgroundView: UIView? {
         return carouselViewController?.backgroundView
@@ -99,7 +104,11 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
 
     deinit {
         logger.debug("[PreviewerViewController] deinit")
-    
+
+        displayLink?.invalidate()
+        displayLink = nil
+        videoOutput = nil
+
         removeObservers()
         player?.pause()
         player?.currentItem?.cancelPendingSeeks()
@@ -141,6 +150,19 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
             .sink { [weak self] event in
                 self?.onEvent(event)
             }.store(in: &subscriptions)
+
+        // Add app lifecycle observers for displayLink
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil)
     }
     
     override open func setupAppearance() {
@@ -347,6 +369,33 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     
     open func configurePlayer(asset: AVAsset, assetKeys: [String]) {
         let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: assetKeys)
+
+        if viewOnce {
+            // Setup video output for frame extraction (secure rendering)
+            let pixelBufferAttributes: [String: Any] = [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
+            ]
+            videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: pixelBufferAttributes)
+            playerItem.add(videoOutput!)
+
+            // Get video track's preferred transform for correct orientation
+            if let videoTrack = asset.tracks(withMediaType: .video).first {
+                videoTransform = videoTrack.preferredTransform
+            }
+
+            // Don't use AVPlayerLayer for viewOnce - frames will be rendered to playerView.image
+            playerLayer?.removeFromSuperlayer()
+            playerLayer = nil
+        } else {
+            // Standard AVPlayerLayer for non-viewOnce videos
+            playerLayer?.removeFromSuperlayer()
+            playerLayer = AVPlayerLayer(player: player)
+            playerLayer?.videoGravity = .resizeAspect
+            playerView.contentMode = imageContentMode
+            playerView.layer.insertSublayer(playerLayer!, at: 0)
+        }
+
+        // Create or update player
         if let player {
             player.replaceCurrentItem(with: playerItem)
         } else {
@@ -371,7 +420,12 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
                 options: [.old, .new],
                 context: nil)
         }
-        
+
+        // Setup display link for viewOnce frame extraction
+        if viewOnce {
+            setupDisplayLink()
+        }
+
         NotificationCenter.default.removeObserver(self)
         NotificationCenter.default
             .addObserver(
@@ -379,16 +433,64 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
                 selector: #selector(onPlayToEnd),
                 name: NSNotification.Name.AVPlayerItemDidPlayToEndTime,
                 object: playerItem)
-        
-        playerLayer?.removeFromSuperlayer()
-        playerLayer = AVPlayerLayer(player: player)
-        playerLayer?.videoGravity = .resizeAspect
-        playerView.contentMode = imageContentMode
-        playerView.layer.insertSublayer(playerLayer!, at: 0)
+
+        if !viewOnce {
+            playerLayer?.player = player
+        }
         playerView.image = viewModel.previewItem.attachment.originalImage
         durationLabel.text = appearance.durationFormatter.format(player!.currentItem?.duration.seconds ?? 0)
     }
-    
+
+    private func setupDisplayLink() {
+        displayLink?.invalidate()
+        displayLink = CADisplayLink(target: self, selector: #selector(displayLinkDidRefresh))
+        displayLink?.preferredFramesPerSecond = 30 // Limit to 30fps for efficiency
+        displayLink?.add(to: .main, forMode: .common)
+    }
+
+    @objc private func displayLinkDidRefresh(_ link: CADisplayLink) {
+        guard let output = videoOutput,
+              let player = player else { return }
+
+        let currentTime = player.currentTime()
+
+        // Check if new frame is available
+        guard output.hasNewPixelBuffer(forItemTime: currentTime) else { return }
+
+        // Extract and render frame
+        guard let pixelBuffer = output.copyPixelBuffer(
+            forItemTime: currentTime,
+            itemTimeForDisplay: nil
+        ) else { return }
+
+        // Convert to UIImage and display (inside secure container)
+        autoreleasepool {
+            var ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+
+            // Apply video track transform for correct orientation
+            // Note: We use inverted transform because CIImage coordinate system
+            if videoTransform != .identity {
+                ciImage = ciImage.transformed(by: videoTransform.inverted())
+            }
+
+            if let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) {
+                DispatchQueue.main.async { [weak self] in
+                    self?.playerView.image = UIImage(cgImage: cgImage)
+                }
+            }
+        }
+    }
+
+    @objc private func appDidEnterBackground() {
+        displayLink?.isPaused = true
+    }
+
+    @objc private func appWillEnterForeground() {
+        if player?.timeControlStatus == .playing {
+            displayLink?.isPaused = false
+        }
+    }
+
     // MARK: Add Gesture Recognizers
 
     open func addGestureRecognizers() {
