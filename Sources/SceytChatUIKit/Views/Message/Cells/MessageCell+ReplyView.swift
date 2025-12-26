@@ -81,7 +81,7 @@ extension MessageCell {
             stackViewH2.addArrangedSubview(messageLabel)
             stackViewV.addArrangedSubview(stackViewH2)
             stackViewH.setCustomSpacing(8, after: borderView)
-            stackViewH.pin(to: self, anchors: [.leading(0), .trailing(-8), .top(8), .bottom(-8)])
+            stackViewH.pin(to: self, anchors: [.leading(0), .trailing(-8), .top(6), .bottom(-6)])
             borderView.resize(anchors: [.width(2)])
             borderView.heightAnchor.pin(to: self.heightAnchor)
             stackViewV.heightAnchor.pin(to: stackViewH.heightAnchor)

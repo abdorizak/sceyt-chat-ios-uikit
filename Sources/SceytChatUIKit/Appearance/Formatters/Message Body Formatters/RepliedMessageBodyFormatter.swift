@@ -44,7 +44,7 @@ open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
                             attributes[.foregroundColor] = messageBodyAttributes.mentionLabelAppearance.foregroundColor
                             attributes[.font] = messageBodyAttributes.mentionLabelAppearance.font
                             attributes[.mention] = userId
-                            let mention = NSAttributedString(string: SceytChatUIKit.shared.config.mentionTriggerPrefix + messageBodyAttributes.mentionUserNameFormatter.format(user),
+                            let mention = NSAttributedString(string: SceytChatUIKit.shared.config.mentionTriggerPrefix + messageBodyAttributes.replyUserNameFormatter.format(user),
                                                              attributes: attributes)
                             attributedBody.safeReplaceCharacters(in: range, with: mention)
                         }
