@@ -12,22 +12,54 @@ import Photos
 
 extension MessageCell {
     open class AttachmentVideoView: AttachmentView {
-        
+
         open lazy var playButton = UIImageView()
             .withoutAutoresizingMask
-            
+
         open lazy var timeLabel = Components.timeLabel
             .init()
             .withoutAutoresizingMask
-        
+
+        open lazy var blurEffectView: UIVisualEffectView = {
+            let blur = UIBlurEffect(style: .light)
+            let view = UIVisualEffectView(effect: blur)
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.isUserInteractionEnabled = false
+            view.isHidden = true
+            return view
+        }()
+
+        open lazy var fireIconContainerView: UIView = {
+            let view = UIView()
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.backgroundColor = UIColor(hex: "#17191C", alpha: 0x66 / 255.0)
+            view.layer.cornerRadius = 28
+            view.isUserInteractionEnabled = false
+            view.isHidden = true
+            return view
+        }()
+
+        open lazy var fireIconView: UIImageView = {
+            let view = UIImageView()
+            view.translatesAutoresizingMaskIntoConstraints = false
+            view.contentMode = .scaleAspectFit
+            view.image = .fire
+            view.tintColor = .white
+            view.isUserInteractionEnabled = false
+            return view
+        }()
+
         private var progressViewHeightConstraint: NSLayoutConstraint?
         
         
         override open func setupAppearance() {
             super.setupAppearance()
+            imageView.clipsToBounds = true
+            blurEffectView.clipsToBounds = true
+
             progressView.contentInsets = .init(top: 4, left: 4, bottom: 4, right: 4)
             progressView.backgroundColor = .black.withAlphaComponent(0.3)
-            
+
             playButton.image = appearance.videoPlayIcon
             timeLabel.backgroundColor = appearance.overlayColor
             timeLabel.textLabel.font = appearance.videoDurationLabelAppearance.font
@@ -37,12 +69,17 @@ extension MessageCell {
         override open func setupLayout() {
             super.setupLayout()
             addSubview(imageView)
+            addSubview(blurEffectView)
+            addSubview(fireIconContainerView)
+            fireIconContainerView.addSubview(fireIconView)
             addSubview(playButton)
             addSubview(timeLabel)
             addSubview(progressView)
             addSubview(progressLabel)
             addSubview(pauseButton)
+
             imageView.pin(to: self)
+            blurEffectView.pin(to: imageView)
             playButton.pin(to: imageView, anchors: [.centerX(), .centerY()])
             timeLabel.pin(to: imageView, anchors: [.top(8), .leading(8)])
             progressViewHeightConstraint = progressView.heightAnchor.pin(constant: 56)
@@ -54,6 +91,12 @@ extension MessageCell {
             progressLabel.centerXAnchor.pin(to: centerXAnchor)
             progressLabel.topAnchor.pin(to: progressView.bottomAnchor, constant: 4)
             progressLabel.bottomAnchor.pin(lessThanOrEqualTo: bottomAnchor, constant: -2)
+
+            fireIconContainerView.resize(anchors: [.width(56), .height(56)])
+            fireIconContainerView.pin(to: imageView, anchors: [.centerX, .centerY])
+
+            fireIconView.resize(anchors: [.width(32), .height(32)])
+            fireIconView.pin(to: fireIconContainerView, anchors: [.centerX, .centerY])
         }
         
         override open var data: MessageLayoutModel.AttachmentLayout! {
@@ -63,6 +106,13 @@ extension MessageCell {
                 if duration >= 0 {
                     timeLabel.text = SceytChatUIKit.shared.formatters.mediaDurationFormatter.format(duration)
                 }
+
+                // Show/hide blur and fire icon based on viewOnce
+                let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+                blurEffectView.isHidden = !isViewOnce
+                fireIconContainerView.isHidden = !isViewOnce
+                playButton.isHidden = isViewOnce
+
                 if let filePath = data.attachment.filePath,
                    filePath.hasPrefix("/local/"),
                    let asset = PHAsset.fetchAssets(withLocalIdentifiers: [filePath.substring(fromIndex: 7)], options: .none).firstObject {
@@ -113,6 +163,8 @@ extension MessageCell {
         open override func layoutSubviews() {
             super.layoutSubviews()
             progressViewHeightConstraint?.constant = min(56, bounds.height / 2)
+            // Match the blur view's corner radius to the image view
+            blurEffectView.layer.cornerRadius = 16.0
         }
     }
 }
