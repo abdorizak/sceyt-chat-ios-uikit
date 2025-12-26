@@ -16,6 +16,10 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
     
     open var viewModel: PreviewerViewModel!
     open var viewOnce: Bool = false
+    open var messageText: String?
+    private var isMessageTextExpanded: Bool = false
+    private var messageTextViewHeightConstraint: NSLayoutConstraint?
+    private var messageTextContainerBottomConstraint: NSLayoutConstraint?
     
     var targetView: UIImageView {
         if !scrollView.isHidden {
@@ -62,6 +66,31 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         let slider = PreviewerSlider()
         slider.thumbPadding = appearance.thumbPadding
         return slider
+    }()
+
+    open lazy var messageTextView: UITextView = {
+        let textView = UITextView()
+        textView.isEditable = false
+        textView.isSelectable = false
+        textView.isScrollEnabled = false
+        textView.textAlignment = .center
+        textView.backgroundColor = .clear
+        textView.textContainerInset = UIEdgeInsets(top: 8, left: 20, bottom: 8, right: 20)
+        textView.textContainer.lineFragmentPadding = 0
+        textView.textContainer.lineBreakMode = .byTruncatingTail
+        textView.textContainer.maximumNumberOfLines = 3
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.isUserInteractionEnabled = false
+        textView.showsVerticalScrollIndicator = true
+        textView.showsHorizontalScrollIndicator = false
+        return textView
+    }()
+
+    open lazy var messageTextContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        return view
     }()
     
     public private(set) var isSliderDragging = false {
@@ -183,8 +212,12 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         
         durationLabel.font = appearance.timelineLabelAppearance.font
         durationLabel.textColor = appearance.timelineLabelAppearance.foregroundColor
-        
+
         playPauseButton.setImage(appearance.playIcon, for: [])
+
+        messageTextView.font = appearance.timelineLabelAppearance.font
+        messageTextView.textColor = .white
+        messageTextView.text = messageText
     }
     
     lazy var screenShotProtectedScrollView = ScreenshotProtectController(content: self.containerView)
@@ -224,7 +257,36 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         
         contentView.addSubview(scrollView)
         scrollView.pin(to: contentView)
-        
+
+        // Add message text view for view-once messages
+        if viewOnce, let text = messageText, !text.isEmpty {
+            contentView.addSubview(messageTextContainerView)
+            messageTextContainerView.addSubview(messageTextView)
+
+            // Add tap gesture to container for collapsing/expanding
+            let containerTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleMessageTextExpansion))
+            messageTextContainerView.addGestureRecognizer(containerTapGesture)
+
+            // Create height constraint with max 70 for collapsed state
+            messageTextViewHeightConstraint = messageTextView.heightAnchor.constraint(lessThanOrEqualToConstant: 70)
+            messageTextViewHeightConstraint?.isActive = true
+
+            // Create bottom constraint (will be updated based on content type)
+            messageTextContainerBottomConstraint = messageTextContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+
+            NSLayoutConstraint.activate([
+                messageTextContainerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                messageTextContainerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                messageTextContainerView.topAnchor.constraint(greaterThanOrEqualTo: contentView.safeAreaLayoutGuide.topAnchor, constant: 8),
+                messageTextContainerBottomConstraint!,
+
+                messageTextView.leadingAnchor.constraint(equalTo: messageTextContainerView.leadingAnchor, constant: 0),
+                messageTextView.trailingAnchor.constraint(equalTo: messageTextContainerView.trailingAnchor, constant: 0),
+                messageTextView.topAnchor.constraint(equalTo: messageTextContainerView.topAnchor, constant: 0),
+                messageTextView.bottomAnchor.constraint(equalTo: messageTextContainerView.bottomAnchor, constant: -30)
+            ])
+        }
+
     }
     
     override open func setupDone() {
@@ -341,7 +403,8 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
                 scrollView.isHidden = true
                 playerView.isHidden = false
                 playerControlContainerView.isHidden = false
-                
+                updateMessageTextConstraintForVideo()
+
                 let asset = AVAsset(url: fileUrl)
                 
                 let assetKeys = ["playable", "duration"]
@@ -359,6 +422,7 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
                 scrollView.isHidden = false
                 playerView.isHidden = true
                 playerControlContainerView.isHidden = true
+                updateMessageTextConstraintForImage()
                 imageView.image = attachment.originalImage
                 imageView.setNeedsLayout()
                 scrollView.setNeedsLayout()
@@ -366,7 +430,35 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
             }
         }
     }
-    
+
+    private func updateMessageTextConstraintForVideo() {
+        guard viewOnce, messageText != nil, !messageText!.isEmpty,
+              let bottomConstraint = messageTextContainerBottomConstraint else { return }
+
+        let contentView: UIView = viewOnce ? self.containerView : self.view
+
+        // Deactivate current constraint
+        bottomConstraint.isActive = false
+
+        // Create new constraint to position above player controls
+        messageTextContainerBottomConstraint = messageTextContainerView.bottomAnchor.constraint(equalTo: playerControlContainerView.topAnchor)
+        messageTextContainerBottomConstraint?.isActive = true
+    }
+
+    private func updateMessageTextConstraintForImage() {
+        guard viewOnce, messageText != nil, !messageText!.isEmpty,
+              let bottomConstraint = messageTextContainerBottomConstraint else { return }
+
+        let contentView: UIView = viewOnce ? self.containerView : self.view
+
+        // Deactivate current constraint
+        bottomConstraint.isActive = false
+
+        // Create new constraint to position at bottom of content view
+        messageTextContainerBottomConstraint = messageTextContainerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+        messageTextContainerBottomConstraint?.isActive = true
+    }
+
     open func configurePlayer(asset: AVAsset, assetKeys: [String]) {
         let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: assetKeys)
 
@@ -571,6 +663,50 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         } else {
             player?.pause()
         }
+    }
+
+    @objc
+    private func toggleMessageTextExpansion() {
+        isMessageTextExpanded.toggle()
+
+        if isMessageTextExpanded {
+            // Expand: remove the height constraint and line limit to show full content
+            messageTextViewHeightConstraint?.isActive = false
+            messageTextView.textContainer.maximumNumberOfLines = 0
+            messageTextView.isUserInteractionEnabled = true
+            // Keep scrolling disabled so the text view auto-sizes to its content
+            // The top constraint will limit maximum height
+            messageTextView.isScrollEnabled = false
+        } else {
+            // Collapse: re-apply the max height constraint and line limit with ellipsis
+            messageTextViewHeightConstraint?.isActive = true
+            messageTextView.textContainer.maximumNumberOfLines = 3
+            messageTextView.isUserInteractionEnabled = false
+            messageTextView.isScrollEnabled = false
+        }
+
+        // Force the text view to recalculate its size
+        messageTextView.invalidateIntrinsicContentSize()
+        let textLength = messageTextView.text?.count ?? 0
+        if textLength > 0 {
+            messageTextView.layoutManager.invalidateLayout(forCharacterRange: NSRange(location: 0, length: textLength), actualCharacterRange: nil)
+            messageTextView.layoutManager.ensureLayout(for: messageTextView.textContainer)
+        }
+
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5, options: .curveEaseInOut, animations: {
+            self.view.layoutIfNeeded()
+        }, completion: { _ in
+            // After expansion animation completes, check if content exceeds available space
+            if self.isMessageTextExpanded {
+                let contentHeight = self.messageTextView.contentSize.height
+                let frameHeight = self.messageTextView.frame.height
+
+                // If content is larger than the frame (constrained by top anchor), enable scrolling
+                if contentHeight > frameHeight {
+                    self.messageTextView.isScrollEnabled = true
+                }
+            }
+        })
     }
     
     override open func observeValue(

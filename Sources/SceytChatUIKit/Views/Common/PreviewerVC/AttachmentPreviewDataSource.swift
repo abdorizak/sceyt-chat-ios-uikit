@@ -30,6 +30,34 @@ public protocol PreviewDataSourceItemObservable: AnyObject {
     func didUpdate(previewItem: PreviewItem)
 }
 
+open class SingleItemPreviewDataSource: PreviewDataSource {
+    private let item: PreviewItem
+    public weak var delegate: AttachmentPreviewDataSourceDelegate?
+
+    public init(item: PreviewItem) {
+        self.item = item
+    }
+
+    public var numberOfImages: Int { 1 }
+    public var isLoading: Bool { false }
+
+    public func previewItem(at index: Int) -> PreviewItem? {
+        index == 0 ? item : nil
+    }
+
+    public func indexOfItem(_ item: PreviewItem) -> Int? {
+        item == self.item ? 0 : nil
+    }
+
+    public func canShowPreviewer() -> Bool {
+        delegate?.canShowPreviewer() ?? true
+    }
+
+    public func setOnLoading(_ callback: @escaping (Bool) -> Void) {}
+    public func setOnReload(_ callback: @escaping () -> Void) {}
+    public func observe(_ observable: PreviewDataSourceItemObservable) {}
+}
+
 open class AttachmentPreviewDataSource: PreviewDataSource {
     
     private var ascending: Bool

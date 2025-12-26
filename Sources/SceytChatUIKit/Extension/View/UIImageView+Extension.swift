@@ -15,6 +15,7 @@ extension UIImageView {
         var previewer: (() -> PreviewDataSource?)?
         var item: PreviewItem?
         var viewOnce: Bool = false
+        var messageText: String?
     }
     
     private var viewController: UIViewController? {
@@ -27,7 +28,8 @@ extension UIImageView {
         previewer: (() -> AttachmentPreviewDataSource?)?,
         item: PreviewItem?,
         from: UIViewController? = nil,
-        viewOnce: Bool = false) {
+        viewOnce: Bool = false,
+        messageText: String? = nil) {
         var _tapRecognizer: TapWithDataRecognizer? = gestureRecognizers?.first(where: { $0 is TapWithDataRecognizer }) as? TapWithDataRecognizer
 
         isUserInteractionEnabled = true
@@ -44,26 +46,35 @@ extension UIImageView {
         _tapRecognizer!.item = item
         _tapRecognizer!.from = from
         _tapRecognizer!.viewOnce = viewOnce
+        _tapRecognizer!.messageText = messageText
         addGestureRecognizer(_tapRecognizer!)
     }
     
     @objc
     private func showImageViewer(_ sender: TapWithDataRecognizer) {
-        guard
-            let previewer = sender.previewer?(),
-            previewer.canShowPreviewer(),
-            let sourceView = sender.view as? UIImageView
-        else { return }
-        var initialIndex = 0
-        if let item = sender.item,
-           let idx = previewer.indexOfItem(item) {
-            initialIndex = idx
+        guard let sourceView = sender.view as? UIImageView else { return }
+
+        // For view-once messages, create a single-item previewer with just the pressed item
+        let finalPreviewer: PreviewDataSource
+        let initialIndex: Int
+
+        if sender.viewOnce, let item = sender.item {
+            finalPreviewer = SingleItemPreviewDataSource(item: item)
+            initialIndex = 0
+        } else {
+            guard let previewer = sender.previewer?(),
+                  previewer.canShowPreviewer()
+            else { return }
+            finalPreviewer = previewer
+            initialIndex = sender.item.flatMap { previewer.indexOfItem($0) } ?? 0
         }
+
         let imageCarousel = Components.mediaPreviewerCarouselViewController.init(
                 sourceView: sourceView,
-                previewDataSource: previewer,
+                previewDataSource: finalPreviewer,
                 initialIndex: initialIndex,
-                viewOnce: sender.viewOnce)
+                viewOnce: sender.viewOnce,
+                messageText: sender.messageText)
         UIApplication.shared.sendAction(#selector(resignFirstResponder), to: nil, from: nil, for: nil)
         let presentFromViewController = sender.from ?? viewController
         presentFromViewController?.present(Components.mediaPreviewerNavigationController.init(imageCarousel), animated: true)

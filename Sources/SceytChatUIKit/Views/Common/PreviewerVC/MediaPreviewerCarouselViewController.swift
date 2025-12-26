@@ -31,9 +31,10 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
     }
     
     public var previewDataSource: PreviewDataSource?
-    
+
     private let initialIndex: Int
     public var viewOnce: Bool = false
+    public var messageText: String?
     
     private var screenshotObserver: NSObjectProtocol?
     private lazy var blurEffectView: UIVisualEffectView = {
@@ -64,13 +65,15 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         subtitle: String? = nil,
         previewDataSource: PreviewDataSource,
         initialIndex: Int = 0,
-        viewOnce: Bool = false)
+        viewOnce: Bool = false,
+        messageText: String? = nil)
     {
         self.initialSourceView = sourceView
         self.sourceFrameRelativeToWindow = sourceView.frameRelativeToWindow()
         self.initialIndex = initialIndex
         self.previewDataSource = previewDataSource
         self.viewOnce = viewOnce
+        self.messageText = messageText
         let pageOptions = [UIPageViewController.OptionsKey.interPageSpacing: 20]
 
         super.init(
@@ -135,15 +138,15 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
 
     open func setupAppearance() {
         view.setNeedsDisplay()
-        
+
         view.backgroundColor = appearance.backgroundColor
-        
+
         backgroundView.backgroundColor = appearance.backgroundColor
         backgroundView.alpha = 1
-        
+
         titleLabel.font = appearance.titleLabelAppearance.font
         titleLabel.textColor = appearance.titleLabelAppearance.foregroundColor
-        
+
         subtitleLabel.font = appearance.subtitleLabelAppearance.font
         subtitleLabel.textColor = appearance.subtitleLabelAppearance.foregroundColor
     }
@@ -154,6 +157,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         {
             let initialViewController = Components.mediaPreviewerViewController.init()
             initialViewController.viewOnce = self.viewOnce
+            initialViewController.messageText = self.messageText
             initialViewController.imageContentMode = imageContentMode
             initialViewController.viewModel = Components.previewerViewModel
                 .init(
@@ -307,6 +311,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         else { return nil }
         let viewController = Components.mediaPreviewerViewController.init()
         viewController.viewOnce = self.viewOnce
+        viewController.messageText = self.messageText
         viewController.viewModel = Components.previewerViewModel
             .init(
                 index: index,
