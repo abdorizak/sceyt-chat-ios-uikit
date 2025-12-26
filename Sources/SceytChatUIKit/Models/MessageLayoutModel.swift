@@ -1401,7 +1401,11 @@ extension MessageLayoutModel {
                 self.byMe = byMe
                 self.thumbnailSize = thumbnailSize
                 self.appearance = appearance
-                if let attachment = message.attachments?.first {
+
+                // Don't show attachment for view_once messages
+                if message.isViewOnceMessage {
+                    self.attachment = nil
+                } else if let attachment = message.attachments?.first {
                     self.attachment = .init(
                         attachment: attachment,
                         ownerMessage: message,
@@ -1409,19 +1413,46 @@ extension MessageLayoutModel {
                         thumbnailSize: thumbnailSize ?? Components.messageCellReplyView.Measure.imageSize,
                         appearance: appearance)
                 }
-                self.attributedBody = appearance.replyMessageAppearance.messageBodyFormatter.format(
-                    .init(
-                        message: message,
-                        deletedStateText: appearance.deletedStateText,
-                        bodyLabelAppearance: appearance.replyMessageAppearance.subtitleLabelAppearance,
-                        mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
-                        attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
-                        deletedLabelAppearance: appearance.replyMessageAppearance.deletedLabelAppearance,
-                        attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
-                        attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
-                        mentionUserNameFormatter: appearance.mentionUserNameFormatter
+
+                // Show custom text for view_once messages
+                if message.isViewOnceMessage {
+                    let attachmentType = message.attachments?.first?.type ?? "image"
+                    let attachmentName: String
+                    switch attachmentType {
+                    case "video":
+                        attachmentName = L10n.Attachment.video
+                    case "image":
+                        attachmentName = L10n.Attachment.image
+                    case "voice":
+                        attachmentName = L10n.Attachment.voice
+                    case "file":
+                        attachmentName = L10n.Attachment.file
+                    default:
+                        attachmentName = L10n.Attachment.image
+                    }
+                    let viewOnceText = L10n.ViewOnce.selfDestructedAttachment(attachmentName)
+                    self.attributedBody = NSAttributedString(
+                        string: viewOnceText,
+                        attributes: [
+                            .font: appearance.replyMessageAppearance.subtitleLabelAppearance.font as Any,
+                            .foregroundColor: appearance.replyMessageAppearance.subtitleLabelAppearance.foregroundColor as Any
+                        ]
                     )
-                )
+                } else {
+                    self.attributedBody = appearance.replyMessageAppearance.messageBodyFormatter.format(
+                        .init(
+                            message: message,
+                            deletedStateText: appearance.deletedStateText,
+                            bodyLabelAppearance: appearance.replyMessageAppearance.subtitleLabelAppearance,
+                            mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
+                            attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
+                            deletedLabelAppearance: appearance.replyMessageAppearance.deletedLabelAppearance,
+                            attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
+                            attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
+                            mentionUserNameFormatter: appearance.mentionUserNameFormatter
+                        )
+                    )
+                }
                 icon = makeIcon()
             }
         

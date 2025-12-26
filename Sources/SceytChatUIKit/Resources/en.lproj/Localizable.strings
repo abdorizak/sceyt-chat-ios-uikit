@@ -412,3 +412,4 @@
 "viewOnce.screenshot.alert.title" = "Screenshot Blocked";
 "viewOnce.screenshot.alert.message" = "Screen capture has been restricted to ensure user privacy.";
 "viewOnce.selfDestructed" = "Message self-destructed";
+"viewOnce.selfDestructedAttachment" = "Self-destructed %@";

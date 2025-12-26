@@ -820,7 +820,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         let title = appearance.replyMessageAppearance.senderNameFormatter.format(message.user)
         var image: UIImage?
         var showPlayIcon = false
-        if let attachment = message.attachments?.first {
+
+        // Don't show thumbnails for view_once messages
+        if message.isViewOnceMessage {
+            image = nil
+        } else if let attachment = message.attachments?.first {
             switch attachment.type {
             case "image":
                 image = attachment.thumbnailImage
@@ -853,18 +857,44 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                     .foregroundColor: appearance.replyMessageAppearance.senderNameLabelAppearance.foregroundColor
                 ]))
         actionView.titleLabel.attributedText = titleAttributedString
-        
-        actionView.messageLabel.attributedText = appearance.replyMessageAppearance.messageBodyFormatter.format(
-            .init(
-                message: message,
-                bodyLabelAppearance: appearance.replyMessageAppearance.bodyLabelAppearance,
-                mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
-                attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
-                attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
-                attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
-                mentionUserNameFormatter: appearance.replyMessageAppearance.mentionUserNameFormatter
+
+        // Show custom text for view_once messages
+        if message.isViewOnceMessage {
+            let attachmentType = message.attachments?.first?.type ?? "image"
+            let attachmentName: String
+            switch attachmentType {
+            case "video":
+                attachmentName = L10n.Attachment.video
+            case "image":
+                attachmentName = L10n.Attachment.image
+            case "voice":
+                attachmentName = L10n.Attachment.voice
+            case "file":
+                attachmentName = L10n.Attachment.file
+            default:
+                attachmentName = L10n.Attachment.image
+            }
+            let viewOnceText = L10n.ViewOnce.selfDestructedAttachment(attachmentName)
+            actionView.messageLabel.attributedText = NSAttributedString(
+                string: viewOnceText,
+                attributes: [
+                    .font: appearance.replyMessageAppearance.bodyLabelAppearance.font,
+                    .foregroundColor: appearance.replyMessageAppearance.bodyLabelAppearance.foregroundColor
+                ]
             )
-        )
+        } else {
+            actionView.messageLabel.attributedText = appearance.replyMessageAppearance.messageBodyFormatter.format(
+                .init(
+                    message: message,
+                    bodyLabelAppearance: appearance.replyMessageAppearance.bodyLabelAppearance,
+                    mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
+                    attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
+                    attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
+                    attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
+                    mentionUserNameFormatter: appearance.replyMessageAppearance.mentionUserNameFormatter
+                )
+            )
+        }
 
         actionView.backgroundColor = appearance.replyMessageAppearance.backgroundColor
         actionView.isHidden = false
