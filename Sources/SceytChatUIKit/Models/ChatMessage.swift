@@ -607,5 +607,9 @@ public extension ChatMessage {
     var isViewOnceMessage: Bool {
         return type == MessageType.viewOnce
     }
+
+    var hasOpenedMarker: Bool {
+        return markerCount?[DefaultMarker.opened.rawValue] ?? 0 > 0
+    }
 }
 

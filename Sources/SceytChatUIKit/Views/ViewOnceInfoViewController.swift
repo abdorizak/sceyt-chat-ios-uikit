@@ -93,7 +93,7 @@ open class ViewOnceInfoViewController: ViewController {
 
         let horizontalPadding: CGFloat = 24
         let bottomPadding: CGFloat = 16
-        let topPadding: CGFloat = 75
+        let topPadding: CGFloat = 50
 
         // Scroll view constraints
         scrollView.pin(to: view.safeAreaLayoutGuide, anchors: [.leading, .trailing, .top])

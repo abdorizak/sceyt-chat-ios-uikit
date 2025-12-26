@@ -411,3 +411,4 @@
 "viewOnce.info.description" = "Any photo, video, or voice message you send will disappear from the chat after it's been opened.\nTo keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.";
 "viewOnce.screenshot.alert.title" = "Screenshot Blocked";
 "viewOnce.screenshot.alert.message" = "Screen capture has been restricted to ensure user privacy.";
+"viewOnce.selfDestructed" = "Message self-destructed";

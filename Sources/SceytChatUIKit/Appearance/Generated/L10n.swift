@@ -1035,6 +1035,8 @@ public enum L10n {
     }
   }
   public enum ViewOnce {
+    /// Message self-destructed
+    public static let selfDestructed = L10n.tr("Localizable", "viewOnce.selfDestructed", fallback: "Message self-destructed")
     public enum Info {
       /// Any photo, video, or voice message you send will disappear from the chat after it's been opened.
       /// To keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.

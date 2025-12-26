@@ -244,8 +244,8 @@ open class MessageLayoutModel {
             contentOptions.insert(.name)
         }
 
-        // Hide text for viewOnce messages
-        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 {
+        // Hide text for viewOnce messages, but NOT if message has been opened (we want to show "Message self-destructed")
+        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 && !message.hasOpenedMarker {
             contentOptions.remove(.text)
             textSize = .zero
         }
@@ -420,6 +420,7 @@ open class MessageLayoutModel {
             self.message.body != message.body ||
             self.message.state != message.state ||
             self.message.bodyAttributes != message.bodyAttributes ||
+            self.message.hasOpenedMarker != message.hasOpenedMarker ||
             !isEqualMentionedUsers {
             attributedView = Self.attributedView(
                 message: message,
@@ -483,8 +484,8 @@ open class MessageLayoutModel {
             contentOptions.insert(.name)
         }
 
-        // Hide text for viewOnce messages
-        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 {
+        // Hide text for viewOnce messages, but NOT if message has been opened (we want to show "Message self-destructed")
+        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 && !message.hasOpenedMarker {
             contentOptions.remove(.text)
             textSize = .zero
         }
@@ -706,7 +707,12 @@ open class MessageLayoutModel {
     }
     
     open class func attachmentLayout(message: ChatMessage, channel: ChatChannel, appearance: MessageCell.Appearance) -> [AttachmentLayout] {
-        (message.attachments?.compactMap {
+        // Hide attachments if message has opened marker
+        if message.hasOpenedMarker {
+            return []
+        }
+
+        return (message.attachments?.compactMap {
             logger.verbose("[Attachment] attachmentLayout attachment \($0.description)")
             let layout = Components.messageAttachmentLayoutModel.init(attachment: $0, ownerMessage: message, ownerChannel: channel, appearance: appearance)
             return layout.type == .link ? nil : layout
@@ -719,7 +725,12 @@ open class MessageLayoutModel {
     }
     
     open class func linkAttachmentLayout(message: ChatMessage, channel: ChatChannel, appearance: MessageCell.Appearance) -> [AttachmentLayout] {
-        (message.attachments?.compactMap {
+        // Hide link attachments if message has opened marker
+        if message.hasOpenedMarker {
+            return []
+        }
+
+        return (message.attachments?.compactMap {
             logger.verbose("[Attachment] attachmentLayout attachment \($0.description)")
             let layout = Components.messageAttachmentLayoutModel.init(attachment: $0, ownerMessage: message, ownerChannel: channel, appearance: appearance)
             return layout.type != .link || $0.imageDecodedMetadata?.hideLinkDetails == true ? nil : layout
@@ -727,6 +738,13 @@ open class MessageLayoutModel {
     }
     
     open func updateAttachmentLayouts(message: ChatMessage) {
+        // Hide attachments if message has opened marker
+        if message.hasOpenedMarker {
+            attachments = []
+            linkAttachments = []
+            return
+        }
+
         attachments =
         (message.attachments?.compactMap { attachment in
             logger.verbose("[Attachment] attachmentLayout update attachment \(attachment.description)")
@@ -742,7 +760,7 @@ open class MessageLayoutModel {
             let rd = rh.type == .image || rh.type == .video ? 0 : 1
             return ld < rd
         }
-        
+
         linkAttachments =
         (message.attachments?.compactMap { attachment in
             logger.verbose("[Attachment] link attachmentLayout update attachment \(attachment.description)")
