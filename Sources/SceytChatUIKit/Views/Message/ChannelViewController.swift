@@ -1516,6 +1516,8 @@ open class ChannelViewController: ViewController,
                 self.router.playFrom(url: url)
             case .playedAudio(_):
                 self.channelViewModel.markMessages([model.message], as: .played)
+            case .openedViewOnce(_):
+                self.channelViewModel.markMessages([model.message], as: .opened)
             case .didTapLink(let link):
                 self.showLink(link)
             case .didLongPressLink(let link):
@@ -1545,7 +1547,7 @@ open class ChannelViewController: ViewController,
             case .didTapPollOption(let optionIndex, let pollViewModel):
                 self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
             case .didTapReadMore:
-                
+
                 self.channelViewModel.invalidateLayout()
                 // Invalidate the collection view layout
                 self.collectionView.collectionViewLayout.invalidateLayout()

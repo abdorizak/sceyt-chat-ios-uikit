@@ -130,6 +130,8 @@ open class MessageCell: CollectionViewCell,
                 onAction?(.playAtUrl(url))
             case .playedAudio(let url):
                 onAction?(.playedAudio(url))
+            case .openedViewOnce(let attachment):
+                onAction?(.openedViewOnce(attachment))
             }
         }
         
@@ -187,6 +189,12 @@ open class MessageCell: CollectionViewCell,
             self,
             selector: #selector(didUpdateMessagePoll(_:)),
             name: .didUpdateMessagePoll,
+            object: nil
+        )
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(didOpenViewOnceMessage(_:)),
+            name: .didOpenViewOnceMessage,
             object: nil
         )
 
@@ -491,7 +499,7 @@ open class MessageCell: CollectionViewCell,
         guard data.hasPoll else {
             return
         }
- 
+
         guard let data,
               let userInfo = notification.userInfo,
               let pollUIModel = userInfo["pollUIModel"] as? PollViewModel,
@@ -504,6 +512,18 @@ open class MessageCell: CollectionViewCell,
         // Update actionButtonView state
         let hasNoVotes = pollUIModel.totalVotes == 0
         bottomActionView.isEnabled = !hasNoVotes
+    }
+
+    @objc
+    func didOpenViewOnceMessage(_ notification: Notification) {
+        guard let data,
+              let userInfo = notification.userInfo,
+              let messageId = userInfo["messageId"] as? MessageId,
+              data.message.id == messageId,
+              let attachment = data.message.attachments?.first
+        else { return }
+
+        onAction?(.openedViewOnce(attachment))
     }
 
     // MARK: Actions
@@ -790,6 +810,7 @@ public extension MessageCell {
         case openUrl(URL)
         case playAtUrl(URL)
         case playedAudio(URL)
+        case openedViewOnce(ChatMessage.Attachment)
         case didTapLink(URL)
         case didLongPressLink(URL)
         case didTapPhoneNumber(String)

@@ -207,5 +207,6 @@ public extension MessageCell.AttachmentStackView {
         case resumeTransfer(ChatMessage, ChatMessage.Attachment)
         case play(URL)
         case playedAudio(URL)
+        case openedViewOnce(ChatMessage.Attachment)
     }
 }

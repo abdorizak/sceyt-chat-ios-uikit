@@ -531,6 +531,11 @@ public extension ChatMessage {
             .transient(transient)
             .displayCount(displayCount)
             .silent(silent)
+
+        if viewOnce {
+            b.viewOnce(true)
+        }
+
         if let metadata {
             b.metadata(metadata)
         }

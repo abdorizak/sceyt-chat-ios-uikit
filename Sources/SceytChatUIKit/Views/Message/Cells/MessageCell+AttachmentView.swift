@@ -62,7 +62,7 @@ extension MessageCell {
             imageView.setup(
                 previewer: previewer,
                 item: PreviewItem.attachment(data.attachment),
-                viewOnce: data.ownerMessage?.viewOnce ?? false
+                viewOnce: data.ownerMessage?.isViewOnceMessage ?? false
             )
         }
         

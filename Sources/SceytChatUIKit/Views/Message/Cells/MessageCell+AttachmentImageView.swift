@@ -88,9 +88,13 @@ extension MessageCell {
                 imageView.image = data.thumbnail
 
                 // Show/hide blur and fire icon based on viewOnce
-                let isViewOnce = data.ownerMessage?.viewOnce ?? false
+                let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
                 blurEffectView.isHidden = !isViewOnce
                 fireIconContainerView.isHidden = !isViewOnce
+                
+                if data.ownerMessage?.id == 763885519683002368 {
+                    print("data.ownerMessage?.id")
+                }
 
                 data.onLoadThumbnail = { [weak self] thumbnail in
                     guard let self else {

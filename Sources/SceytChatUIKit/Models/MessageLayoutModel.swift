@@ -245,7 +245,7 @@ open class MessageLayoutModel {
         }
 
         // Hide text for viewOnce messages
-        if message.viewOnce && (message.attachments?.count ?? 0) == 1 {
+        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 {
             contentOptions.remove(.text)
             textSize = .zero
         }
@@ -484,7 +484,7 @@ open class MessageLayoutModel {
         }
 
         // Hide text for viewOnce messages
-        if message.viewOnce && (message.attachments?.count ?? 0) == 1 {
+        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 {
             contentOptions.remove(.text)
             textSize = .zero
         }

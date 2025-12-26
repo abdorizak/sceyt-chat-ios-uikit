@@ -306,6 +306,7 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         guard let previewItem = previewDataSource?.previewItem(at: index)
         else { return nil }
         let viewController = Components.mediaPreviewerViewController.init()
+        viewController.viewOnce = self.viewOnce
         viewController.viewModel = Components.previewerViewModel
             .init(
                 index: index,

@@ -237,6 +237,16 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         }
         carouselViewController?.titleLabel.text = title
         carouselViewController?.subtitleLabel.text = appearance.mediaDateFormatter.format(viewModel.previewItem.attachment.createdAt)
+
+        // Post notification for view_once messages
+        if viewOnce {
+            let messageId = viewModel.previewItem.attachment.messageId
+            NotificationCenter.default.post(
+                name: .didOpenViewOnceMessage,
+                object: nil,
+                userInfo: ["messageId": messageId]
+            )
+        }
     }
     
     override open func viewWillDisappear(_ animated: Bool) {
