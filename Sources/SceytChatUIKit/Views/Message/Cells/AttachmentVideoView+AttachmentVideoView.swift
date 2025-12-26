@@ -138,6 +138,12 @@ extension MessageCell {
             else { return }
             if progress > 0, progress < 1 {
                 playButton.isHidden = true
+
+                // Hide viewOnce blur and fire icon during upload/download to avoid double blur
+                let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+                if isViewOnce {
+                    fireIconContainerView.isHidden = true
+                }
             }
             super.setProgress(progress)
         }
@@ -158,6 +164,10 @@ extension MessageCell {
         open override func didHideProgressView() {
             super.didHideProgressView()
             playButton.isHidden = false
+
+            // Show viewOnce blur and fire icon again after upload/download completes
+            let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+            fireIconContainerView.isHidden = !isViewOnce
         }
         
         open override func layoutSubviews() {

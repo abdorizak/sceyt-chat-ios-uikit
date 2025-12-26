@@ -91,10 +91,6 @@ extension MessageCell {
                 let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
                 blurEffectView.isHidden = !isViewOnce
                 fireIconContainerView.isHidden = !isViewOnce
-                
-                if data.ownerMessage?.id == 763885519683002368 {
-                    print("data.ownerMessage?.id")
-                }
 
                 data.onLoadThumbnail = { [weak self] thumbnail in
                     guard let self else {
@@ -104,6 +100,28 @@ extension MessageCell {
                     self.imageView.image = data.attachment.thumbnailImage ?? thumbnail
                 }
             }
+        }
+
+        override open func setProgress(_ progress: CGFloat) {
+            guard progressView.progress != progress
+            else { return }
+
+            // Hide viewOnce blur and fire icon during upload/download to avoid double blur
+            if progress > 0, progress < 1 {
+                let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+                if isViewOnce {
+                    fireIconContainerView.isHidden = true
+                }
+            }
+            super.setProgress(progress)
+        }
+
+        override open func didHideProgressView() {
+            super.didHideProgressView()
+
+            // Show viewOnce blur and fire icon again after upload/download completes
+            let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+            fireIconContainerView.isHidden = !isViewOnce
         }
     }
 }
