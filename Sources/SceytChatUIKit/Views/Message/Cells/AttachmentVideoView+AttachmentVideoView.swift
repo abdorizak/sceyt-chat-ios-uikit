@@ -150,6 +150,9 @@ extension MessageCell {
         
         open override func willHideProgressView() {
             super.willHideProgressView()
+            let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+            guard !isViewOnce else { return }
+
             UIView.performWithoutAnimation {
                 playButton.transform = .init(scaleX: 0.01, y: 0.01)
                 playButton.isHidden = false
@@ -163,10 +166,10 @@ extension MessageCell {
         
         open override func didHideProgressView() {
             super.didHideProgressView()
-            playButton.isHidden = false
 
             // Show viewOnce blur and fire icon again after upload/download completes
             let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+            playButton.isHidden = isViewOnce
             fireIconContainerView.isHidden = !isViewOnce
         }
         
