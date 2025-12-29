@@ -1416,7 +1416,7 @@ extension MessageLayoutModel {
 
                 // Show custom text for view_once messages
                 if message.isViewOnceMessage {
-                    let attachmentType = message.attachments?.first?.type ?? "image"
+                    let attachmentType = message.attachments?.first?.type
                     let attachmentName: String
                     switch attachmentType {
                     case "video":
@@ -1428,16 +1428,29 @@ extension MessageLayoutModel {
                     case "file":
                         attachmentName = L10n.Attachment.file
                     default:
-                        attachmentName = L10n.Attachment.image
+                        attachmentName = ""
                     }
-                    let viewOnceText = L10n.ViewOnce.selfDestructedAttachment(attachmentName)
-                    self.attributedBody = NSAttributedString(
-                        string: viewOnceText,
+                    let font = appearance.replyMessageAppearance.subtitleLabelAppearance.font
+                    let color = appearance.replyMessageAppearance.subtitleLabelAppearance.foregroundColor
+
+                    let text = NSMutableAttributedString(
+                        string: attachmentName,
                         attributes: [
-                            .font: appearance.replyMessageAppearance.subtitleLabelAppearance.font as Any,
-                            .foregroundColor: appearance.replyMessageAppearance.subtitleLabelAppearance.foregroundColor as Any
+                            .font: font as Any,
+                            .foregroundColor: color as Any
                         ]
                     )
+
+                    // Add addCircleDashed icon at the beginning
+                    let tintedIcon = Images.addCircleDashed.withTintColor(color, renderingMode: .alwaysTemplate)
+                    let attachment = NSTextAttachment()
+                    attachment.bounds = CGRect(x: 0, y: (font.capHeight - 16.0).rounded() / 2, width: 16.0, height: 16.0)
+                    attachment.image = tintedIcon
+                    let iconAttributedString = NSMutableAttributedString(attachment: attachment)
+                    iconAttributedString.append(NSAttributedString(string: " ", attributes: [.font: font as Any]))
+                    text.insert(iconAttributedString, at: 0)
+
+                    self.attributedBody = text
                 } else {
                     self.attributedBody = appearance.replyMessageAppearance.messageBodyFormatter.format(
                         .init(
