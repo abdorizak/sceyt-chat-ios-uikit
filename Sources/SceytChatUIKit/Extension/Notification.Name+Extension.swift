@@ -15,5 +15,4 @@ extension Notification.Name {
     static let didUpdateMessagePoll = Notification.Name("didUpdatePoll")
     static let didClosePoll = Notification.Name("didClosePoll")
     static let didOpenViewOnceMessage = Notification.Name("didOpenViewOnceMessage")
-    static let didReceiveOpenedMarker = Notification.Name("didReceiveOpenedMarker")
 }

@@ -136,16 +136,7 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
         logger.debug("[MARKER CHECK] didReceive in cid \(channel.id) mark: \(marker.name) for \(marker.messageIds) in channelId:\(marker.channelId)")
         database.write {
             $0.update(messageMarkers: marker)
-        } completion: { error in
-            // TODO: Improve this part
-            // Post notification for opened marker to update message UI
-            if error == nil && marker.name == DefaultMarker.opened.rawValue {
-                NotificationCenter.default.post(
-                    name: .didReceiveOpenedMarker,
-                    object: nil,
-                    userInfo: ["messageIds": marker.messageIds, "channelId": marker.channelId]
-                )
-            }
+        } completion: { _ in
         }
     }
     
