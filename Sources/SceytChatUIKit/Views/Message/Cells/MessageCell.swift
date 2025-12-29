@@ -307,7 +307,7 @@ open class MessageCell: CollectionViewCell,
         readMoreButton.isHidden = true
         textLabel.attributedText = data.attributedView.content
 
-        if data.shouldShowReadMore && !data.isTextExpanded && data.message.state != .deleted {
+        if data.shouldDisplayReadMoreButton {
             readMoreButton.isHidden = false
         }
 

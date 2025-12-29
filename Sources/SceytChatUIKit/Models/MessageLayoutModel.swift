@@ -74,7 +74,7 @@ open class MessageLayoutModel {
     /// Returns true only if the message has long text that should be truncated,
     /// is not currently expanded, and is not deleted
     public var shouldDisplayReadMoreButton: Bool {
-        shouldShowReadMore && !isTextExpanded && message.state != .deleted
+        shouldShowReadMore && !isTextExpanded && message.state != .deleted && !message.isViewOnceMessage
     }
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero

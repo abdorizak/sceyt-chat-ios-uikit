@@ -651,7 +651,17 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         guard scrollView.zoomScale == scrollView.minimumZoomScale,
               let panGesture = gestureRecognizer as? UIPanGestureRecognizer
         else { return false }
-            
+
+        // If messageTextView is expanded and scrollable, check if touch is inside it
+        if isMessageTextExpanded {
+            let touchLocation = panGesture.location(in: messageTextView)
+            if messageTextView.bounds.contains(touchLocation) {
+                // Touch is inside the messageTextView, don't allow pan gesture to begin
+                // so messageTextView can handle scrolling
+                return false
+            }
+        }
+
         let velocity = panGesture.velocity(in: scrollView)
         return abs(velocity.y) > abs(velocity.x)
     }
@@ -698,13 +708,7 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         }, completion: { _ in
             // After expansion animation completes, check if content exceeds available space
             if self.isMessageTextExpanded {
-                let contentHeight = self.messageTextView.contentSize.height
-                let frameHeight = self.messageTextView.frame.height
-
-                // If content is larger than the frame (constrained by top anchor), enable scrolling
-                if contentHeight > frameHeight {
-                    self.messageTextView.isScrollEnabled = true
-                }
+                self.messageTextView.isScrollEnabled = true
             }
         })
     }
