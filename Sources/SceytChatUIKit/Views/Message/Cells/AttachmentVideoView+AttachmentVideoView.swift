@@ -112,6 +112,7 @@ extension MessageCell {
                 blurEffectView.isHidden = !isViewOnce
                 fireIconContainerView.isHidden = !isViewOnce
                 playButton.isHidden = isViewOnce
+                update(status: data.transferStatus)
 
                 if let filePath = data.attachment.filePath,
                    filePath.hasPrefix("/local/"),
@@ -172,7 +173,20 @@ extension MessageCell {
             playButton.isHidden = isViewOnce
             fireIconContainerView.isHidden = !isViewOnce
         }
-        
+
+        override open func update(status: ChatMessage.Attachment.TransferStatus) {
+            super.update(status: status)
+
+            // Hide fire icon when showing download/upload icons
+            switch status {
+            case .pauseDownloading, .failedDownloading, .pauseUploading, .failedUploading:
+                fireIconContainerView.isHidden = true
+            default:
+                let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+                fireIconContainerView.isHidden = !isViewOnce
+            }
+        }
+
         open override func layoutSubviews() {
             super.layoutSubviews()
             progressViewHeightConstraint?.constant = min(56, bounds.height / 2)

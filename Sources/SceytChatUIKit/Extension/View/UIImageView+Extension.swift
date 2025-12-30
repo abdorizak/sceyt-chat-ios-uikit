@@ -59,6 +59,10 @@ extension UIImageView {
         let initialIndex: Int
 
         if sender.viewOnce, let item = sender.item {
+            // Only open previewer for viewOnce messages when attachment is downloaded
+            let attachment = item.attachment
+            guard attachment.status == .done else { return }
+
             finalPreviewer = SingleItemPreviewDataSource(item: item)
             initialIndex = 0
         } else {

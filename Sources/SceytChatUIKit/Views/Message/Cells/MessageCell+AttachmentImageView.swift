@@ -90,7 +90,7 @@ extension MessageCell {
                 // Show/hide blur and fire icon based on viewOnce
                 let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
                 blurEffectView.isHidden = !isViewOnce
-                fireIconContainerView.isHidden = !isViewOnce
+                update(status: data.transferStatus)
 
                 data.onLoadThumbnail = { [weak self] thumbnail in
                     guard let self else {
@@ -122,6 +122,19 @@ extension MessageCell {
             // Show viewOnce blur and fire icon again after upload/download completes
             let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
             fireIconContainerView.isHidden = !isViewOnce
+        }
+
+        override open func update(status: ChatMessage.Attachment.TransferStatus) {
+            super.update(status: status)
+
+            // Hide fire icon when showing download/upload icons
+            switch status {
+            case .pauseDownloading, .failedDownloading, .pauseUploading, .failedUploading:
+                fireIconContainerView.isHidden = true
+            default:
+                let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
+                fireIconContainerView.isHidden = !isViewOnce
+            }
         }
     }
 }
