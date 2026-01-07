@@ -105,12 +105,6 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         }
     }
 
-    open var isViewOnceFeatureEnabled = false {
-        didSet {
-            updateState()
-        }
-    }
-
     open var cameraButtonWidth: CGFloat { 48.0 }
     open var recordButtonWidth: CGFloat { 52.0 }
     open var sendButtonWidth: CGFloat { 52.0 }
@@ -358,7 +352,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     
     open func updateTrailingInputButtons() {
         let shouldShowSendButton = !inputTextView.text.replacingOccurrences(of: "\u{fffc}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !selectedMediaView.items.isEmpty
-        let shouldShowViewOnceButton = isViewOnceFeatureEnabled && selectedMediaView.items.count == 1
+        let shouldShowViewOnceButton = appearance.enableViewOnce && selectedMediaView.items.count == 1
 
         // Update button visibility
         sendButton.isHidden = !shouldShowSendButton
@@ -433,7 +427,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     }
 
     open func updateViewOnceButtonVisibility() {
-        let shouldShow = isViewOnceFeatureEnabled && selectedMediaView.items.count == 1
+        let shouldShow = appearance.enableViewOnce && selectedMediaView.items.count == 1
 
         // Reset state when conditions change
         if !shouldShow && isViewOnceEnabled {
