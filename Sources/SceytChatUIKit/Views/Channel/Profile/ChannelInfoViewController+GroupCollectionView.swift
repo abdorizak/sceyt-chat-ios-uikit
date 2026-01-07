@@ -104,8 +104,7 @@ extension ChannelInfoViewController {
                         )
                     }
                     // Check if we received fewer items than requested
-//                    self.hasMore = channels.count >= self.pageLimit
-                    self.hasMore = channels.count >= 0
+                    self.hasMore = channels.count >= self.pageLimit
                     self.reloadData()
                     self.updateNoItems()
                 }
@@ -173,8 +172,11 @@ extension ChannelInfoViewController {
                     // Check if we received fewer items than requested
                     self.hasMore = channels.count >= self.pageLimit
 
-                    // Insert new items
-                    self.reloadData()
+                    // Insert new items using batch updates to avoid glitches during fast scrolling
+                    let indexPaths = (startIndex..<self.groups.count).map { IndexPath(item: $0, section: 0) }
+                    self.performBatchUpdates({
+                        self.insertItems(at: indexPaths)
+                    }, completion: nil)
                     self.updateNoItems()
                 }
             }
