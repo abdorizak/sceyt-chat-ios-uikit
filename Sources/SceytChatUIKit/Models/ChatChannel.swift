@@ -41,9 +41,31 @@ public class ChatChannel {
     public var draftMessage: NSAttributedString?
     
     public var decodedMetadata: Metadata?
-        
+
+    private var dtoChannelId: ChannelId?
+    private var _members: [ChatChannelMember]?
+    private var membersLoaded = false
+
     /// available only if channel type is direct
-    public private(set) var members: [ChatChannelMember]?
+    public var members: [ChatChannelMember]? {
+        get {
+            if membersLoaded {
+                return _members
+            }
+            if channelType == .direct, let channelId = dtoChannelId {
+                _members = MemberDTO.fetch(
+                    channelId: channelId,
+                    context: SceytChatUIKit.shared.database.viewContext
+                ).map { $0.convert() }
+            }
+            membersLoaded = true
+            return _members
+        }
+        set {
+            _members = newValue
+            membersLoaded = true
+        }
+    }
     
     public init(
         id: ChannelId,
@@ -106,7 +128,8 @@ public class ChatChannel {
             decodedMetadata = try? Metadata.decode(metadata)
         }
         if let members {
-            self.members = members
+            self._members = members
+            self.membersLoaded = true
         }
     }
     
@@ -141,13 +164,7 @@ public class ChatChannel {
             unSynched: dto.unsynched
         )
         if self.channelType == .direct {
-            if let context = dto.managedObjectContext {
-                members = MemberDTO.fetch(channelId: ChannelId(dto.id), context: context).map { $0.convert() }
-            } else {
-                #if DEBUG
-                fatalError("ChannelDTO managedObjectContext is nil")
-                #endif
-            }
+            self.dtoChannelId = ChannelId(dto.id)
         }
     }
     
@@ -186,7 +203,8 @@ public class ChatChannel {
             userRole: channel.userRole,
             messageRetentionPeriod: channel.messageRetentionPeriod)
         if self.channelType == .direct {
-            members = channel.members?.map { .init(member: $0)}
+            self._members = channel.members?.map { .init(member: $0)}
+            self.membersLoaded = true
         }
     }
     
