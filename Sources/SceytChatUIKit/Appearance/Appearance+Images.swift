@@ -651,6 +651,11 @@ public extension Appearance {
                                                      renderingMode: .original))!
         }()
 
+        public static var iconAudioViewOnce: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconAudioViewOnce.image,
+                                                     renderingMode: .original))!
+        }()
+
         public init() { }
 
     }
@@ -802,6 +807,7 @@ extension UIImage {
     public static var addCircleDashed: UIImage { Images.addCircleDashed }
     public static var iconViewOnce: UIImage { Images.iconViewOnce }
     public static var iconViewOnceSelected: UIImage { Images.iconViewOnceSelected }
+    public static var iconAudioViewOnce: UIImage { Images.iconAudioViewOnce }
     public static var fire: UIImage { Images.fire }
     public static var iconOnceMessages: UIImage { Images.iconOnceMessages }
 }

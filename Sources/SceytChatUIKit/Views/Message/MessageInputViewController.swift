@@ -67,12 +67,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                 self.showNoMicrophonePermission()
             case .recordingUnavailable:
                 self.showRecordingUnavailable()
-            case let .recorded(url, metadata):
+            case let .recorded(url, metadata, viewOnce):
                 self.recordedView.isHidden = false
-                self.recordedView.setup(url: url, metadata: metadata)
-            case let .send(url, metadata):
+                self.recordedView.setup(url: url, metadata: metadata, viewOnce: viewOnce)
+            case let .send(url, metadata, viewOnce):
                 if let url = Components.storage.copyFile(url) {
                     self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
+                    self.isViewOnceEnabled = viewOnce
                     self.action = .send(false)
                 }
             case .didStartRecording:
@@ -218,10 +219,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             switch $0 {
             case .cancel:
                 self.recordedView.isHidden = true
-            case let .send(url, metadata):
+            case let .send(url, metadata, viewOnce):
                 self.recordedView.isHidden = true
                 if let url = Components.storage.copyFile(url) {
                     self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
+                    self.isViewOnceEnabled = viewOnce
                     self.action = .send(false)
                 }
             }

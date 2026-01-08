@@ -12,10 +12,12 @@ import UIKit
 extension MessageInputViewController {
     open class VoiceRecordPlaybackView: View {
         enum Event {
-            case send(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>), cancel
+            case send(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>, viewOnce: Bool), cancel
         }
-        
+
         var onEvent: ((Event) -> Void)?
+
+        private var viewOnce: Bool = false
         
         open lazy var cancelButton = {
             $0.setImage(appearance.closeIcon, for: [])
@@ -64,21 +66,22 @@ extension MessageInputViewController {
         private var url: URL!
         private var metadata: ChatMessage.Attachment.Metadata<[Int]>!
         
-        open func setup(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>) {
+        open func setup(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>, viewOnce: Bool = false) {
             self.url = url
             self.metadata = metadata
+            self.viewOnce = viewOnce
             audioPlayerView.setup(url: url, metadata: metadata)
         }
-        
+
         @objc
         private func onTapCancel() {
             SimpleSinglePlayer.stop()
             onEvent?(.cancel)
         }
-        
+
         @objc
         private func onTapSend() {
-            onEvent?(.send(url: url, metadata: metadata))
+            onEvent?(.send(url: url, metadata: metadata, viewOnce: viewOnce))
         }
         
         open func pause() {
