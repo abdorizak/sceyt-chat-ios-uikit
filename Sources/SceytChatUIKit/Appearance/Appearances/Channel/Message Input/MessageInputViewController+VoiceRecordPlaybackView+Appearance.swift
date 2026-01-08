@@ -14,6 +14,9 @@ extension MessageInputViewController.VoiceRecordPlaybackView: AppearanceProvidin
         playIcon: .audioPlayerPlayGrey,
         pauseIcon: .audioPlayerPauseGrey,
         sendVoiceIcon: .messageSendAction,
+        viewOnceIcon: .addCircleDashed,
+        viewOnceActiveIcon: .iconViewOnceSelected,
+        enableViewOnce: false,
         playerBackgroundColor: .surface1,
         durationLabelAppearance: LabelAppearance(
             foregroundColor: .secondaryText,
@@ -38,7 +41,16 @@ extension MessageInputViewController.VoiceRecordPlaybackView: AppearanceProvidin
         
         @Trackable<Appearance, UIImage>
         public var sendVoiceIcon: UIImage
-        
+
+        @Trackable<Appearance, UIImage>
+        public var viewOnceIcon: UIImage
+
+        @Trackable<Appearance, UIImage>
+        public var viewOnceActiveIcon: UIImage
+
+        @Trackable<Appearance, Bool>
+        public var enableViewOnce: Bool
+
         @Trackable<Appearance, UIColor>
         public var playerBackgroundColor: UIColor
         
@@ -57,6 +69,9 @@ extension MessageInputViewController.VoiceRecordPlaybackView: AppearanceProvidin
             playIcon: UIImage,
             pauseIcon: UIImage,
             sendVoiceIcon: UIImage,
+            viewOnceIcon: UIImage,
+            viewOnceActiveIcon: UIImage,
+            enableViewOnce: Bool,
             playerBackgroundColor: UIColor,
             durationLabelAppearance: LabelAppearance,
             audioWaveformViewAppearance: AudioWaveformView.Appearance,
@@ -67,6 +82,9 @@ extension MessageInputViewController.VoiceRecordPlaybackView: AppearanceProvidin
             self._playIcon = Trackable(value: playIcon)
             self._pauseIcon = Trackable(value: pauseIcon)
             self._sendVoiceIcon = Trackable(value: sendVoiceIcon)
+            self._viewOnceIcon = Trackable(value: viewOnceIcon)
+            self._viewOnceActiveIcon = Trackable(value: viewOnceActiveIcon)
+            self._enableViewOnce = Trackable(value: enableViewOnce)
             self._playerBackgroundColor = Trackable(value: playerBackgroundColor)
             self._durationLabelAppearance = Trackable(value: durationLabelAppearance)
             self._audioWaveformViewAppearance = Trackable(value: audioWaveformViewAppearance)
@@ -80,6 +98,9 @@ extension MessageInputViewController.VoiceRecordPlaybackView: AppearanceProvidin
             playIcon: UIImage? = nil,
             pauseIcon: UIImage? = nil,
             sendVoiceIcon: UIImage? = nil,
+            viewOnceIcon: UIImage? = nil,
+            viewOnceActiveIcon: UIImage? = nil,
+            enableViewOnce: Bool? = nil,
             playerBackgroundColor: UIColor? = nil,
             durationLabelAppearance: LabelAppearance? = nil,
             audioWaveformViewAppearance: AudioWaveformView.Appearance? = nil,
@@ -90,16 +111,22 @@ extension MessageInputViewController.VoiceRecordPlaybackView: AppearanceProvidin
             self._playIcon = Trackable(reference: reference, referencePath: \.playIcon)
             self._pauseIcon = Trackable(reference: reference, referencePath: \.pauseIcon)
             self._sendVoiceIcon = Trackable(reference: reference, referencePath: \.sendVoiceIcon)
+            self._viewOnceIcon = Trackable(reference: reference, referencePath: \.viewOnceIcon)
+            self._viewOnceActiveIcon = Trackable(reference: reference, referencePath: \.viewOnceActiveIcon)
+            self._enableViewOnce = Trackable(reference: reference, referencePath: \.enableViewOnce)
             self._playerBackgroundColor = Trackable(reference: reference, referencePath: \.playerBackgroundColor)
             self._durationLabelAppearance = Trackable(reference: reference, referencePath: \.durationLabelAppearance)
             self._audioWaveformViewAppearance = Trackable(reference: reference, referencePath: \.audioWaveformViewAppearance)
             self._durationFormatter = Trackable(reference: reference, referencePath: \.durationFormatter)
-            
+
             if let backgroundColor { self.backgroundColor = backgroundColor }
             if let closeIcon { self.closeIcon = closeIcon }
             if let playIcon { self.playIcon = playIcon }
             if let pauseIcon { self.pauseIcon = pauseIcon }
             if let sendVoiceIcon { self.sendVoiceIcon = sendVoiceIcon }
+            if let viewOnceIcon { self.viewOnceIcon = viewOnceIcon }
+            if let viewOnceActiveIcon { self.viewOnceActiveIcon = viewOnceActiveIcon }
+            if let enableViewOnce { self.enableViewOnce = enableViewOnce }
             if let playerBackgroundColor { self.playerBackgroundColor = playerBackgroundColor }
             if let durationLabelAppearance { self.durationLabelAppearance = durationLabelAppearance }
             if let audioWaveformViewAppearance { self.audioWaveformViewAppearance = audioWaveformViewAppearance }

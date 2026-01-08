@@ -34,6 +34,7 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
         sendVoiceIcon: .audioPlayerSendLarge,
         viewOnceIcon: .addCircleDashed,
         viewOnceActiveIcon: .iconViewOnceSelected,
+        enableViewOnce: false,
         durationFormatter: SceytChatUIKit.shared.formatters.mediaDurationFormatter
     )
     
@@ -86,6 +87,9 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
         @Trackable<Appearance, UIImage>
         public var viewOnceActiveIcon: UIImage
 
+        @Trackable<Appearance, Bool>
+        public var enableViewOnce: Bool
+
         @Trackable<Appearance, any TimeIntervalFormatting>
         public var durationFormatter: any TimeIntervalFormatting
         
@@ -106,6 +110,7 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
             sendVoiceIcon: UIImage,
             viewOnceIcon: UIImage,
             viewOnceActiveIcon: UIImage,
+            enableViewOnce: Bool,
             durationFormatter: any TimeIntervalFormatting
         ) {
             self._backgroundColor = Trackable(value: backgroundColor)
@@ -124,6 +129,7 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
             self._sendVoiceIcon = Trackable(value: sendVoiceIcon)
             self._viewOnceIcon = Trackable(value: viewOnceIcon)
             self._viewOnceActiveIcon = Trackable(value: viewOnceActiveIcon)
+            self._enableViewOnce = Trackable(value: enableViewOnce)
             self._durationFormatter = Trackable(value: durationFormatter)
         }
         
@@ -145,6 +151,7 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
             sendVoiceIcon: UIImage? = nil,
             viewOnceIcon: UIImage? = nil,
             viewOnceActiveIcon: UIImage? = nil,
+            enableViewOnce: Bool? = nil,
             durationFormatter: (any TimeIntervalFormatting)? = nil
         ) {
             self._backgroundColor = Trackable(reference: reference, referencePath: \.backgroundColor)
@@ -163,6 +170,7 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
             self._sendVoiceIcon = Trackable(reference: reference, referencePath: \.sendVoiceIcon)
             self._viewOnceIcon = Trackable(reference: reference, referencePath: \.viewOnceIcon)
             self._viewOnceActiveIcon = Trackable(reference: reference, referencePath: \.viewOnceActiveIcon)
+            self._enableViewOnce = Trackable(reference: reference, referencePath: \.enableViewOnce)
             self._durationFormatter = Trackable(reference: reference, referencePath: \.durationFormatter)
 
             if let backgroundColor { self.backgroundColor = backgroundColor }
@@ -181,6 +189,7 @@ extension MessageInputViewController.VoiceRecorderView: AppearanceProviding {
             if let sendVoiceIcon { self.sendVoiceIcon = sendVoiceIcon }
             if let viewOnceIcon { self.viewOnceIcon = viewOnceIcon }
             if let viewOnceActiveIcon { self.viewOnceActiveIcon = viewOnceActiveIcon }
+            if let enableViewOnce { self.enableViewOnce = enableViewOnce }
             if let durationFormatter { self.durationFormatter = durationFormatter }
         }
     }

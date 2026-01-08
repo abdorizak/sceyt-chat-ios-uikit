@@ -99,7 +99,7 @@ extension MessageInputViewController {
                 self.lockButton.isHidden = self.state == .recorded
                 self.micButton.isHidden = self.state == .recorded
                 self.slidingView.isHidden = self.state == .recorded
-                self.viewOnceButton.isHidden = self.state != .locked
+                self.viewOnceButton.isHidden = self.state != .locked || !appearance.enableViewOnce
             }
         }
         
@@ -245,7 +245,7 @@ extension MessageInputViewController {
                 micButton.centerYAnchor.pin(to: gestureView.centerYAnchor)
                 slidingView.pin(to: self, anchors: [.leading(), .trailing()])
                 slidingView.topAnchor.pin(to: gestureView.topAnchor)
-                viewOnceButton.bottomAnchor.pin(to: lockButton.topAnchor, constant: 0)
+                viewOnceButton.bottomAnchor.pin(to: lockButton.topAnchor, constant: -8 + MessageInputViewController.Layouts.recorderShadowBlur)
                 viewOnceButton.centerXAnchor.pin(to: lockButton.centerXAnchor)
                 viewOnceButton.resize(anchors: [.width(42), .height(42)])
                 viewOnceImageView.centerXAnchor.pin(to: viewOnceButton.centerXAnchor)
@@ -321,7 +321,7 @@ extension MessageInputViewController {
 
             backgroundColor = .clear
             slidingView.appearance = appearance
-            viewOnceButton.backgroundColor = .background
+            viewOnceButton.backgroundColor = appearance.backgroundColor
             viewOnceButton.layer.cornerRadius = 21
             viewOnceButton.layer.shadowColor = UIColor.black.cgColor
             viewOnceButton.layer.shadowOffset = CGSize(width: 0, height: 2)
