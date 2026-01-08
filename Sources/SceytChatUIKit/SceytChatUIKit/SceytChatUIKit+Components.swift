@@ -68,6 +68,7 @@ extension SceytChatUIKit {
         public static var mediaPreviewerCarouselViewController: MediaPreviewerCarouselViewController.Type = MediaPreviewerCarouselViewController.self
         public static var mediaPreviewerNavigationController: MediaPreviewerNavigationController.Type = MediaPreviewerNavigationController.self
         public static var mediaPreviewerViewController: MediaPreviewerViewController.Type = MediaPreviewerViewController.self
+        public static var mediaPreviewerAudioViewController: MediaPreviewerAudioViewController.Type = MediaPreviewerAudioViewController.self
         public static var menuController: MenuController.Type = MenuController.self
         public static var messageInfoViewController: MessageInfoViewController.Type = MessageInfoViewController.self
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self

@@ -155,15 +155,32 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         if let previewDataSource = previewDataSource,
            let previewItem = previewDataSource.previewItem(at: initialIndex)
         {
-            let initialViewController = Components.mediaPreviewerViewController.init()
-            initialViewController.viewOnce = self.viewOnce
-            initialViewController.messageText = self.messageText
-            initialViewController.imageContentMode = imageContentMode
-            initialViewController.viewModel = Components.previewerViewModel
-                .init(
-                    index: initialIndex,
-                    previewItem: previewItem)
-            previewDataSource.observe(initialViewController.viewModel)
+            let initialViewController: ViewController
+
+            // Check if the attachment is audio
+            if case let .attachment(attachment) = previewItem, attachment.type == "voice" {
+                let audioViewController = Components.mediaPreviewerAudioViewController.init()
+                audioViewController.viewOnce = self.viewOnce
+                audioViewController.messageText = self.messageText
+                audioViewController.viewModel = Components.previewerViewModel
+                    .init(
+                        index: initialIndex,
+                        previewItem: previewItem)
+                previewDataSource.observe(audioViewController.viewModel)
+                initialViewController = audioViewController
+            } else {
+                let imageViewController = Components.mediaPreviewerViewController.init()
+                imageViewController.viewOnce = self.viewOnce
+                imageViewController.messageText = self.messageText
+                imageViewController.imageContentMode = imageContentMode
+                imageViewController.viewModel = Components.previewerViewModel
+                    .init(
+                        index: initialIndex,
+                        previewItem: previewItem)
+                previewDataSource.observe(imageViewController.viewModel)
+                initialViewController = imageViewController
+            }
+
             setViewControllers([initialViewController], direction: .forward, animated: true)
         }
         
@@ -223,11 +240,19 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
 
     override open func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if isBeingDismissed,
-           let viewController = viewControllers?.first as? MediaPreviewerViewController,
-           initialIndex != viewController.viewModel.index
-        {
-            initialSourceView?.alpha = 1.0
+        if isBeingDismissed {
+            let currentIndex: Int?
+            if let mediaVC = viewControllers?.first as? MediaPreviewerViewController {
+                currentIndex = mediaVC.viewModel.index
+            } else if let audioVC = viewControllers?.first as? MediaPreviewerAudioViewController {
+                currentIndex = audioVC.viewModel.index
+            } else {
+                currentIndex = nil
+            }
+
+            if let currentIndex = currentIndex, initialIndex != currentIndex {
+                initialSourceView?.alpha = 1.0
+            }
         }
     }
     
@@ -280,9 +305,17 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         viewControllerBefore viewController: UIViewController) -> UIViewController?
     {
         guard !viewOnce else { return nil }
-        guard let viewController = viewController as? MediaPreviewerViewController else { return nil }
+
+        let index: Int
+        if let mediaVC = viewController as? MediaPreviewerViewController {
+            index = mediaVC.viewModel.index
+        } else if let audioVC = viewController as? MediaPreviewerAudioViewController {
+            index = audioVC.viewModel.index
+        } else {
+            return nil
+        }
+
         guard let previewDataSource = previewDataSource else { return nil }
-        let index = viewController.viewModel.index
         guard index <= (previewDataSource.numberOfImages - 2)
         else {
             resetPreviewViewControllerIfNeeded(currentIndex: index)
@@ -296,8 +329,16 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         viewControllerAfter viewController: UIViewController) -> UIViewController?
     {
         guard !viewOnce else { return nil }
-        guard let viewController = viewController as? MediaPreviewerViewController else { return nil }
-        let index = viewController.viewModel.index
+
+        let index: Int
+        if let mediaVC = viewController as? MediaPreviewerViewController {
+            index = mediaVC.viewModel.index
+        } else if let audioVC = viewController as? MediaPreviewerAudioViewController {
+            index = audioVC.viewModel.index
+        } else {
+            return nil
+        }
+
         guard index > 0
         else {
             resetPreviewViewControllerIfNeeded(currentIndex: index)
@@ -306,18 +347,32 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
         return previewViewController(for: index - 1)
     }
     
-    open func previewViewController(for index: Int) -> MediaPreviewerViewController? {
+    open func previewViewController(for index: Int) -> ViewController? {
         guard let previewItem = previewDataSource?.previewItem(at: index)
         else { return nil }
-        let viewController = Components.mediaPreviewerViewController.init()
-        viewController.viewOnce = self.viewOnce
-        viewController.messageText = self.messageText
-        viewController.viewModel = Components.previewerViewModel
-            .init(
-                index: index,
-                previewItem: previewItem)
-        previewDataSource?.observe(viewController.viewModel)
-        return viewController
+
+        // Check if the attachment is audio
+        if case let .attachment(attachment) = previewItem, attachment.type == "voice" {
+            let viewController = Components.mediaPreviewerAudioViewController.init()
+            viewController.viewOnce = self.viewOnce
+            viewController.messageText = self.messageText
+            viewController.viewModel = Components.previewerViewModel
+                .init(
+                    index: index,
+                    previewItem: previewItem)
+            previewDataSource?.observe(viewController.viewModel)
+            return viewController
+        } else {
+            let viewController = Components.mediaPreviewerViewController.init()
+            viewController.viewOnce = self.viewOnce
+            viewController.messageText = self.messageText
+            viewController.viewModel = Components.previewerViewModel
+                .init(
+                    index: index,
+                    previewItem: previewItem)
+            previewDataSource?.observe(viewController.viewModel)
+            return viewController
+        }
     }
     
     open func resetPreviewViewControllerIfNeeded(currentIndex: Int) {
@@ -336,16 +391,24 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
     }
     
     private func resetPreviewViewControllers() {
-        _ = viewControllers?
-            .compactMap { $0 as? MediaPreviewerViewController }
-            .map {
-                let item = $0.viewModel.previewItem
+        _ = viewControllers?.compactMap { viewController -> ViewController? in
+            if let mediaVC = viewController as? MediaPreviewerViewController {
+                let item = mediaVC.viewModel.previewItem
                 if let index = previewDataSource?.indexOfItem(item) {
-                    $0.viewModel = Components.previewerViewModel.init(index: index, previewItem: item)
+                    mediaVC.viewModel = Components.previewerViewModel.init(index: index, previewItem: item)
                 }
-                $0.bindPreviewItem()
-                return $0
+                mediaVC.bindPreviewItem()
+                return mediaVC
+            } else if let audioVC = viewController as? MediaPreviewerAudioViewController {
+                let item = audioVC.viewModel.previewItem
+                if let index = previewDataSource?.indexOfItem(item) {
+                    audioVC.viewModel = Components.previewerViewModel.init(index: index, previewItem: item)
+                }
+                audioVC.bindPreviewItem()
+                return audioVC
             }
+            return nil
+        }
 //        setViewControllers(resetViewControllers, direction: .forward, animated: false)
     }
 }

@@ -159,6 +159,7 @@ extension MessageInputViewController {
             
             switch gesture.state {
             case .began:
+                isViewOnceEnabled = false
                 let recordPermission = Components.audioSession.recordPermission
                 switch recordPermission {
                 case .granted:
