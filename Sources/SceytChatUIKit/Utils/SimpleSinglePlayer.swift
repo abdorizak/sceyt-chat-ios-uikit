@@ -63,6 +63,7 @@ internal class SimpleSinglePlayer: NSObject {
                 }
             }
             isPlaying = true
+            currentId = id
             player.play()
             // Apply stored speed if available
             if let storedRate = speedForPlayer[id] {
