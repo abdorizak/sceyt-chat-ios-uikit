@@ -215,6 +215,15 @@ open class MediaPreviewerCarouselViewController: UIPageViewController,
 
     @objc
     private func handleScreenshot() {
+        guard let previewDataSource = previewDataSource,
+              let previewItem = previewDataSource.previewItem(at: initialIndex)
+        else { return }
+
+        // Don't show screenshot alert for voice messages
+        if case let .attachment(attachment) = previewItem, attachment.type == "voice" {
+            return
+        }
+
         showScreenshotAlert()
     }
 

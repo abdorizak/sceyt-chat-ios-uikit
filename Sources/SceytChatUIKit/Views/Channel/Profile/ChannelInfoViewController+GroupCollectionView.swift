@@ -25,7 +25,7 @@ extension ChannelInfoViewController {
         private var query: ChannelListQuery?
         private var isLoading = false
         private var hasMore = true
-        private let pageLimit = 10
+        private let pageLimit = 20
         open var onSelect: ((ChannelLayoutModel) -> Void)?
 
         open var layout: Layout? { collectionViewLayout as? Layout }
