@@ -175,6 +175,8 @@ extension MessageCell {
         private func onTapPlay() {
             guard let audioView = (subviews.first(where: { $0 is AttachmentAudioView }) as? AttachmentAudioView) else { return }
 
+            guard previewer?()?.canShowPreviewer() ?? true else { return }
+
             // Check if we're already inside a previewer
             let isInsidePreviewer = sequence(first: window?.rootViewController, next: { $0?.presentedViewController })
                 .contains { $0 is MediaPreviewerNavigationController }
@@ -213,7 +215,8 @@ extension MessageCell {
                    let attachment = audioView.data?.attachment,
                    audioView.data?.ownerMessage?.isViewOnceMessage == true,
                    attachment.status == .done,
-                   !isInsidePreviewer {
+                   !isInsidePreviewer,
+                   previewer?()?.canShowPreviewer() ?? true {
                     // Handle view_once audio: open previewer (only if not already in previewer)
                     onAction?(.openedViewOnce(attachment))
 
