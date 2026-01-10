@@ -11,6 +11,17 @@ import SceytChat
 import UIKit
 
 open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
+
+    /// Custom layout model that controls reply view visibility for audio previewer
+    /// Set shouldShowReply to true to display reply views on message cells
+    private class AudioPreviewerLayoutModel: MessageLayoutModel {
+        /// Controls whether reply view should be shown. Default is false.
+        var shouldShowReply: Bool = false
+
+        override var hasReply: Bool {
+            return shouldShowReply && super.hasReply
+        }
+    }
     // MessageCell to display audio attachment
     private var messageCell: MessageCell!
     private var layoutModel: MessageLayoutModel!
@@ -76,6 +87,13 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
         carouselViewController?.subtitleLabel.text = appearance.mediaDateFormatter.format(viewModel.previewItem.attachment.createdAt)
     }
 
+    override open func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        // Pause audio playback when screen closes
+        SimpleSinglePlayer.pause()
+    }
+
     open override func onEvent(_ event: PreviewerViewModel.Event) {
         switch event {
         case .didUpdateItem:
@@ -104,7 +122,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
 
             self.chatChannel = channel
             // Create a MessageLayoutModel for the audio attachment
-            layoutModel = Components.messageLayoutModel.init(
+            layoutModel = AudioPreviewerLayoutModel(
                 channel: channel,
                 message: message,
                 appearance: Components.messageCell.appearance
@@ -138,6 +156,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
             }
 
             messageCell.data = layoutModel
+            messageCell.replyView.isHidden = true
 
             messageCell.setNeedsLayout()
             messageCell.layoutIfNeeded()
@@ -184,7 +203,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
             return
         }
 
-        layoutModel = Components.messageLayoutModel.init(
+        layoutModel = AudioPreviewerLayoutModel(
             channel: channel,
             message: newMessage,
             appearance: Components.messageCell.appearance
@@ -214,6 +233,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
         ])
         
         messageCell.data = layoutModel
+        messageCell.replyView.isHidden = true
 
         self.messageCell.layoutIfNeeded()
     }
