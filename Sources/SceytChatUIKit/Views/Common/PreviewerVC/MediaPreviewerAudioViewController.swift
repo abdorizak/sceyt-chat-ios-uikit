@@ -14,9 +14,15 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
     // MessageCell to display audio attachment
     private var messageCell: MessageCell!
     private var layoutModel: MessageLayoutModel!
+    private var chatChannel: ChatChannel? = nil
+    private var messageCellHeightConstraint: NSLayoutConstraint?
+
+    // Database observer for message updates
+    private var messageObserver: DatabaseObserver<MessageDTO, ChatMessage>?
 
     deinit {
         logger.debug("[MediaPreviewerAudioViewController] deinit")
+        messageObserver?.stopObserver()
     }
 
     override open func setup() {
@@ -45,6 +51,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
     override open func setupDone() {
         super.setupDone()
         bindPreviewItem()
+        startDatabaseObserver()
     }
 
     override open func viewDidAppear(_ animated: Bool) {
@@ -95,6 +102,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
                 return
             }
 
+            self.chatChannel = channel
             // Create a MessageLayoutModel for the audio attachment
             layoutModel = Components.messageLayoutModel.init(
                 channel: channel,
@@ -105,29 +113,108 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
             // Calculate the measure size for the layout
             let measuredSize = layoutModel.measure()
 
-            // Create and configure MessageCell
-            if message.incoming {
-                messageCell = ChannelViewController.IncomingMessageCell.init()
+            // Create and configure MessageCell only if it doesn't exist
+            if messageCell == nil {
+                if message.incoming {
+                    messageCell = ChannelViewController.IncomingMessageCell.init()
+                } else {
+                    messageCell = ChannelViewController.OutgoingMessageCell.init()
+                }
+
+                view.addSubview(messageCell)
+                messageCell.translatesAutoresizingMaskIntoConstraints = false
+
+                // Store reference to height constraint
+                messageCellHeightConstraint = messageCell.heightAnchor.constraint(equalToConstant: measuredSize.height)
+
+                NSLayoutConstraint.activate([
+                    messageCell.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                    messageCell.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 0),
+                    messageCell.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: 0),
+                    messageCellHeightConstraint!
+                ])
             } else {
-                messageCell = ChannelViewController.OutgoingMessageCell.init()
+                messageCellHeightConstraint?.constant = measuredSize.height
             }
-            
-
-            view.addSubview(messageCell)
-            messageCell.translatesAutoresizingMaskIntoConstraints = false
-
-            NSLayoutConstraint.activate([
-                messageCell.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-                messageCell.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 0),
-                messageCell.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: 0),
-                messageCell.heightAnchor.constraint(equalToConstant: measuredSize.height)
-            ])
 
             messageCell.data = layoutModel
 
-            // Force layout update
             messageCell.setNeedsLayout()
             messageCell.layoutIfNeeded()
         }
+    }
+
+    // MARK: - Database Observer
+
+    open func startDatabaseObserver() {
+        let messageId = viewModel.previewItem.attachment.messageId
+        let predicate = NSPredicate(format: "id == %lld", messageId)
+
+        messageObserver = DatabaseObserver<MessageDTO, ChatMessage>(
+            request: MessageDTO.fetchRequest()
+                .sort(descriptors: [.init(keyPath: \MessageDTO.id, ascending: false)])
+                .fetch(predicate: predicate),
+            context: SceytChatUIKit.shared.database.viewContext
+        ) { $0.convert() }
+
+        messageObserver?.onDidChange = { [weak self] changes in
+            self?.onMessageDidChange(changes: changes)
+        }
+
+        do {
+            try messageObserver?.startObserver()
+        } catch {
+            logger.errorIfNotNil(error, "messageObserver.startObserver")
+        }
+    }
+
+    open func onMessageDidChange(changes: DBChangeItemPaths) {
+        guard !changes.updates.isEmpty else { return }
+
+        guard let newMessage = messageObserver?.item(at: IndexPath(row: 0, section: 0)),
+              let channel = self.chatChannel else {
+            return
+        }
+        
+        guard let oldMessage = layoutModel?.message else {
+            return
+        }
+
+        guard oldMessage.deliveryStatus != newMessage.deliveryStatus else {
+            return
+        }
+
+        layoutModel = Components.messageLayoutModel.init(
+            channel: channel,
+            message: newMessage,
+            appearance: Components.messageCell.appearance
+        )
+        
+        let measuredSize = layoutModel.measure()
+
+        messageCell.removeFromSuperview()
+
+        if newMessage.incoming {
+            messageCell = ChannelViewController.IncomingMessageCell.init()
+        } else {
+            messageCell = ChannelViewController.OutgoingMessageCell.init()
+        }
+
+        view.addSubview(messageCell)
+        messageCell.translatesAutoresizingMaskIntoConstraints = false
+
+        // Store reference to height constraint
+        messageCellHeightConstraint = messageCell.heightAnchor.constraint(equalToConstant: measuredSize.height)
+
+        NSLayoutConstraint.activate([
+            messageCell.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            messageCell.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 0),
+            messageCell.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: 0),
+            messageCellHeightConstraint!
+        ])
+        
+        messageCell.data = layoutModel
+
+        self.messageCell.layoutIfNeeded()
     }
 }
