@@ -2081,9 +2081,15 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
     
     open func downloadMessageAttachmentsIfNeeded(layoutModel: MessageLayoutModel) {
         DispatchQueue.global().async {
+            var attachmentsToDownload: [ChatMessage.Attachment]? = nil
+            if !layoutModel.contentOptions.contains(.link) {
+                attachmentsToDownload = layoutModel.message.attachments?.filter { $0.type != "link" }
+            }
+
             fileProvider
                 .downloadMessageAttachmentsIfNeeded(
-                    message: layoutModel.message
+                    message: layoutModel.message,
+                    attachments: attachmentsToDownload
                 )
         }
     }
