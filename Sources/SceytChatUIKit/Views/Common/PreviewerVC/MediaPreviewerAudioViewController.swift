@@ -26,6 +26,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
     private var messageCell: MessageCell!
     private var layoutModel: MessageLayoutModel!
     private var chatChannel: ChatChannel? = nil
+    private var message: ChatMessage? = nil
     private var messageCellHeightConstraint: NSLayoutConstraint?
 
     // Database observer for message updates
@@ -121,6 +122,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
             }
 
             self.chatChannel = channel
+            self.message = message
             // Create a MessageLayoutModel for the audio attachment
             layoutModel = AudioPreviewerLayoutModel(
                 channel: channel,
@@ -166,8 +168,8 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
     // MARK: - Database Observer
 
     open func startDatabaseObserver() {
-        let messageId = viewModel.previewItem.attachment.messageId
-        let predicate = NSPredicate(format: "id == %lld", messageId)
+        guard let messageTId = message?.tid else { return }
+        let predicate = NSPredicate(format: "tid == %lld", messageTId)
 
         messageObserver = DatabaseObserver<MessageDTO, ChatMessage>(
             request: MessageDTO.fetchRequest()
@@ -194,7 +196,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
               let channel = self.chatChannel else {
             return
         }
-        
+
         guard let oldMessage = layoutModel?.message else {
             return
         }
@@ -202,39 +204,7 @@ open class MediaPreviewerAudioViewController: MediaPreviewerViewController {
         guard oldMessage.deliveryStatus != newMessage.deliveryStatus else {
             return
         }
-
-        layoutModel = AudioPreviewerLayoutModel(
-            channel: channel,
-            message: newMessage,
-            appearance: Components.messageCell.appearance
-        )
         
-        let measuredSize = layoutModel.measure()
-
-        messageCell.removeFromSuperview()
-
-        if newMessage.incoming {
-            messageCell = ChannelViewController.IncomingMessageCell.init()
-        } else {
-            messageCell = ChannelViewController.OutgoingMessageCell.init()
-        }
-
-        view.addSubview(messageCell)
-        messageCell.translatesAutoresizingMaskIntoConstraints = false
-
-        // Store reference to height constraint
-        messageCellHeightConstraint = messageCell.heightAnchor.constraint(equalToConstant: measuredSize.height)
-
-        NSLayoutConstraint.activate([
-            messageCell.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            messageCell.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 0),
-            messageCell.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: 0),
-            messageCellHeightConstraint!
-        ])
-        
-        messageCell.data = layoutModel
-        messageCell.replyView.isHidden = true
-
-        self.messageCell.layoutIfNeeded()
+        messageCell.deliveryStatus = newMessage.deliveryStatus
     }
 }
