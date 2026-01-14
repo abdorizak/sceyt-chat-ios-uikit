@@ -150,6 +150,7 @@ open class ChannelViewController: ViewController,
     }
     
     private var isScrollingBottom = false
+    private var isUpdatingInputViewHeight = false
     private var checkOnlyFirstTimeReceivedMessagesFromArchive = true
     private var isViewDidAppear = false
     private var contextMenu: ContextMenu!
@@ -406,6 +407,7 @@ open class ChannelViewController: ViewController,
         customInputViewController.onContentHeightUpdate = { [weak self] height, completion in
             guard let self else { return }
             if height != self.messageInputViewHeightConstraint.constant {
+                self.isUpdatingInputViewHeight = true
                 UIView.animate(withDuration: 0.25) { [weak self] in
                     guard let self else { return }
                     let bottom = self.collectionView.contentInset.bottom
@@ -429,7 +431,10 @@ open class ChannelViewController: ViewController,
                         ),
                         animated: false
                     )
-                } completion: { _ in completion?() }
+                } completion: { [weak self] _ in
+                    self?.isUpdatingInputViewHeight = false
+                    completion?()
+                }
             }
         }
 
@@ -1263,7 +1268,9 @@ open class ChannelViewController: ViewController,
         updateUnreadViewVisibility()
         updateLastNavigatedIndexPath()
         updatePinnedHeaderVisibility()
-        self.addMoreMessage(scrollDirection: self.lastScrollDirection, force: false)
+        if !isUpdatingInputViewHeight {
+            self.addMoreMessage(scrollDirection: self.lastScrollDirection, force: false)
+        }
     }
     
     open func scrollViewDidScrollToTop(_ scrollView: UIScrollView) {
@@ -1699,6 +1706,7 @@ open class ChannelViewController: ViewController,
     
     open func sendMessage(_ message: UserSendMessage, shouldClearText: Bool = true) {
         userSelectOnRepliedMessage = nil
+        isScrollingBottom = true
         logger.verbose("[MESSAGE SEND] sendMessage")
         let canShowUnread = canShowUnreadCountView
         canShowUnreadCountView = false
