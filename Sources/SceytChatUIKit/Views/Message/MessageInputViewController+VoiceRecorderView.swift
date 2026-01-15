@@ -23,6 +23,8 @@ extension MessageInputViewController {
 
         var onEvent: ((Event) -> Void)?
         
+        open var minDuration: TimeInterval = 1.0
+
         enum State {
             case unlock, lock, locked, cancel, recorded
         }
@@ -307,7 +309,7 @@ extension MessageInputViewController {
                     self.setNeedsLayout()
                     self.layoutIfNeeded()
                 }
-            } else if state == .cancel || recorder == nil || recorder!.metadata.duration < 1 {
+            } else if state == .cancel || recorder == nil || TimeInterval(recorder?.metadata.duration ?? 0) < minDuration {
                 impactFeebackGenerator.impactOccurred()
                 reset(animated: animated)
             } else if state != .recorded, superview != nil {
@@ -404,8 +406,13 @@ extension MessageInputViewController {
         
         @objc
         private func onTapSend() {
+            guard let recorder else { return }
+            if TimeInterval(recorder.metadata.duration) < minDuration {
+                reset(animated: false)
+                return
+            }
             reset(animated: false)
-            onEvent?(.send(recorder!.url, recorder!.metadata, viewOnce: isViewOnceEnabled))
+            onEvent?(.send(recorder.url, recorder.metadata, viewOnce: isViewOnceEnabled))
         }
 
         @objc
