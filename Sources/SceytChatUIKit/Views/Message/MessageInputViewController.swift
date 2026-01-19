@@ -325,7 +325,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         recordedView.pin(to: view, anchors: [.leading, .trailing, .top])
         recordedView.isHidden = true
         
-        updateState()
+        updateState(false)
     }
     
     open override func setupDone() {
@@ -335,8 +335,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         canRunMentionUserLogic = appearance.enableMention
     }
     
-    open func updateState() {
-        updateTrailingInputButtons()
+    open func updateState(_ animated: Bool = true) {
+        updateTrailingInputButtons(animated)
         updateViewOnceButtonVisibility()
 
         style = selectedMediaView.items.count > 0 ? .large : .small
@@ -352,7 +352,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         }
     }
     
-    open func updateTrailingInputButtons() {
+    open func updateTrailingInputButtons(_ animated: Bool = true) {
         let shouldShowSendButton = !inputTextView.text.replacingOccurrences(of: "\u{fffc}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !selectedMediaView.items.isEmpty
         let shouldShowViewOnceButton = appearance.enableViewOnce && selectedMediaView.items.count == 1
 
