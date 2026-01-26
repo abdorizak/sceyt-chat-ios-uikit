@@ -228,14 +228,14 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         let contentView: UIView = viewOnce ? self.containerView : self.view
         
         if viewOnce {
-            view.addSubview(screenShotProtectedScrollView.container)
-            screenShotProtectedScrollView.container.translatesAutoresizingMaskIntoConstraints = false
+            // Use wrapper view with overlay support - shows custom overlay in screenshots
+            screenShotProtectedScrollView.showsOverlayInScreenshots = true
+            let wrapperView = screenShotProtectedScrollView.setupWithOverlay(in: view)
             
-            screenShotProtectedScrollView.container.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-            screenShotProtectedScrollView.container.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
-            screenShotProtectedScrollView.container.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
-            screenShotProtectedScrollView.container.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-            screenShotProtectedScrollView.setupContentAsHiddenInScreenshotMode()
+            wrapperView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            wrapperView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+            wrapperView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+            wrapperView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         }
         
         contentView.addSubview(playerView)

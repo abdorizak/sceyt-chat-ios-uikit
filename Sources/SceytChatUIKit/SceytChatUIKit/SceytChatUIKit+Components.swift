@@ -221,6 +221,7 @@ extension SceytChatUIKit {
         public static var channelEventView: ChannelEventView.Type = ChannelEventView.self
         public static var selectedUserListView: SelectedUserListView.Type = SelectedUserListView.self
         public static var selectedChannelListView: SelectedChannelListView.Type = SelectedChannelListView.self
+        public static var protectedContentOverlayView: ProtectedContentOverlayView.Type = ProtectedContentOverlayView.self
         
         // MARK: - Providers
         
