@@ -225,9 +225,11 @@ extension ChannelListViewController {
         
         private func removeEvent(for userId: UserId) {
             eventModels.removeAll { $0.user.id == userId }
-            
+
             if eventModels.isEmpty {
                 stopDisplayTimer()
+                // Guard against nil data during cell recycling/observer restart
+                guard let data = data else { return }
                 update(messageText: data.attributedView)
             }
         }
@@ -355,13 +357,22 @@ extension ChannelListViewController {
         open func clearEvents() {
             eventModels.removeAll()
             stopDisplayTimer()
+
+            // Guard against nil data during cell recycling/observer restart
+            guard let data = data else { return }
             update(messageText: data.attributedView)
         }
         
         open func buildAttributedMessage(for models: [ChannelEventModel]) -> NSAttributedString {
             guard let model = models.first else {
-                return data.attributedView
+                return data?.attributedView ?? NSAttributedString()
             }
+
+            // Guard against nil data during cell recycling/observer restart
+            guard let data = data else {
+                return NSAttributedString()
+            }
+
             let message = NSMutableAttributedString()
 
             if !data.channel.isDirect {
@@ -399,7 +410,8 @@ extension ChannelListViewController {
         }
         
         open func subscribeForPresence() {
-            guard data.channel.isDirect,
+            guard let data = data,
+                  data.channel.isDirect,
                   let peer = data.channel.peer,
                   peer.state == .active
             else {
@@ -407,13 +419,13 @@ extension ChannelListViewController {
                 return
             }
             Components.presenceProvider.subscribe(userId: peer.id) { [weak self] userPresence in
-                guard let self, peer.id == self.data.channel.peer?.id
+                guard let self, let selfData = self.data, peer.id == selfData.channel.peer?.id
                 else { return }
                 self.presenceView.isHidden = userPresence.presence.state != .online
                 let chatUser = ChatUser(user: userPresence.user)
                 if chatUser !~= peer {
-                    self.data.updateMemberWithUser(chatUser)
-                    self.bind(self.data)
+                    selfData.updateMemberWithUser(chatUser)
+                    self.bind(selfData)
                 }
             }
         }
