@@ -251,14 +251,6 @@ extension ChatRemoteNotificationHandler: ChatClientDelegate {
             markMessageAsReceived(pushData: pushData) { error in
                 completion(error)
             }
-
-        case .disconnected, .failed:
-            // Connection failed, cleanup and complete without error
-            // (message is already stored, marking as received is optional)
-            logger.verbose("[ChatRemoteNotificationHandler] Connection failed/disconnected, skipping mark as received")
-            cleanupConnectionDelegate()
-            completion(nil)
-
         default:
             // Still connecting, wait...
             break
