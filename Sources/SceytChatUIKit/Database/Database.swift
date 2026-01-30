@@ -225,9 +225,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
                 }
                 if self.backgroundPerformContext.hasChanges {
                     self.logUncommittedChanges(context: self.backgroundPerformContext)
-                    logger.info("[DATABASE] Will save on backgroundPerformContext")
                     try self.backgroundPerformContext.save()
-                    logger.info("[DATABASE] Saved on backgroundPerformContext")
                 }
             } catch {
                 resultQueue.async { completion?(error) }
@@ -236,26 +234,6 @@ public final class PersistentContainer: NSPersistentContainer, Database {
     }
     
     func logUncommittedChanges(context: NSManagedObjectContext) {
-        let insertedObjects = context.insertedObjects
-        let updatedObjects = context.updatedObjects
-        let deletedObjects = context.deletedObjects
-        let registeredObjects = context.registeredObjects
-        
-        if !insertedObjects.isEmpty {
-            logger.info("[DATABASE] Inserted Objects: \(insertedObjects.count)")
-        }
-        
-        if !updatedObjects.isEmpty {
-            logger.info("[DATABASE] Updated Objects: \(updatedObjects.count)")
-        }
-        
-        if !deletedObjects.isEmpty {
-            logger.info("[DATABASE] Deleted Objects: \(deletedObjects.count)")
-        }
-        
-        if !registeredObjects.isEmpty {
-            logger.info("[DATABASE] Registered Objects: \(registeredObjects.count)")
-        }
     }
     
     public final func performWriteTask(resultQueue: DispatchQueue,
