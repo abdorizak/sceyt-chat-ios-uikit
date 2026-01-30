@@ -231,6 +231,8 @@ extension SceytChatUIKit {
                 
             }
         }
+        public static var chatRemoteNotificationHandler: ChatRemoteNotificationHandler.Type = ChatRemoteNotificationHandler.self
+        public static var pushNotificationParser: DefaultPushNotificationParser.Type = DefaultPushNotificationParser.self
         public static var attachmentTransfer: AttachmentTransfer.Type = AttachmentTransfer.self
         public static var channelAttachmentProvider: ChannelAttachmentProvider.Type = ChannelAttachmentProvider.self
         public static var channelCreator: ChannelCreator.Type = ChannelCreator.self
