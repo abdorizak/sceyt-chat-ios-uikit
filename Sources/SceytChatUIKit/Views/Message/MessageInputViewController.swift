@@ -1248,7 +1248,14 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             return true
         }
 
-        return !deleteMentionText(in: range)
+        // Only check for mention deletion when actually deleting (empty replacement text or range.length > 0)
+        let isDeletion = text.isEmpty
+        if isDeletion {
+            let shouldDelete = deleteMentionText(in: range)
+            return !shouldDelete
+        }
+
+        return true
     }
     
     public func textViewDidChange(_ textView: UITextView) {
