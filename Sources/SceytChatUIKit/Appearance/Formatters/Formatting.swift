@@ -124,6 +124,10 @@ public protocol LastMessageBodyFormatting: Formatting {
 
 /// A protocol that defines formatting behavior for replied message bodies.
 public protocol RepliedMessageBodyFormatting: Formatting {
+    /// Controls whether audio duration should be displayed in replied messages.
+    /// Default is `true` to maintain backward compatibility.
+    var showAudioDuration: Bool { get set }
+
     /// Formats a replied message body into an attributed string.
     ///
     /// - Parameter attributes: The `RepliedMessageBodyFormatterAttributes` instance containing the attributes needed for formatting.
