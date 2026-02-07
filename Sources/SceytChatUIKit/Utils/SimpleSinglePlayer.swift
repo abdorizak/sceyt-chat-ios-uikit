@@ -94,13 +94,14 @@ internal class SimpleSinglePlayer: NSObject {
         isPlaying = false
         if let currentPlayer {
             currentPlayer.pause()
-        }
-        currentPlayer = nil
-        if let timeObserver {
-            currentPlayer?.removeTimeObserver(timeObserver)
+            if let timeObserver {
+                currentPlayer.removeTimeObserver(timeObserver)
+            }
         }
         timeObserver = nil
+        currentPlayer = nil
         currentId = nil
+        currentTime = 0
         currentStopBlock?()
         currentStopBlock = nil
         
