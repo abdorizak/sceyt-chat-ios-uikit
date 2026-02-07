@@ -43,7 +43,6 @@ open class ChannelMemberListViewController: ViewController,
             .sink { [weak self] in
                 self?.onEvent($0)
             }.store(in: &subscriptions)
-        memberListViewModel.loadMembers()
         
         view.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onLongPress)))
     }

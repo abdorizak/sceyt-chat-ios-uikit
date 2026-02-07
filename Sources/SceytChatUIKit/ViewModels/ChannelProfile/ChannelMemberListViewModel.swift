@@ -130,39 +130,60 @@ open class ChannelMemberListViewModel: NSObject {
 
     open func startDatabaseObserver() {
         if shouldShowOnlyAdmins {
-            deleteAdminsFromDatabase()
-            // Use the original single observer when filtering by role
-            memberObserver.onDidChange = {[weak self] in
-                self?.onDidChangeEvent(items: $0)
-            }
-            do {
-                try memberObserver.startObserver()
-            } catch {
-                logger.errorIfNotNil(error, "observer.startObserver")
+            // Wait for deletion to complete before starting observer
+            deleteAdminsFromDatabase { [weak self] error in
+                guard let self else { return }
+                if let error = error {
+                    logger.errorIfNotNil(error, "Failed to delete admins before starting observer")
+                }
+
+                // Use the original single observer when filtering by role
+                self.memberObserver.onDidChange = { [weak self] in
+                    self?.onDidChangeEvent(items: $0)
+                }
+                do {
+                    try self.memberObserver.startObserver()
+                } catch {
+                    logger.errorIfNotNil(error, "observer.startObserver")
+                }
+
+                self.loadMembers()
             }
         } else {
-            deleteMembersFromDatabase()
-            // Use separate observers for each role section
-            ownerObserver.onDidChange = {[weak self] in
-                self?.onDidChangeEvent(items: $0, section: self?.ownerSectionIndex ?? 0)
-            }
-            adminObserver.onDidChange = {[weak self] in
-                self?.onDidChangeEvent(items: $0, section: self?.adminSectionIndex ?? 1)
-            }
-            otherObserver.onDidChange = {[weak self] in
-                self?.onDidChangeEvent(items: $0, section: self?.otherSectionIndex ?? 2)
-            }
-            do {
-                try ownerObserver.startObserver()
-                try adminObserver.startObserver()
-                try otherObserver.startObserver()
-            } catch {
-                logger.errorIfNotNil(error, "observer.startObserver")
+            // Wait for deletion to complete before starting observers
+            deleteMembersFromDatabase { [weak self] error in
+                guard let self else { return }
+                if let error = error {
+                    logger.errorIfNotNil(error, "Failed to delete members before starting observer")
+                }
+
+                // Use separate observers for each role section
+                self.ownerObserver.onDidChange = { [weak self] in
+                    guard let self else { return }
+                    self.onDidChangeEvent(items: $0, section: self.ownerSectionIndex)
+                }
+                self.adminObserver.onDidChange = { [weak self] in
+                    guard let self else { return }
+                    self.onDidChangeEvent(items: $0, section: self.adminSectionIndex)
+                }
+                self.otherObserver.onDidChange = { [weak self] in
+                    guard let self else { return }
+                    self.onDidChangeEvent(items: $0, section: self.otherSectionIndex)
+                }
+                do {
+                    try self.ownerObserver.startObserver()
+                    try self.adminObserver.startObserver()
+                    try self.otherObserver.startObserver()
+                } catch {
+                    logger.errorIfNotNil(error, "observer.startObserver")
+                }
+
+                self.loadMembers()
             }
         }
     }
 
-    open func deleteMembersFromDatabase() {
+    open func deleteMembersFromDatabase(completion: ((Error?) -> Void)? = nil) {
         provider.database.write { context in
             let predicate = NSPredicate(format: "channelId == %lld", self.channel.id)
             context.deleteMembers(predicate: predicate)
@@ -170,10 +191,11 @@ open class ChannelMemberListViewModel: NSObject {
             if let error = error {
                 logger.errorIfNotNil(error, "Failed to delete members from database")
             }
+            completion?(error)
         }
     }
 
-    open func deleteAdminsFromDatabase() {
+    open func deleteAdminsFromDatabase(completion: ((Error?) -> Void)? = nil) {
         provider.database.write { context in
             let predicate = NSPredicate(format: "channelId == %lld AND role.name == %@",
                                        self.channel.id,
@@ -183,6 +205,7 @@ open class ChannelMemberListViewModel: NSObject {
             if let error = error {
                 logger.errorIfNotNil(error, "Failed to delete admins from database")
             }
+            completion?(error)
         }
     }
 
