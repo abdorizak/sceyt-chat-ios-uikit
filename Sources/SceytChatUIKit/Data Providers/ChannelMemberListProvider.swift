@@ -17,6 +17,9 @@ open class ChannelMemberListProvider: DataProvider {
 
     let channelId: ChannelId
 
+    // Serial queue to prevent concurrent database writes
+    private let databaseWriteQueue = DispatchQueue(label: "com.sceyt.channelMemberListProvider.databaseWrite", qos: .userInitiated)
+
     // Separate loading states for each role
     private var ownerLoading = false
     private var adminLoading = false
@@ -156,11 +159,15 @@ open class ChannelMemberListProvider: DataProvider {
     }
 
     open func store(members: [Member]) {
-        database.write {
-            $0.createOrUpdate(
-                members: members, channelId: self.channelId)
-        } completion: { error in
-            logger.debug(error?.localizedDescription ?? "")
+        // Use serial queue to prevent concurrent database writes that cause crashes
+        databaseWriteQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.database.write {
+                $0.createOrUpdate(
+                    members: members, channelId: self.channelId)
+            } completion: { error in
+                logger.debug(error?.localizedDescription ?? "")
+            }
         }
     }
 }
