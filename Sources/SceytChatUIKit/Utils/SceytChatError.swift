@@ -37,6 +37,34 @@ public extension Error {
     
 }
 
+public enum SDKErrorTypeEnum: String {
+    
+    case badRequest      = "BadRequest"
+    case badParam        = "BadParam"
+    case notFound        = "NotFound"
+    case notAllowed      = "NotAllowed"
+    case tooLargeRequest = "TooLargeRequest"
+    case internalError   = "InternalError"
+    case tooManyRequests = "TooManyRequests"
+    case authentication  = "Authentication"
+    
+    public var isResendable: Bool {
+        switch self {
+        case .internalError,
+             .tooManyRequests,
+             .authentication:
+            return true
+            
+        case .badRequest,
+             .badParam,
+             .notFound,
+             .notAllowed,
+             .tooLargeRequest:
+            return false
+        }
+    }
+}
+
 public enum ChannelURIError: Error, LocalizedError {
     case range(min: Int, length: Int)
     case regex(String)
