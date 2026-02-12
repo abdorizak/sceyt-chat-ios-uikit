@@ -385,24 +385,13 @@ open class ChannelMessageSender: DataProvider {
         guard message.deliveryStatus == .pending else { return false }
         guard chatClient.connectionState == .connected else { return false }
         guard attempt < max(0, maxSendRetryCount) else { return false }
-        guard isSDKNetworkError(error) else { return false }
-        return true
+        return error?.sdkError?.isResendable == true
     }
     
     private func retryDelay(forAttempt attempt: Int) -> TimeInterval {
         let baseSeconds = 1.0 * pow(2.0, Double(attempt))
         let jitterSeconds = Double.random(in: 0...(baseSeconds * 0.3))
         return baseSeconds + jitterSeconds
-    }
-    
-    private func isSDKNetworkError(_ error: Error?) -> Bool {
-        guard let error else { return false }
-        if let sceytError = error as? SceytError {
-            if let sdkError = SDKErrorTypeEnum(rawValue: sceytError.type), sdkError.isResendable {
-                return true
-            }
-        }
-        return false
     }
 }
 

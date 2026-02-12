@@ -37,6 +37,15 @@ public extension Error {
     
 }
 
+extension Error {
+    var sdkError: SDKErrorTypeEnum? {
+        if let sceytError = self as? SceytError {
+            return SDKErrorTypeEnum(rawValue: sceytError.type)
+        }
+        return nil
+    }
+}
+
 public enum SDKErrorTypeEnum: String {
     
     case badRequest      = "BadRequest"
