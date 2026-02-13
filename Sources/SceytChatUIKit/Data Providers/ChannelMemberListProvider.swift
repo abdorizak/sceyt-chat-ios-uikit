@@ -161,10 +161,9 @@ open class ChannelMemberListProvider: DataProvider {
     open func store(members: [Member]) {
         // Use serial queue to prevent concurrent database writes that cause crashes
         databaseWriteQueue.async { [weak self] in
-            guard let self = self else { return }
-            self.database.write {
-                $0.createOrUpdate(
-                    members: members, channelId: self.channelId)
+            guard let self else { return }
+            self.database.performWriteTask {
+                $0.createOrUpdate(members: members, channelId: self.channelId)
             } completion: { error in
                 logger.debug(error?.localizedDescription ?? "")
             }
