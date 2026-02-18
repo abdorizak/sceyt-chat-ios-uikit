@@ -249,6 +249,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
                     try context.save()
                 }
             } catch {
+                context.rollback()
                 resultQueue.async { completion?(error) }
             }
         }
