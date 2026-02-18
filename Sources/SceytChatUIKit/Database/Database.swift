@@ -234,7 +234,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
     public final func performWriteTask(resultQueue: DispatchQueue,
                                               _ perform: @escaping (NSManagedObjectContext) throws -> Void,
                                               completion: ((Error?) -> Void)? = nil) {
-        let context = createBackgroundContext()
+        let context = backgroundPerformContext
         context.perform {[weak self] in
             guard let self = self else { return }
             do {
