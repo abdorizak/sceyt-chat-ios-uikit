@@ -51,8 +51,7 @@ open class ChannelListViewController: ViewController,
         tableView.contentInsetAdjustmentBehavior = .automatic
         tableView.tableFooterView = UIView()
         tableView.separatorStyle = .none
-        tableView.delegate = self
-        tableView.dataSource = self
+        setupTableViewDelegates()
                 
         navigationItem.hidesSearchBarWhenScrolling = true
         searchResultsViewController.resultsUpdater = channelListViewModel
@@ -69,6 +68,11 @@ open class ChannelListViewController: ViewController,
             }.willHide { [weak self] in
                 self?.adjustTableViewToKeyboard(notification: $0)
             }
+    }
+    
+    open func setupTableViewDelegates() {
+        tableView.delegate = self
+        tableView.dataSource = self
     }
     
     open override func setupLayout() {
@@ -167,7 +171,7 @@ open class ChannelListViewController: ViewController,
             updateTableView(paths: paths)
             showEmptyViewIfNeeded()
         case .reload:
-            tableView.reloadData()
+            reloadTableView()
             showEmptyViewIfNeeded()
         case .reloadSearch:
             searchResultsViewController.reloadData()
@@ -204,6 +208,10 @@ open class ChannelListViewController: ViewController,
         }
     }
     
+    open func reloadTableView() {
+        tableView.reloadData()
+    }
+
     open func updateTableView(paths: ChannelListViewModel.Paths) {
         if view.window == nil || tableView.visibleCells.isEmpty || !isViewDidAppear {
             tableView.reloadData()
