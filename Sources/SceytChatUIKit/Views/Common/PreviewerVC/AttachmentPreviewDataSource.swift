@@ -178,12 +178,28 @@ open class AttachmentPreviewDataSource: PreviewDataSource {
     }
 
     public func indexOfItem(_ item: PreviewItem) -> Int? {
-        for index in 0 ..< attachmentObserver.numberOfItems(in: 0) {
+        let count = attachmentObserver.numberOfItems(in: 0)
+
+        // First pass: exact match (works once the server has assigned a real id)
+        for index in 0..<count {
             if let attachment = attachmentObserver.item(at: IndexPath(row: index, section: 0)),
                attachment == item.attachment {
                 return index
             }
         }
+
+        // Second pass: the attachment was still pending (id == 0) when setupPreviewer()
+        // stored it in the tap recognizer. By tap time the DB has the real id, so the
+        // exact match above fails. Fall back to matching by URL so we open the correct media.
+        if item.attachment.id == 0, let itemUrl = item.attachment.url, !itemUrl.isEmpty {
+            for index in 0..<count {
+                if let attachment = attachmentObserver.item(at: IndexPath(row: index, section: 0)),
+                   attachment.url == itemUrl {
+                    return index
+                }
+            }
+        }
+
         return nil
     }
 
