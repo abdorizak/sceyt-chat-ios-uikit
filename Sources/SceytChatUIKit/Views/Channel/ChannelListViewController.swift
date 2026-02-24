@@ -110,10 +110,12 @@ open class ChannelListViewController: ViewController,
 
         var newFingerprints: [ChannelId: ChannelFingerprint] = [:]
         var changedIds: [ChannelId] = []
+        var seenIds = Set<ChannelId>()
 
         for section in sections {
             let ids = (0..<channelListViewModel.numberOfChannel(at: section)).compactMap { row -> ChannelId? in
                 guard let channel = channelListViewModel.channel(at: IndexPath(row: row, section: section)) else { return nil }
+                guard seenIds.insert(channel.id).inserted else { return nil }
                 let fp = makeFingerprint(for: channel)
                 newFingerprints[channel.id] = fp
                 if channelFingerprints[channel.id] != fp {

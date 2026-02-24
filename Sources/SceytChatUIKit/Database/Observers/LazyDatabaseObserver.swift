@@ -540,7 +540,13 @@ open class LazyDatabaseObserver<DTO: NSManagedObject, Item>: NSObject, NSFetched
                     }
                 }
                 if let objs = userInfo[NSRefreshedObjectsKey] as? Set<NSManagedObject> {
-                    let dtos = sorted(objs)
+                    var dtos = sorted(objs)
+                    let filteredObjectIDs = Set(dtos.map { $0.objectID })
+                    let cachedDtos = objs.compactMap { $0 as? DTO }.filter { dto in
+                        !filteredObjectIDs.contains(dto.objectID) &&
+                        readCache({ self.mainCaches.mapItems[dto.objectID] }) != nil
+                    }
+                    dtos += cachedDtos
                     if !dtos.isEmpty {
                         willChangeCache()
                         shouldInsert = reload(dtos: dtos, in: &insertCache, changeItems: &changeItems, changeSections: &changeSections)
