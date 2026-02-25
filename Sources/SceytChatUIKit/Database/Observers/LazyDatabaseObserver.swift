@@ -176,10 +176,10 @@ open class LazyDatabaseObserver<DTO: NSManagedObject, Item>: NSObject, NSFetched
     }
     
     open func numberOfItems(in section: Int) -> Int {
-        if (isObserverStarted || isObserverRestarting), currentCaches.mainCache.indices.contains(section) {
-            return currentCaches.mainCache[section].count
-        }
-        return 0
+        guard isObserverStarted || isObserverRestarting else { return 0 }
+        let cache = currentCaches.mainCache
+        guard cache.indices.contains(section) else { return 0 }
+        return cache[section].count
     }
     
     open var count: Int {

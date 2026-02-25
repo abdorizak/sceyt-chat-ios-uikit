@@ -187,6 +187,9 @@ extension ChannelListViewController {
             dateLabel.font = appearance.dateLabelAppearance.font
             dateLabel.textColor = appearance.dateLabelAppearance.foregroundColor
             separatorView.backgroundColor = appearance.separatorColor
+            retentionBadgeView.isHidden = true
+            pinView.isHidden = true
+            muteView.isHidden = true
         }
         
         // MARK: - Event Management Methods
