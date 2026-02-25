@@ -71,6 +71,7 @@ func configureSceytChatUIKit() {
     // Set customized component subclass
     SceytChatUIKit.Components.clientConnectionHandler = ConnectionService.self
     SceytChatUIKit.Components.channelInfoViewController = CustomChannelInfoViewController.self
+    SceytChatUIKit.Components.channelListViewController = ChannelsViewController.self
     
     // Set customized subclass for formatters
     SceytChatUIKit.shared.formatters.userNameFormatter = UserDisplayNameFormatter()
