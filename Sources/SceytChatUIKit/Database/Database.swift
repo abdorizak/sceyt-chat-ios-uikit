@@ -72,26 +72,30 @@ public extension Database {
         resetStalenessInterval: Bool = true,
         completion: (() -> Void)? = nil
     ) {
-        let group = DispatchGroup()
-
-        func refresh(_ context: NSManagedObjectContext) {
-            group.enter()
-            context.perform {
-                defer { group.leave() }
-
-                if resetStalenessInterval { context.stalenessInterval = 0 }
-                context.refreshAllObjects()
-                if resetStalenessInterval { context.stalenessInterval = -1 }
-            }
+        if resetStalenessInterval {
+            self.backgroundPerformContext.stalenessInterval = 0
         }
-
-        refresh(backgroundPerformContext)
-        refresh(backgroundReadOnlyObservableContext)
-        refresh(viewContext)
-
-        group.notify(queue: .main) {
-            completion?()
+        self.backgroundPerformContext.refreshAllObjects()
+        if resetStalenessInterval {
+            self.backgroundPerformContext.stalenessInterval = -1
         }
+        
+        if resetStalenessInterval {
+            self.backgroundReadOnlyObservableContext.stalenessInterval = 0
+        }
+        self.backgroundReadOnlyObservableContext.refreshAllObjects()
+        if resetStalenessInterval {
+            self.backgroundReadOnlyObservableContext.stalenessInterval = -1
+        }
+        
+        if resetStalenessInterval {
+            self.viewContext.stalenessInterval = 0
+        }
+        self.viewContext.refreshAllObjects()
+        if resetStalenessInterval {
+            self.viewContext.stalenessInterval = -1
+        }
+        completion?()
     }
     
     func deleteAll() {
