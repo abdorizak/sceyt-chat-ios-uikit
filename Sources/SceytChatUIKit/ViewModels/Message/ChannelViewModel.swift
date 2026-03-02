@@ -96,7 +96,7 @@ open class ChannelViewModel: NSObject, ChatClientDelegate, ChannelDelegate, Unre
         isDirectChat && channel.peer?.state != .active && !channel.isSelfChannel
     }
     
-    public private(set) var channel: ChatChannel {
+    public var channel: ChatChannel {
         didSet {
             markAsReadIfNeeded()
         }
