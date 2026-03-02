@@ -197,18 +197,18 @@ extension MessageCell {
                         self?.lastAttachmentTransferProgress = progress
                     }
                 } completion: {[weak self] done in
+                    guard self?.data == data
+                    else {
+                        logger.verbose("[Attachment] completion self is nil \(data.attachment.description)")
+                        return
+                    }
                     logger.debug("[Attachment] completion \(done.attachment.status)")
-                    data.update(attachment: done.attachment)
                     if done.error == nil {
                         fileProvider.removeProgressObserver(message: done.message, attachment: done.attachment)
                     } else {
                         needsToUpdateStatus = true
                     }
-                    guard self?.data == data
-                    else {
-                        logger.verbose("[Attachment] completion cell recycled, skipping UI update \(data.attachment.description)")
-                        return
-                    }
+                    self?.data.update(attachment: done.attachment)
                     DispatchQueue.main.async {
                         self?.update(status: done.attachment.status)
                         self?.setCompletion(done)

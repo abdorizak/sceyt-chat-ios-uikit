@@ -93,8 +93,8 @@ extension MessageCell {
                 update(status: data.transferStatus)
 
                 data.onLoadThumbnail = { [weak self] thumbnail in
-                    guard let self, self.data === data else {
-                        logger.verbose("[Attachment] onLoadThumbnail self is nil or data mismatch")
+                    guard let self else {
+                        logger.verbose("[Attachment] onLoadThumbnail self is nil")
                         return
                     }
                     self.imageView.image = data.attachment.thumbnailImage ?? thumbnail
