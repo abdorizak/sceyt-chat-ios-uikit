@@ -286,9 +286,38 @@ open class ChannelListViewController: ViewController,
                 || !paths.sectionInserts.isEmpty
                 || !paths.sectionDeletes.isEmpty
             if hasStructuralChanges || paths.updates.isEmpty {
-                applyCurrentSnapshot(animation: true)
+                let hasDraftMove = !paths.moves.isEmpty
+                && paths.moves.allSatisfy { move in
+                    guard let channel = channelListViewModel.channel(at: move.to) else { return false }
+                    return channel.draftMessage?.string != channelFingerprints[channel.id]?.draftMessageText
+                }
+                && paths.inserts.isEmpty
+                && paths.deletes.isEmpty
+                && paths.sectionInserts.isEmpty
+                && paths.sectionDeletes.isEmpty
+                
+                applyCurrentSnapshot(animation: !hasDraftMove)
             } else {
-                applyDiffableUpdatesOnly(at: paths.updates)
+                let hasLastMessageIdChanged = paths.updates.contains { indexPath in
+                    guard let channel = channelListViewModel.channel(at: indexPath) else { return false }
+                    let fp = channelFingerprints[channel.id]
+                    return channel.lastMessage?.tid != fp?.lastMessageTid
+                    || channel.lastMessage?.id != fp?.lastMessageId
+                }
+
+                if hasLastMessageIdChanged {
+                    applyCurrentSnapshot(animation: true)
+                } else {
+                    let hasDraftChange = paths.updates.contains { indexPath in
+                        guard let channel = channelListViewModel.channel(at: indexPath) else { return false }
+                        return channel.draftMessage?.string != channelFingerprints[channel.id]?.draftMessageText
+                    }
+                    if hasDraftChange {
+                        applyCurrentSnapshot(animation: false)
+                    } else {
+                        applyDiffableUpdatesOnly(at: paths.updates)
+                    }
+                }
             }
         } else {
             if view.window == nil || tableView.visibleCells.isEmpty || !isViewDidAppear {
