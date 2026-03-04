@@ -255,15 +255,21 @@ extension ChannelListViewController {
             }
         }
         
+        override open func updateConstraints() {
+            updateCenterYConstraint()
+            super.updateConstraints()
+        }
+
         public func update(messageText: NSAttributedString?) {
             messageLabel.attributedText = messageText
-            updateCenterYConstraint()
-            messageLabel.setNeedsLayout()
-            messageLabel.layoutIfNeeded()
+            setNeedsUpdateConstraints()
         }
-        
+
         private func updateCenterYConstraint() {
-            let shouldCenter = messageLabel.attributedText?.string.isEmpty != false
+            let text = messageLabel.attributedText
+            let visibleText = text?.string.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let hasMessageContent = (text?.length ?? 0) > 0 && !visibleText.isEmpty
+            let shouldCenter = !hasMessageContent
             messageStackViewCenterYConstraint?.isActive = shouldCenter
             messageVerticalConstraints.forEach { $0.isActive = !shouldCenter }
         }
@@ -279,6 +285,7 @@ extension ChannelListViewController {
         
         open func bind(_ data: ChannelLayoutModel) {
             subjectLabel.text = data.formattedSubject
+            subjectLabel.isHidden = data.formattedSubject?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false
             update(messageText: data.attributedView)
             dateLabel.text = data.formattedDate
             pinView.isHidden = data.channel.pinnedAt == nil
@@ -319,7 +326,8 @@ extension ChannelListViewController {
                     avatarView.clipsToBounds = true
                     avatarView.contentMode = .scaleAspectFill
                 }.store(in: &subscriptions)
-            updateConstraints()
+            setNeedsUpdateConstraints()
+            setNeedsLayout()
         }
         
         open func deliveryStatusImage(message: ChatMessage?) -> UIImage? {
