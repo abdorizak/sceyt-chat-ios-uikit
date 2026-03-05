@@ -111,7 +111,16 @@ extension MessageCell {
                 let isViewOnce = data.ownerMessage?.isViewOnceMessage ?? false
                 blurEffectView.isHidden = !isViewOnce
                 fireIconContainerView.isHidden = !isViewOnce
-                playButton.isHidden = isViewOnce
+                if isViewOnce {
+                    playButton.isHidden = true
+                } else {
+                    if data.attachment.status == .done {
+                        playButton.isHidden = false
+                    } else {
+                        playButton.isHidden = true
+                    }
+                }
+
                 update(status: data.transferStatus)
 
                 if let filePath = data.attachment.filePath,
