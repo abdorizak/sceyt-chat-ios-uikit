@@ -316,7 +316,11 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         }
         
         var title = ""
-        if let user = viewModel.previewItem.attachment.user {
+        let previewUser: ChatUser? = viewModel.previewItem.attachment.user
+            ?? (try? DataProvider.database.read {
+                MessageDTO.fetch(id: self.viewModel.previewItem.attachment.messageId, context: $0)?.convert()
+            }.get()?.user)
+        if let user = previewUser {
             title = appearance.userNameFormatter.format(user)
         }
         carouselViewController?.titleLabel.text = title
