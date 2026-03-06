@@ -59,12 +59,23 @@ extension UIImageView {
         let initialIndex: Int
 
         if sender.viewOnce, let item = sender.item {
-            // Only open previewer for viewOnce messages when attachment is downloaded
             let attachment = item.attachment
-            guard attachment.status == .done else { return }
 
-            finalPreviewer = SingleItemPreviewDataSource(item: item)
-            initialIndex = 0
+            if attachment.status == .done || fileProvider.filePath(attachment: attachment) != nil {
+                // file is fully on disk (covers stuck .downloading case too)
+                finalPreviewer = SingleItemPreviewDataSource(item: item)
+                initialIndex = 0
+            } else {
+                // genuinely still downloading — retry to unstick and wait
+                let message = try? DataProvider.database.read {
+                    MessageDTO.fetch(id: attachment.messageId, context: $0)?.convert()
+                }.get()
+                guard let message else { return }
+                fileProvider.downloadMessageAttachmentsIfNeeded(message: message, attachments: [attachment]) { [weak self] _, _ in
+                    // re-trigger tap after download completes
+                }
+                return
+            }
         } else {
             guard let previewer = sender.previewer?(),
                   previewer.canShowPreviewer()
