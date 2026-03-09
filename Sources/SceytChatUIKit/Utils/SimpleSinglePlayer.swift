@@ -15,6 +15,7 @@ internal class SimpleSinglePlayer: NSObject {
     
     private static var currentPlayer: AVPlayer?
     private static var currentStopBlock: StopBlock?
+    private static var currentPauseBlock: StopBlock?
     private static var currentDurationBlock: DurationBlock?
     private static var timeObserver: Any?
     private static var speedForPlayer: [Int64: Float] = [:]
@@ -88,6 +89,11 @@ internal class SimpleSinglePlayer: NSObject {
     static func pause() {
         isPlaying = false
         currentPlayer?.pause()
+        currentPauseBlock?()
+    }
+
+    static func setPauseBlock(_ block: StopBlock?) {
+        currentPauseBlock = block
     }
     
     static func stop(resumeBackgroundPlayback: Bool = true) {
@@ -104,6 +110,7 @@ internal class SimpleSinglePlayer: NSObject {
         currentTime = 0
         currentStopBlock?()
         currentStopBlock = nil
+        currentPauseBlock = nil
         
         if resumeBackgroundPlayback {
             try? Components.audioSession.notifyOthersOnDeactivation()

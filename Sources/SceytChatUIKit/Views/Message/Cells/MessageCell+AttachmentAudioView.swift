@@ -143,6 +143,9 @@ extension MessageCell {
                 if data.attachment.playerId == SimpleSinglePlayer.currentId {
                     state = SimpleSinglePlayer.isPlaying ? .playing : .paused
                     SimpleSinglePlayer.set(durationBlock: setDuration, stopBlock: stop)
+                    if SimpleSinglePlayer.isPlaying {
+                        SimpleSinglePlayer.setPauseBlock { [weak self] in self?.state = .paused }
+                    }
                 } else {
                     state = .stopped
                 }
@@ -216,14 +219,17 @@ extension MessageCell {
             case .stopped:
                 state = .playing
                 SimpleSinglePlayer.play(fileUrl, id: data.attachment.playerId, durationBlock: setDuration, stopBlock: stop)
+                SimpleSinglePlayer.setPauseBlock { [weak self] in self?.state = .paused }
                 setPlayerSpeed(speed)
                 onPlayed(fileUrl)
             case .playing:
+                SimpleSinglePlayer.setPauseBlock(nil)
                 state = .paused
                 SimpleSinglePlayer.pause()
             case .paused:
                 state = .playing
                 SimpleSinglePlayer.play(fileUrl, id: data.attachment.playerId, durationBlock: setDuration, stopBlock: stop)
+                SimpleSinglePlayer.setPauseBlock { [weak self] in self?.state = .paused }
                 setPlayerSpeed(speed)
             }
         }
