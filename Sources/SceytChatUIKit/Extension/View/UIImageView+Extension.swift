@@ -53,6 +53,7 @@ extension UIImageView {
     @objc
     private func showImageViewer(_ sender: TapWithDataRecognizer) {
         guard let sourceView = sender.view as? UIImageView else { return }
+        UIApplication.shared.sendAction(#selector(resignFirstResponder), to: nil, from: nil, for: nil)
 
         // For view-once messages, create a single-item previewer with just the pressed item
         let finalPreviewer: PreviewDataSource
@@ -90,7 +91,6 @@ extension UIImageView {
                 initialIndex: initialIndex,
                 viewOnce: sender.viewOnce,
                 messageText: sender.messageText)
-        UIApplication.shared.sendAction(#selector(resignFirstResponder), to: nil, from: nil, for: nil)
         let presentFromViewController = sender.from ?? viewController
         presentFromViewController?.present(Components.mediaPreviewerNavigationController.init(imageCarousel), animated: true)
     }
