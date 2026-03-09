@@ -137,6 +137,8 @@ extension MessageCell {
                 case .pending, .uploading, .downloading:
                     if let progress = fileProvider.currentProgressPercent(message: data.message, attachment: layout.attachment) {
                         av.setProgress(.init(message: data.message, attachment: layout.attachment, progress: progress))
+                    } else if fileProvider.filePath(attachment: layout.attachment) == nil {
+                        av.setProgress(0.0001)
                     }
                 case .pauseUploading, .failedUploading:
                     break
