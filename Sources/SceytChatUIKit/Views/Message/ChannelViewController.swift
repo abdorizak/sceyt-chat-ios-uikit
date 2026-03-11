@@ -290,8 +290,7 @@ open class ChannelViewController: ViewController,
 
         joinGlobalChannelButton.addTarget(self, action: #selector(joinButtonAction(_:)), for: .touchUpInside)
         titleView.profileImageView.isUserInteractionEnabled = false
-        titleViewTapGestureRecognizer.addTarget(self, action: #selector(showChannelProfileAction))
-        titleView.addGestureRecognizer(titleViewTapGestureRecognizer)
+        titleView.tapButton.addTarget(self, action: #selector(showChannelProfileAction), for: .touchUpInside)
         viewTapGestureRecognizer.addTarget(self, action: #selector(viewTapped(gesture:)))
         viewTapGestureRecognizer.delegate = self
         viewTapGestureRecognizer.cancelsTouchesInView = true
@@ -762,9 +761,9 @@ open class ChannelViewController: ViewController,
         } else {
             navigationItem.setHidesBackButton(false, animated: false)
             navigationItem.leftItemsSupplementBackButton = true
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleView)
             navigationItem.title = nil
-            navigationItem.titleView = nil
+            navigationItem.titleView = titleView
+            navigationItem.leftBarButtonItem = nil
             navigationItem.rightBarButtonItems = []
         }
         selectingView.isHidden = !channelViewModel.isEditing
@@ -775,7 +774,7 @@ open class ChannelViewController: ViewController,
         definesPresentationContext = true
         navigationItem.setHidesBackButton(true, animated: false)
         navigationItem.leftBarButtonItem = nil
-        navigationItem.rightBarButtonItems = nil
+        navigationItem.rightBarButtonItems = []
         navigationItem.titleView = searchBar
         
         if isViewDidAppear {
