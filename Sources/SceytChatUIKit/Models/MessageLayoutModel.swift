@@ -896,7 +896,12 @@ open class MessageLayoutModel {
         preview.metadata = linkMetadata
         preview.iconOriginalSize = linkMetadata.iconOriginalSize
         if let imageSize = linkMetadata.imageOriginalSize ?? linkMetadata.image?.size {
-            preview.imageOriginalSize = AttachmentLayout.preferredImageSize(maxSize: Self.defaults.imageAttachmentSize.width, imageSize: imageSize)
+            if imageSize.width < 200 || imageSize.height < 200 {
+                preview.imageOriginalSize = imageSize
+                preview.isCompactLayout = true
+            } else {
+                preview.imageOriginalSize = AttachmentLayout.preferredImageSize(maxSize: Self.defaults.imageAttachmentSize.width, imageSize: imageSize)
+            }
         } else {
             preview.imageOriginalSize = linkMetadata.imageOriginalSize
         }
@@ -1060,6 +1065,7 @@ public extension MessageLayoutModel {
         public var imageOriginalSize: CGSize?
         public var iconOriginalSize: CGSize?
         public var metadata: LinkMetadata?
+        public var isCompactLayout: Bool = false
     }
     
     struct ReactionInfo: Equatable {
