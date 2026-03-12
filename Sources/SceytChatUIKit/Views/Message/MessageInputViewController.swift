@@ -631,7 +631,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
 
             case .failure:
                 DispatchQueue.main.async {
-                    if self.lastDetectedLinkMetadata != nil, self.currentState == nil {
+                    if url == self.getLink(),
+                       self.lastDetectedLinkMetadata != nil,
+                       self.currentState == nil {
                         self.removeActionView()
                     }
                 }
