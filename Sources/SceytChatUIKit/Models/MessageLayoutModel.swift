@@ -896,7 +896,7 @@ open class MessageLayoutModel {
         preview.metadata = linkMetadata
         preview.iconOriginalSize = linkMetadata.iconOriginalSize
         if let imageSize = linkMetadata.imageOriginalSize ?? linkMetadata.image?.size {
-            if imageSize.width < 200 || imageSize.height < 200 {
+            if imageSize.width < 200 {
                 preview.imageOriginalSize = imageSize
                 preview.isCompactLayout = true
             } else {

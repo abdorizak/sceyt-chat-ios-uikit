@@ -114,7 +114,7 @@ extension MessageCell {
                 if isViewOnce {
                     playButton.isHidden = true
                 } else {
-                    if data.attachment.status == .done {
+                    if data.attachment.status == .done || fileProvider.filePath(attachment: data.attachment) != nil {
                         playButton.isHidden = false
                     } else {
                         playButton.isHidden = true

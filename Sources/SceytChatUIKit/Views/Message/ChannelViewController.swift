@@ -1687,7 +1687,9 @@ open class ChannelViewController: ViewController,
             viewOnce: customInputViewController.isViewOnceEnabled
         )
 
-        m.didUserDismissLinkPreview = customInputViewController.didUserDismissLinkPreview
+        let isLinkPreviewVisible = customInputViewController.lastDetectedLinkMetadata != nil
+                                  && !customInputViewController.didUserDismissLinkPreview
+        m.didUserDismissLinkPreview = !isLinkPreviewVisible
         if let ma = messageAction {
             switch ma {
             case (let message, .reply):
