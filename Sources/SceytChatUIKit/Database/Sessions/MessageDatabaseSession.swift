@@ -257,12 +257,12 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             } else if $0.tid != 0 {
                 attachmentDTO = AttachmentDTO.fetch(tid: $0.tid, message: dto, context: self)
                 logger.verbose("[AttachmentDTO] update MESSAGE found by tid \($0.tid) \(attachmentDTO != nil) \($0.description)")
+            } else if let url = $0.url {
+                attachmentDTO = AttachmentDTO.fetchOrCreate(url: url, message: dto, context: self)
+                logger.verbose("[AttachmentDTO] update MESSAGE found by url \(url) \(attachmentDTO != nil) \($0.description)")
             } else if let filePath = $0.filePath {
                 attachmentDTO = AttachmentDTO.fetchOrCreate(filePath: filePath, message: dto, context: self)
                 logger.verbose("[AttachmentDTO] update MESSAGE found by filePath \(filePath) \(attachmentDTO != nil) \($0.description)")
-            } else if let url = $0.url {
-                logger.verbose("[AttachmentDTO] update MESSAGE found by url \(url) \(attachmentDTO != nil) \($0.description)")
-                attachmentDTO = AttachmentDTO.fetchOrCreate(url: url, message: dto, context: self)
             }
             guard let attachmentDTO else { return }
             if let url = $0.url {
@@ -271,7 +271,15 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             if let filePath = $0.filePath {
                 attachmentDTO.filePath = filePath
             }
-            
+            if attachmentDTO.message == nil {
+                attachmentDTO.message = dto
+            }
+            if attachmentDTO.messageId == 0 {
+                attachmentDTO.messageId = dto.id
+            }
+            if attachmentDTO.type.isEmpty, !$0.type.isEmpty {
+                attachmentDTO.type = $0.type
+            }
             attachmentDTO.transferProgress = $0.transferProgress
             attachmentDTO.status = $0.status.rawValue
             attachmentDTO.name = $0.name

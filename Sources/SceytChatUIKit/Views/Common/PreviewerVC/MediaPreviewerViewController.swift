@@ -316,10 +316,9 @@ open class MediaPreviewerViewController: ViewController, UIGestureRecognizerDele
         }
         
         var title = ""
-        let previewUser: ChatUser? = viewModel.previewItem.attachment.user
-            ?? (try? DataProvider.database.read {
+        let previewUser: ChatUser? = try? DataProvider.database.read {
                 MessageDTO.fetch(id: self.viewModel.previewItem.attachment.messageId, context: $0)?.convert()
-            }.get()?.user)
+            }.get()?.user
         if let user = previewUser {
             title = appearance.userNameFormatter.format(user)
         }
