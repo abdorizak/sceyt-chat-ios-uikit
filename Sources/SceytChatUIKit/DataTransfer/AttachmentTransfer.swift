@@ -167,8 +167,9 @@ open class AttachmentTransfer: DataProvider {
         else { return [] }
         
         for att in attachments {
+            let resolvedLocalFilePath = dataSession(for: message)?.getFilePath(attachment: att)
             if att.status == .pending,
-               let filePath = dataSession(for: message)?.getFilePath(attachment: att), !filePath.isEmpty
+               let filePath = resolvedLocalFilePath, !filePath.isEmpty
             {
                 att.status = .done
                 att.transferProgress = 1
@@ -185,6 +186,12 @@ open class AttachmentTransfer: DataProvider {
                         $0.completion?(attachmentCompletion)
                     }
                 }
+            } else if att.type != "link",
+                      att.status == .done,
+                      resolvedLocalFilePath == nil
+            {
+                att.status = .pending
+                att.transferProgress = 0
             }
         }
 
