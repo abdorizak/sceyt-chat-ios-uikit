@@ -44,7 +44,7 @@ extension ChannelInfoViewController {
         }
         
         deinit {
-            SimpleSinglePlayer.reset()
+            SimpleSinglePlayer.stop()
         }
         
         open override func setupAppearance() {

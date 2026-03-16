@@ -176,10 +176,10 @@ open class LazyDatabaseObserver<DTO: NSManagedObject, Item>: NSObject, NSFetched
     }
     
     open func numberOfItems(in section: Int) -> Int {
-        if (isObserverStarted || isObserverRestarting), currentCaches.mainCache.indices.contains(section) {
-            return currentCaches.mainCache[section].count
-        }
-        return 0
+        guard isObserverStarted || isObserverRestarting else { return 0 }
+        let cache = currentCaches.mainCache
+        guard cache.indices.contains(section) else { return 0 }
+        return cache[section].count
     }
     
     open var count: Int {
@@ -525,7 +525,6 @@ open class LazyDatabaseObserver<DTO: NSManagedObject, Item>: NSObject, NSFetched
            (currentContext === context) {
             
             func perform() {
-                logger.verbose("[MESSAGE SEND] didChangeObjects perform")
                 readCache {}
                 var sendEvent = false
                 var changeItems = [ChangeItem]()
@@ -541,7 +540,13 @@ open class LazyDatabaseObserver<DTO: NSManagedObject, Item>: NSObject, NSFetched
                     }
                 }
                 if let objs = userInfo[NSRefreshedObjectsKey] as? Set<NSManagedObject> {
-                    let dtos = sorted(objs)
+                    var dtos = sorted(objs)
+                    let filteredObjectIDs = Set(dtos.map { $0.objectID })
+                    let cachedDtos = objs.compactMap { $0 as? DTO }.filter { dto in
+                        !filteredObjectIDs.contains(dto.objectID) &&
+                        readCache({ self.mainCaches.mapItems[dto.objectID] }) != nil
+                    }
+                    dtos += cachedDtos
                     if !dtos.isEmpty {
                         willChangeCache()
                         shouldInsert = reload(dtos: dtos, in: &insertCache, changeItems: &changeItems, changeSections: &changeSections)

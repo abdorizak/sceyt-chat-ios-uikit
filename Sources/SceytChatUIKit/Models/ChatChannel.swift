@@ -41,7 +41,7 @@ public class ChatChannel {
     public var draftMessage: NSAttributedString?
     
     public var decodedMetadata: Metadata?
-        
+
     /// available only if channel type is direct
     public private(set) var members: [ChatChannelMember]?
     

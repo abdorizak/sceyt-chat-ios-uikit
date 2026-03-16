@@ -625,9 +625,39 @@ public extension Appearance {
             AssetComposer.shared.compose(from: .init(image: Assets.refresh.image,
                                                      renderingMode: .template(.accent)))!
         }()
-        
+
+        public static var addCircleDashed: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconAddCircleDashed.image,
+                                                     renderingMode: .template(.accent)))!
+        }()
+
+        public static var fire: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconFire.image,
+                                                     renderingMode: .original))!
+        }()
+
+        public static var iconOnceMessages: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconOnceMessages.image,
+                                                     renderingMode: .original))!
+        }()
+
+        public static var iconViewOnce: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconViewOnce.image,
+                                                     renderingMode: .original))!
+        }()
+
+        public static var iconViewOnceSelected: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconViewOnceSelected.image,
+                                                     renderingMode: .original))!
+        }()
+
+        public static var iconAudioViewOnce: UIImage = {
+            AssetComposer.shared.compose(from: .init(image: Assets.iconAudioViewOnce.image,
+                                                     renderingMode: .original))!
+        }()
+
         public init() { }
-        
+
     }
 }
 
@@ -772,6 +802,12 @@ extension UIImage {
     public static var replyPlay: UIImage { Images.replyPlay }
     public static var closeIcon: UIImage { Images.closeIcon }
     public static var messageFile: UIImage { Images.messageFile }
-    
+
     public static var refreshIcon: UIImage { Images.refreshIcon }
+    public static var addCircleDashed: UIImage { Images.addCircleDashed }
+    public static var iconViewOnce: UIImage { Images.iconViewOnce }
+    public static var iconViewOnceSelected: UIImage { Images.iconViewOnceSelected }
+    public static var iconAudioViewOnce: UIImage { Images.iconAudioViewOnce }
+    public static var fire: UIImage { Images.fire }
+    public static var iconOnceMessages: UIImage { Images.iconOnceMessages }
 }

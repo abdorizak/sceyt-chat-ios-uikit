@@ -14,7 +14,7 @@ open class MessageBodyFormatter: MessageBodyFormatting {
     
     open func format(_ messageBodyAttributes: MessageBodyFormatterAttributes) -> (NSAttributedString, [MessageLayoutModel.ContentItem]) {
         let message = messageBodyAttributes.message
-        
+
         switch message.state {
         case .deleted:
             let text = NSAttributedString(string: messageBodyAttributes.deletedStateText,
@@ -23,8 +23,32 @@ open class MessageBodyFormatter: MessageBodyFormatting {
                                             .foregroundColor: messageBodyAttributes.deletedLabelAppearance.foregroundColor
                                           ])
             return (text, [])
-            
+
         default:
+            // Check if message has opened marker
+            if message.hasOpenedMarker {
+                let font = messageBodyAttributes.deletedLabelAppearance.font
+                let color = messageBodyAttributes.deletedLabelAppearance.foregroundColor
+
+                // Create text
+                let text = NSMutableAttributedString(string: L10n.ViewOnce.selfDestructed,
+                                                     attributes: [
+                                                        .font: font,
+                                                        .foregroundColor: color
+                                                     ])
+
+                // Add icon at the beginning
+                let tintedIcon = Assets.iconAddCircleDashed.image.withTintColor(color, renderingMode: .alwaysTemplate)
+                let attachment = NSTextAttachment()
+                attachment.bounds = CGRect(x: 0, y: (font.capHeight - 20.0).rounded() / 2, width: 20.0, height: 20.0)
+                attachment.image = tintedIcon
+                let iconAttributedString = NSMutableAttributedString(attachment: attachment)
+                iconAttributedString.append(NSAttributedString(string: " ", attributes: [.font: font]))
+                text.insert(iconAttributedString, at: 0)
+
+                return (text, [])
+            }
+
             let userSendMessage = messageBodyAttributes.userSendMessage
             let bodyFont = messageBodyAttributes.bodyLabelAppearance.font
             let bodyColor = messageBodyAttributes.bodyLabelAppearance.foregroundColor

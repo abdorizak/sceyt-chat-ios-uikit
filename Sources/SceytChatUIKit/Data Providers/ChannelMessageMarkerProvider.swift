@@ -175,8 +175,9 @@ public enum DefaultMarker: Hashable {
     case displayed
     case received
     case played
+    case opened
     case custom(String)
-    
+
     public init(rawValue: String) {
         switch rawValue {
         case "displayed":
@@ -185,11 +186,13 @@ public enum DefaultMarker: Hashable {
             self = .received
         case "played":
             self = .played
+        case "opened":
+            self = .opened
         default:
             self = .custom(rawValue)
         }
     }
-    
+
     public var rawValue: String {
         switch self {
         case .displayed:
@@ -198,6 +201,8 @@ public enum DefaultMarker: Hashable {
             "received"
         case .played:
             "played"
+        case .opened:
+            "opened"
         case .custom(let customMarkerName):
             customMarkerName
         }
@@ -212,6 +217,7 @@ extension DefaultMarker: Comparable {
         case .displayed:    2
         case .played:       3
         case .custom:       4
+        case .opened:       5
         }
     }
     

@@ -1034,6 +1034,29 @@ public enum L10n {
       public static let online = L10n.tr("Localizable", "user.presence.online", fallback: "online")
     }
   }
+  public enum ViewOnce {
+    /// Message self-destructed
+    public static let selfDestructed = L10n.tr("Localizable", "viewOnce.selfDestructed", fallback: "Message self-destructed")
+    /// Self-destructed %@
+    public static func selfDestructedAttachment(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "viewOnce.selfDestructedAttachment", String(describing: p1), fallback: "Self-destructed %@")
+    }
+    public enum Info {
+      /// Any photo, video, or voice message you send will disappear from the chat after it's been opened.
+      /// To keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.
+      public static let description = L10n.tr("Localizable", "viewOnce.info.description", fallback: "Any photo, video, or voice message you send will disappear from the chat after it's been opened.\nTo keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.")
+      /// View once messages
+      public static let title = L10n.tr("Localizable", "viewOnce.info.title", fallback: "View once messages")
+    }
+    public enum Screenshot {
+      public enum Alert {
+        /// Screen capture has been restricted to ensure user privacy.
+        public static let message = L10n.tr("Localizable", "viewOnce.screenshot.alert.message", fallback: "Screen capture has been restricted to ensure user privacy.")
+        /// Screenshot Blocked
+        public static let title = L10n.tr("Localizable", "viewOnce.screenshot.alert.title", fallback: "Screenshot Blocked")
+      }
+    }
+  }
 }
 // swiftlint:enable explicit_type_interface function_parameter_count identifier_name line_length
 // swiftlint:enable nesting type_body_length type_name vertical_whitespace_opening_braces

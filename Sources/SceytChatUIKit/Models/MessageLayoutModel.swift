@@ -74,7 +74,7 @@ open class MessageLayoutModel {
     /// Returns true only if the message has long text that should be truncated,
     /// is not currently expanded, and is not deleted
     public var shouldDisplayReadMoreButton: Bool {
-        shouldShowReadMore && !isTextExpanded && message.state != .deleted
+        shouldShowReadMore && !isTextExpanded && message.state != .deleted && !message.isViewOnceMessage
     }
     public private(set) var infoViewMeasure: CGSize = .zero
     public private(set) var linkViewMeasure: CGSize = .zero
@@ -243,6 +243,12 @@ open class MessageLayoutModel {
         if messageUserTitleSize != .zero {
             contentOptions.insert(.name)
         }
+
+        // Hide text for viewOnce messages, but NOT if message has been opened (we want to show "Message self-destructed")
+        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 && !message.hasOpenedMarker {
+            contentOptions.remove(.text)
+            textSize = .zero
+        }
         
         for attachment in attachments {
             switch attachment.type {
@@ -292,6 +298,14 @@ open class MessageLayoutModel {
             textSize = .zero
         }
 
+        if message.hasOpenedMarker {
+            contentOptions.remove(.image)
+            contentOptions.remove(.file)
+            contentOptions.remove(.voice)
+            contentOptions.remove(.link)
+            contentOptions.remove(.poll)
+        }
+        
         if attachments.isEmpty {
             for link in Self.createLinkPreviews(message: message, linkAttachments: linkAttachments) {
                 addLinkPreview(linkMetadata: link)
@@ -414,6 +428,7 @@ open class MessageLayoutModel {
             self.message.body != message.body ||
             self.message.state != message.state ||
             self.message.bodyAttributes != message.bodyAttributes ||
+            self.message.hasOpenedMarker != message.hasOpenedMarker ||
             !isEqualMentionedUsers {
             attributedView = Self.attributedView(
                 message: message,
@@ -476,6 +491,13 @@ open class MessageLayoutModel {
         if messageUserTitleSize != .zero {
             contentOptions.insert(.name)
         }
+
+        // Hide text for viewOnce messages, but NOT if message has been opened (we want to show "Message self-destructed")
+        if message.isViewOnceMessage && (message.attachments?.count ?? 0) == 1 && !message.hasOpenedMarker {
+            contentOptions.remove(.text)
+            textSize = .zero
+        }
+
         if self.message.user.avatarUrl != message.user.avatarUrl,
            !updateOptions.contains(.user) {
             updateOptions.insert(.user)
@@ -693,7 +715,12 @@ open class MessageLayoutModel {
     }
     
     open class func attachmentLayout(message: ChatMessage, channel: ChatChannel, appearance: MessageCell.Appearance) -> [AttachmentLayout] {
-        (message.attachments?.compactMap {
+        // Hide attachments if message has opened marker
+        if message.hasOpenedMarker {
+            return []
+        }
+
+        return (message.attachments?.compactMap {
             logger.verbose("[Attachment] attachmentLayout attachment \($0.description)")
             let layout = Components.messageAttachmentLayoutModel.init(attachment: $0, ownerMessage: message, ownerChannel: channel, appearance: appearance)
             return layout.type == .link ? nil : layout
@@ -706,7 +733,12 @@ open class MessageLayoutModel {
     }
     
     open class func linkAttachmentLayout(message: ChatMessage, channel: ChatChannel, appearance: MessageCell.Appearance) -> [AttachmentLayout] {
-        (message.attachments?.compactMap {
+        // Hide link attachments if message has opened marker
+        if message.hasOpenedMarker {
+            return []
+        }
+
+        return (message.attachments?.compactMap {
             logger.verbose("[Attachment] attachmentLayout attachment \($0.description)")
             let layout = Components.messageAttachmentLayoutModel.init(attachment: $0, ownerMessage: message, ownerChannel: channel, appearance: appearance)
             return layout.type != .link || $0.imageDecodedMetadata?.hideLinkDetails == true ? nil : layout
@@ -714,6 +746,13 @@ open class MessageLayoutModel {
     }
     
     open func updateAttachmentLayouts(message: ChatMessage) {
+        // Hide attachments if message has opened marker
+        if message.hasOpenedMarker {
+            attachments = []
+            linkAttachments = []
+            return
+        }
+
         attachments =
         (message.attachments?.compactMap { attachment in
             logger.verbose("[Attachment] attachmentLayout update attachment \(attachment.description)")
@@ -729,7 +768,7 @@ open class MessageLayoutModel {
             let rd = rh.type == .image || rh.type == .video ? 0 : 1
             return ld < rd
         }
-        
+
         linkAttachments =
         (message.attachments?.compactMap { attachment in
             logger.verbose("[Attachment] link attachmentLayout update attachment \(attachment.description)")
@@ -857,7 +896,12 @@ open class MessageLayoutModel {
         preview.metadata = linkMetadata
         preview.iconOriginalSize = linkMetadata.iconOriginalSize
         if let imageSize = linkMetadata.imageOriginalSize ?? linkMetadata.image?.size {
-            preview.imageOriginalSize = AttachmentLayout.preferredImageSize(maxSize: Self.defaults.imageAttachmentSize.width, imageSize: imageSize)
+            if imageSize.width < 200 {
+                preview.imageOriginalSize = imageSize
+                preview.isCompactLayout = true
+            } else {
+                preview.imageOriginalSize = AttachmentLayout.preferredImageSize(maxSize: Self.defaults.imageAttachmentSize.width, imageSize: imageSize)
+            }
         } else {
             preview.imageOriginalSize = linkMetadata.imageOriginalSize
         }
@@ -1021,6 +1065,7 @@ public extension MessageLayoutModel {
         public var imageOriginalSize: CGSize?
         public var iconOriginalSize: CGSize?
         public var metadata: LinkMetadata?
+        public var isCompactLayout: Bool = false
     }
     
     struct ReactionInfo: Equatable {
@@ -1362,7 +1407,11 @@ extension MessageLayoutModel {
                 self.byMe = byMe
                 self.thumbnailSize = thumbnailSize
                 self.appearance = appearance
-                if let attachment = message.attachments?.first {
+
+                // Don't show attachment for view_once messages
+                if message.isViewOnceMessage {
+                    self.attachment = nil
+                } else if let attachment = message.attachments?.first {
                     self.attachment = .init(
                         attachment: attachment,
                         ownerMessage: message,
@@ -1370,19 +1419,60 @@ extension MessageLayoutModel {
                         thumbnailSize: thumbnailSize ?? Components.messageCellReplyView.Measure.imageSize,
                         appearance: appearance)
                 }
-                self.attributedBody = appearance.replyMessageAppearance.messageBodyFormatter.format(
-                    .init(
-                        message: message,
-                        deletedStateText: appearance.deletedStateText,
-                        bodyLabelAppearance: appearance.replyMessageAppearance.subtitleLabelAppearance,
-                        mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
-                        attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
-                        deletedLabelAppearance: appearance.replyMessageAppearance.deletedLabelAppearance,
-                        attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
-                        attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
-                        mentionUserNameFormatter: appearance.mentionUserNameFormatter
+
+                // Show custom text for view_once messages
+                if message.isViewOnceMessage {
+                    let attachmentType = message.attachments?.first?.type
+                    let attachmentName: String
+                    switch attachmentType {
+                    case "video":
+                        attachmentName = L10n.Attachment.video
+                    case "image":
+                        attachmentName = L10n.Attachment.image
+                    case "voice":
+                        attachmentName = L10n.Attachment.voice
+                    case "file":
+                        attachmentName = L10n.Attachment.file
+                    default:
+                        attachmentName = ""
+                    }
+                    let font = appearance.replyMessageAppearance.subtitleLabelAppearance.font
+                    let color = appearance.replyMessageAppearance.subtitleLabelAppearance.foregroundColor
+
+                    let text = NSMutableAttributedString(
+                        string: attachmentName,
+                        attributes: [
+                            .font: font as Any,
+                            .foregroundColor: color as Any
+                        ]
                     )
-                )
+
+                    // Add addCircleDashed icon at the beginning
+                    let tintedIcon = Images.addCircleDashed.withTintColor(color, renderingMode: .alwaysTemplate)
+                    let attachment = NSTextAttachment()
+                    attachment.bounds = CGRect(x: 0, y: (font.capHeight - 16.0).rounded() / 2, width: 16.0, height: 16.0)
+                    attachment.image = tintedIcon
+                    let iconAttributedString = NSMutableAttributedString(attachment: attachment)
+                    iconAttributedString.append(NSAttributedString(string: " ", attributes: [.font: font as Any]))
+                    text.insert(iconAttributedString, at: 0)
+
+                    self.attributedBody = text
+                } else {
+                    self.attributedBody = appearance.replyMessageAppearance.messageBodyFormatter.format(
+                        .init(
+                            message: message,
+                            deletedStateText: appearance.deletedStateText,
+                            bodyLabelAppearance: appearance.replyMessageAppearance.subtitleLabelAppearance,
+                            mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
+                            attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
+                            deletedLabelAppearance: appearance.replyMessageAppearance.deletedLabelAppearance,
+                            attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
+                            attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
+                            mentionUserNameFormatter: appearance.mentionUserNameFormatter,
+                            replyUserNameFormatter: SceytChatUIKit.shared.formatters.replyUserNameFormatter
+                        )
+                    )
+                }
                 icon = makeIcon()
             }
         

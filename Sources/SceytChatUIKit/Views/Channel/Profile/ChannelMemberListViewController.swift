@@ -36,14 +36,13 @@ open class ChannelMemberListViewController: ViewController,
         tableView.dataSource = self
         tableView.separatorStyle = .none
         tableView.sectionFooterHeight = 0
-        tableView.sectionHeaderHeight = 0
+        tableView.estimatedSectionHeaderHeight = 0
         memberListViewModel.startDatabaseObserver()
         memberListViewModel.$event
             .compactMap { $0 }
             .sink { [weak self] in
                 self?.onEvent($0)
             }.store(in: &subscriptions)
-        memberListViewModel.loadMembers()
         
         view.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(onLongPress)))
     }
@@ -73,17 +72,7 @@ open class ChannelMemberListViewController: ViewController,
     }
     
     open func updateTableView(paths: ChannelMemberListViewModel.ChangeItemPaths) {
-        if view.superview == nil || tableView.visibleCells.isEmpty {
-            tableView.reloadData()
-        } else {
-            UIView.performWithoutAnimation {
-                tableView.performBatchUpdates {
-                    tableView.insertRows(at: paths.inserts + paths.moves.map { $0.to }, with: .none)
-                    tableView.reloadRows(at: paths.updates, with: .none)
-                    tableView.deleteRows(at: paths.deletes + paths.moves.map { $0.from }, with: .none)
-                }
-            }
-        }
+        tableView.reloadData()
     }
     
     open func numberOfSections(in tableView: UITableView) -> Int {
@@ -96,15 +85,15 @@ open class ChannelMemberListViewController: ViewController,
     ) -> Int {
         memberListViewModel.numberOfItems(section: section)
     }
-    
+
+    open func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 0
+    }
+
     open func tableView(
         _ tableView: UITableView,
         cellForRowAt indexPath: IndexPath
     ) -> UITableViewCell {
-        if indexPath.item > memberListViewModel.numberOfMembers - 10 {
-            memberListViewModel.loadMembers()
-        }
-
         if indexPath.section == 0, memberListViewModel.hasActionRows {
             let cell = tableView.dequeueReusableCell(for: indexPath, cellType: Components.channelAddMemberCell.self)
             cell.parentAppearance = appearance.addCellAppearance
@@ -132,6 +121,29 @@ open class ChannelMemberListViewController: ViewController,
         cell.parentAppearance = appearance.cellAppearance
         guard let item else { return cell }
         cell.data = item
+
+        // Trigger pagination when creating the last cell of a section
+        if !memberListViewModel.shouldShowOnlyAdmins {
+            let section = indexPath.section
+            let numberOfItemsInSection = memberListViewModel.numberOfItems(section: section)
+
+            if indexPath.row == numberOfItemsInSection - 1 {
+                if section == memberListViewModel.ownerSectionIndex {
+                    memberListViewModel.provider.loadOwners()
+                } else if section == memberListViewModel.adminSectionIndex {
+                    memberListViewModel.provider.loadAdmins()
+                } else if section == memberListViewModel.otherSectionIndex {
+                    memberListViewModel.provider.loadOthers()
+                }
+            }
+        } else {
+            // Original behavior for filtered view
+            let lastIndex = memberListViewModel.numberOfMembers - 1
+            if indexPath.row == lastIndex {
+                memberListViewModel.loadMembers()
+            }
+        }
+
         return cell
     }
     

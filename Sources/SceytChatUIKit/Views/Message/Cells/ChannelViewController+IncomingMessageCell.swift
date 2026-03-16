@@ -135,7 +135,7 @@ extension ChannelViewController {
                 ]
             }
             
-            if options == .text {
+            if options == .text || layout.message.hasOpenedMarker {
                 let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
                 let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
 
@@ -483,7 +483,7 @@ extension ChannelViewController {
                 userNameSize = .zero
             }
             
-            if options == .text {
+            if options == .text || model.message.hasOpenedMarker {
                 // Use truncated text size if text is not expanded
                 // For deleted messages, always use current textSize regardless of isTextExpanded state
                 let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
@@ -540,6 +540,8 @@ extension ChannelViewController {
                 let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
                 textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.width = max(textSize.width, model.parentTextSize.width - 70)
+                textSize.height += (model.isForwarded || showName) ? 2 : 8
+
                 bubbleSize = textSize
 
                 // Add read more button height if needed
@@ -548,21 +550,9 @@ extension ChannelViewController {
                 }
 
                 bubbleSize.width = max(bubbleSize.width, linkSize.width)
+                bubbleSize.height += 8            // textLabel→linkView gap (matches linkView.topAnchor constant: 8)
                 bubbleSize.height += linkSize.height
-                if showName, !model.isForwarded, model.hasReply {
-                    bubbleSize.height += 2
-                } else {
-                    bubbleSize.height += model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2
-                }
-                bubbleSize.height += 12 //padding
-                if userNameSize == .zero {
-                    bubbleSize.height += 18
-                } else {
-                    bubbleSize.height += 2
-                }
-
-                let infoViewSize = InfoView.measure(model: model, appearance: appearance)
-                bubbleSize.height += infoViewSize.height
+                bubbleSize.height += 28           // bottom area: 4 (gap to infoView) + 24 (infoView.top offset from bubble bottom)
             } else if options.contains(.poll) {
                 let pollSize = model.pollViewMeasure
                 bubbleSize = pollSize

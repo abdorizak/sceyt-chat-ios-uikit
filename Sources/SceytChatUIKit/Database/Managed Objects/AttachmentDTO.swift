@@ -111,9 +111,11 @@ public class AttachmentDTO: NSManagedObject {
         }
         let dto = insertNewObject(into: context)
         dto.url = url
+        dto.message = message
+        dto.messageId = message.id
         return dto
     }
-    
+
     public static func fetchOrCreate(filePath: String, message: MessageDTO, context: NSManagedObjectContext) -> AttachmentDTO {
         let subPath = Components.storage.subPath(filePath: filePath)
         let request = fetchRequest()
@@ -125,6 +127,8 @@ public class AttachmentDTO: NSManagedObject {
         }
         let dto = insertNewObject(into: context)
         dto.filePath = filePath
+        dto.message = message
+        dto.messageId = message.id
         return dto
     }
     

@@ -11,9 +11,10 @@ import SceytChat
 import CoreData
 
 open class ChannelMessageProvider: DataProvider {
-    
+
     public var queryLimit = SceytChatUIKit.shared.config.queryLimits.messageListQueryLimit
-    
+    public var maxFetchRetryCount = 3
+
     public let channelId: ChannelId
     public let channelOperator: ChannelOperator
     public let threadMessageId: MessageId?
@@ -57,8 +58,8 @@ open class ChannelMessageProvider: DataProvider {
         completion: ((Error?) -> Void)? = nil
     ) {
         if !query.loading {
-            query.loadNext
-            { (_, messages, error) in
+            loadNextMessagesWithRetry(query: query, messageId: nil)
+            { messages, error in
                 guard let messages = messages
                 else {
                     completion?(error)
@@ -91,8 +92,8 @@ open class ChannelMessageProvider: DataProvider {
         after messageId: MessageId,
         completion: ((Error?) -> Void)? = nil) {
             if !query.loading {
-                query.loadNext(messageId: messageId)
-                { (_, messages, error) in
+                loadNextMessagesWithRetry(query: query, messageId: messageId)
+                { messages, error in
                     guard let messages = messages
                     else {
                         completion?(error)
@@ -124,8 +125,8 @@ open class ChannelMessageProvider: DataProvider {
         completion: ((Error?) -> Void)? = nil
     ) {
         if !query.loading {
-            defaultQuery.loadPrevious
-            { (_, messages, error) in
+            loadPrevMessagesWithRetry(query: query, messageId: nil)
+            { messages, error in
                 guard let messages = messages
                 else {
                     completion?(error)
@@ -158,8 +159,8 @@ open class ChannelMessageProvider: DataProvider {
         before messageId: MessageId,
         completion: ((Error?) -> Void)? = nil) {
             if !query.loading {
-                query.loadPrevious(messageId: messageId)
-                { (_, messages, error) in
+                loadPrevMessagesWithRetry(query: query, messageId: messageId)
+                { messages, error in
                     guard let messages = messages
                     else {
                         completion?(error)
@@ -192,8 +193,8 @@ open class ChannelMessageProvider: DataProvider {
         query: MessageListQuery,
         near messageId: MessageId,
         completion: ((Error?) -> Void)? = nil) {
-            query.loadNear(messageId: messageId)
-            {  (_, messages, error) in
+            loadNearMessagesWithRetry(query: query, messageId: messageId)
+            { messages, error in
                 guard let messages = messages
                 else {
                     completion?(error)
@@ -206,7 +207,89 @@ open class ChannelMessageProvider: DataProvider {
                 self.sendReceivedMarker(messages: messages)
             }
         }
-    
+
+    private func loadNextMessagesWithRetry(
+        query: MessageListQuery,
+        messageId: MessageId?,
+        attempt: Int = 0,
+        completion: @escaping ([Message]?, Error?) -> Void
+    ) {
+        let loadBlock: (@escaping (MessageListQuery?, [Message]?, Error?) -> Void) -> Void = { callback in
+            if let messageId = messageId {
+                query.loadNext(messageId: messageId, callback)
+            } else {
+                query.loadNext(callback)
+            }
+        }
+
+        loadBlock { [weak self] _, messages, error in
+            guard let self else { return }
+
+            guard self.shouldRetryFetch(messages: messages, error: error, attempt: attempt) else {
+                completion(messages, error)
+                return
+            }
+
+            let delay = self.retryDelay(forAttempt: attempt)
+            logger.info("Retry fetch next messages, attempt \(attempt + 1)/\(self.maxFetchRetryCount), delay \(Int(delay * 1000))ms")
+            DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                self.loadNextMessagesWithRetry(query: query, messageId: messageId, attempt: attempt + 1, completion: completion)
+            }
+        }
+    }
+
+    private func loadPrevMessagesWithRetry(
+        query: MessageListQuery,
+        messageId: MessageId?,
+        attempt: Int = 0,
+        completion: @escaping ([Message]?, Error?) -> Void
+    ) {
+        let loadBlock: (@escaping (MessageListQuery?, [Message]?, Error?) -> Void) -> Void = { callback in
+            if let messageId = messageId {
+                query.loadPrevious(messageId: messageId, callback)
+            } else {
+                query.loadPrevious(callback)
+            }
+        }
+
+        loadBlock { [weak self] _, messages, error in
+            guard let self else { return }
+
+            guard self.shouldRetryFetch(messages: messages, error: error, attempt: attempt) else {
+                completion(messages, error)
+                return
+            }
+
+            let delay = self.retryDelay(forAttempt: attempt)
+            logger.info("Retry fetch prev messages, attempt \(attempt + 1)/\(self.maxFetchRetryCount), delay \(Int(delay * 1000))ms")
+            DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                self.loadPrevMessagesWithRetry(query: query, messageId: messageId, attempt: attempt + 1, completion: completion)
+            }
+        }
+    }
+
+    private func loadNearMessagesWithRetry(
+        query: MessageListQuery,
+        messageId: MessageId,
+        attempt: Int = 0,
+        completion: @escaping ([Message]?, Error?) -> Void
+    ) {
+        query.loadNear(messageId: messageId) { [weak self] _, messages, error in
+            guard let self else { return }
+
+            guard self.shouldRetryFetch(messages: messages, error: error, attempt: attempt) else {
+                completion(messages, error)
+                return
+            }
+
+            let delay = self.retryDelay(forAttempt: attempt)
+            logger.info("Retry fetch near messages, attempt \(attempt + 1)/\(self.maxFetchRetryCount), delay \(Int(delay * 1000))ms")
+            DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                self.loadNearMessagesWithRetry(query: query, messageId: messageId, attempt: attempt + 1, completion: completion)
+            }
+        }
+    }
+
     open func store(
         messages: [Message],
         triggerMessage: MessageId? = nil,
@@ -912,6 +995,19 @@ extension ChannelMessageProvider {
     /// This should be called when starting the database observer to clean up expired messages
     open func deleteExpiredAutoDeleteMessages() {
         Self.deleteExpiredAutoDeleteMessages()
+    }
+
+    private func shouldRetryFetch(messages: [Message]?, error: Error?, attempt: Int) -> Bool {
+        guard messages == nil || messages?.isEmpty == true else { return false }
+        guard chatClient.connectionState == .connected else { return false }
+        guard attempt < max(0, maxFetchRetryCount) else { return false }
+        return error?.sdkError?.isResendable == true
+    }
+
+    private func retryDelay(forAttempt attempt: Int) -> TimeInterval {
+        let baseSeconds = 1.0 * pow(2.0, Double(attempt))
+        let jitterSeconds = Double.random(in: 0...(baseSeconds * 0.3))
+        return baseSeconds + jitterSeconds
     }
 }
 

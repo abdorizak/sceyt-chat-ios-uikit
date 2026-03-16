@@ -11,7 +11,9 @@ import SceytChat
 import CoreData
 
 open class ChannelCreator: DataProvider {
-    
+
+    public var maxCreateRetryCount = 3
+
     public required override init() {
         super.init()
     }
@@ -25,66 +27,57 @@ open class ChannelCreator: DataProvider {
         members: [Member]? = nil,
         completion: ((ChatChannel?, [Member]?, Error?) -> Void)? = nil
     ) {
-        Channel
-            .create(
-                type: type,
-                uri: uri,
-                subject: subject,
-                metadata: metadata,
-                avatarUrl: avatarUrl,
-                members: members
-            ) { channel, error in
-                guard let channel = channel
-                else {
-                    logger.errorIfNotNil(error, "Create channel")
-                    completion?(nil, [], error)
-                    return
-                }
-                var chatChannel: ChatChannel?
-                self.database.write {
-                    chatChannel = $0.createOrUpdate(channel: channel)
-                        .convert()
-                }  completion: { error in
-                    logger.errorIfNotNil(error, "Store created channel in db")
-                    completion?(chatChannel, channel.members, nil)
-                }
+        createWithRetry(
+            type: type,
+            uri: uri,
+            subject: subject,
+            metadata: metadata,
+            avatarUrl: avatarUrl,
+            members: members
+        ) { channel, error in
+            guard let channel = channel
+            else {
+                logger.errorIfNotNil(error, "Create channel")
+                completion?(nil, [], error)
+                return
             }
+            var chatChannel: ChatChannel?
+            self.database.write {
+                chatChannel = $0.createOrUpdate(channel: channel)
+                    .convert()
+            }  completion: { error in
+                logger.errorIfNotNil(error, "Store created channel in db")
+                completion?(chatChannel, channel.members, nil)
+            }
+        }
     }
     
     open func create(channel: ChatChannel,
                      completion: ((ChatChannel?, Error?) -> Void)? = nil
     ) {
-        Channel
-            .create(
-                type: channel.type,
-                uri: channel.uri,
-                subject: channel.subject,
-                metadata: channel.metadata,
-                avatarUrl: channel.avatarUrl,
-                members: channel.members?.map { Member.Builder(id: $0.id).build()}
-            ) { sceytChannel, error in
-                guard let sceytChannel
-                else {
-                    logger.errorIfNotNil(error, "Create channel")
-                    completion?(nil, error)
-                    return
-                }
-                var chatChannel: ChatChannel?
-                self.database.write {
-                    if var dto = ChannelDTO.fetch(id: channel.id, context: $0) {
-                        let oldId = dto.id
-                        dto = dto.map(sceytChannel)
-                        dto.id = Int64(sceytChannel.id)
-                        try $0.batchUpdate(object: MessageDTO.self, predicate: .init(format: "channelId == %lld", oldId), propertiesToUpdate: [#keyPath(MessageDTO.channelId): oldId])
-                        try $0.batchUpdate(object: MemberDTO.self, predicate: .init(format: "channelId == %lld", oldId), propertiesToUpdate: [#keyPath(MemberDTO.channelId): oldId])
-                    }
-                    chatChannel = $0.createOrUpdate(channel: sceytChannel)
-                        .convert()
-                }  completion: { error in
-                    logger.errorIfNotNil(error, "Store created channel in db")
-                    completion?(chatChannel, nil)
-                }
+        createChannelWithRetry(channel: channel) { sceytChannel, error in
+            guard let sceytChannel
+            else {
+                logger.errorIfNotNil(error, "Create channel")
+                completion?(nil, error)
+                return
             }
+            var chatChannel: ChatChannel?
+            self.database.write {
+                if var dto = ChannelDTO.fetch(id: channel.id, context: $0) {
+                    let oldId = dto.id
+                    dto = dto.map(sceytChannel)
+                    dto.id = Int64(sceytChannel.id)
+                    try $0.batchUpdate(object: MessageDTO.self, predicate: .init(format: "channelId == %lld", oldId), propertiesToUpdate: [#keyPath(MessageDTO.channelId): oldId])
+                    try $0.batchUpdate(object: MemberDTO.self, predicate: .init(format: "channelId == %lld", oldId), propertiesToUpdate: [#keyPath(MemberDTO.channelId): oldId])
+                }
+                chatChannel = $0.createOrUpdate(channel: sceytChannel)
+                    .convert()
+            }  completion: { error in
+                logger.errorIfNotNil(error, "Store created channel in db")
+                completion?(chatChannel, nil)
+            }
+        }
     }
     
     open func create(
@@ -305,6 +298,95 @@ open class ChannelCreator: DataProvider {
                 }
             }
         }
+    }
+
+    private func createWithRetry(
+        type: String,
+        uri: String?,
+        subject: String?,
+        metadata: String?,
+        avatarUrl: String?,
+        members: [Member]?,
+        attempt: Int = 0,
+        completion: @escaping (Channel?, Error?) -> Void
+    ) {
+        Channel
+            .create(
+                type: type,
+                uri: uri,
+                subject: subject,
+                metadata: metadata,
+                avatarUrl: avatarUrl,
+                members: members
+            ) { [weak self] channel, error in
+                guard let self else { return }
+
+                guard self.shouldRetryCreate(channel: channel, error: error, attempt: attempt) else {
+                    completion(channel, error)
+                    return
+                }
+
+                let delay = self.retryDelay(forAttempt: attempt)
+                logger.info("Retry create channel, attempt \(attempt + 1)/\(self.maxCreateRetryCount), delay \(Int(delay * 1000))ms")
+                DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                    self.createWithRetry(
+                        type: type,
+                        uri: uri,
+                        subject: subject,
+                        metadata: metadata,
+                        avatarUrl: avatarUrl,
+                        members: members,
+                        attempt: attempt + 1,
+                        completion: completion
+                    )
+                }
+            }
+    }
+
+    private func createChannelWithRetry(
+        channel: ChatChannel,
+        attempt: Int = 0,
+        completion: @escaping (Channel?, Error?) -> Void
+    ) {
+        Channel
+            .create(
+                type: channel.type,
+                uri: channel.uri,
+                subject: channel.subject,
+                metadata: channel.metadata,
+                avatarUrl: channel.avatarUrl,
+                members: channel.members?.map { Member.Builder(id: $0.id).build()}
+            ) { [weak self] sceytChannel, error in
+                guard let self else { return }
+
+                guard self.shouldRetryCreate(channel: sceytChannel, error: error, attempt: attempt) else {
+                    completion(sceytChannel, error)
+                    return
+                }
+
+                let delay = self.retryDelay(forAttempt: attempt)
+                logger.info("Retry create channel, attempt \(attempt + 1)/\(self.maxCreateRetryCount), delay \(Int(delay * 1000))ms")
+                DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                    self.createChannelWithRetry(
+                        channel: channel,
+                        attempt: attempt + 1,
+                        completion: completion
+                    )
+                }
+            }
+    }
+
+    private func shouldRetryCreate(channel: Channel?, error: Error?, attempt: Int) -> Bool {
+        guard channel == nil else { return false }
+        guard chatClient.connectionState == .connected else { return false }
+        guard attempt < max(0, maxCreateRetryCount) else { return false }
+        return error?.sdkError?.isResendable == true
+    }
+
+    private func retryDelay(forAttempt attempt: Int) -> TimeInterval {
+        let baseSeconds = 1.0 * pow(2.0, Double(attempt))
+        let jitterSeconds = Double.random(in: 0...(baseSeconds * 0.3))
+        return baseSeconds + jitterSeconds
     }
 }
 

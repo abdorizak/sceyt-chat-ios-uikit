@@ -13,22 +13,36 @@ open class ChannelListViewController: ViewController,
                           UITableViewDelegate, UITableViewDataSource,
                           UITextFieldDelegate,
                           UISearchResultsUpdating {
-    
+
+    // MARK: - Data Source Configuration
+
+    public enum DataSourceMode {
+        case imperative
+        case diffable
+    }
+
+    open var dataSourceMode: DataSourceMode = .imperative
+
+    private var diffableDataSource: UITableViewDiffableDataSource<Int, ChannelId>?
+    private var channelFingerprints: [ChannelId: ChannelFingerprint] = [:]
+
+    // MARK: -
+
     open lazy var channelListViewModel = Components.channelListViewModel
         .init(cellAppearance: appearance.cellAppearance)
-    
+
     open lazy var channelListRouter = Components.channelListRouter
         .init(rootViewController: self)
-    
+
     open lazy var tableView = TableView
         .init()
         .withoutAutoresizingMask
         .rowAutomaticDimension
-    
+
     open lazy var emptyView = Components.emptyStateView
         .init()
         .withoutAutoresizingMask
-    
+
     open lazy var searchController = Components.channelSearchController
         .init(searchResultsController: searchResultsViewController)
 
@@ -36,33 +50,32 @@ open class ChannelListViewController: ViewController,
         .init()
 
     private var isViewDidAppear = false
-    
+
     open override func setup() {
         super.setup()
         title = L10n.Channel.List.title
         tabBarItem.title = L10n.Channel.List.title
-        
+
         navigationItem.rightBarButtonItem = .init(image: .channelNew,
                                                   style: .plain,
                                                   target: self,
                                                   action: #selector(newChannelAction(_:)))
-        
+
         tableView.register(Components.channelCell)
         tableView.contentInsetAdjustmentBehavior = .automatic
         tableView.tableFooterView = UIView()
         tableView.separatorStyle = .none
-        tableView.delegate = self
-        tableView.dataSource = self
-                
+        setupTableViewDelegates()
+
         navigationItem.hidesSearchBarWhenScrolling = true
         searchResultsViewController.resultsUpdater = channelListViewModel
         navigationItem.searchController = searchController
         searchController.searchResultsUpdater = self
-        
+
         definesPresentationContext = true
-        
+
         emptyView.isHidden = true
-        
+
         KeyboardObserver()
             .willShow { [weak self] in
                 self?.adjustTableViewToKeyboard(notification: $0)
@@ -70,7 +83,68 @@ open class ChannelListViewController: ViewController,
                 self?.adjustTableViewToKeyboard(notification: $0)
             }
     }
-    
+
+    open func setupTableViewDelegates() {
+        tableView.delegate = self
+        if dataSourceMode == .diffable {
+            setupDiffableDataSource()
+            applyCurrentSnapshot()
+        } else {
+            tableView.dataSource = self
+        }
+    }
+
+    open func setupDiffableDataSource() {
+        let ds = UITableViewDiffableDataSource<Int, ChannelId>(tableView: tableView) { [weak self] tableView, indexPath, _ in
+            guard let self else { return UITableViewCell() }
+            return self.tableView(tableView, cellForRowAt: indexPath)
+        }
+        diffableDataSource = ds
+    }
+
+    open func applyCurrentSnapshot(animation: Bool = false) {
+        var snapshot = NSDiffableDataSourceSnapshot<Int, ChannelId>()
+        let sectionCount = channelListViewModel.numberOfSections
+        let sections = Array(0..<sectionCount)
+        snapshot.appendSections(sections)
+
+        var newFingerprints: [ChannelId: ChannelFingerprint] = [:]
+        var changedIds: [ChannelId] = []
+        var seenIds = Set<ChannelId>()
+
+        for section in sections {
+            let ids = (0..<channelListViewModel.numberOfChannel(at: section)).compactMap { row -> ChannelId? in
+                guard let channel = channelListViewModel.channel(at: IndexPath(row: row, section: section)) else { return nil }
+                guard seenIds.insert(channel.id).inserted else { return nil }
+                let fp = makeFingerprint(for: channel)
+                newFingerprints[channel.id] = fp
+                if channelFingerprints[channel.id] != fp {
+                    changedIds.append(channel.id)
+                }
+                return channel.id
+            }
+            snapshot.appendItems(ids, toSection: section)
+        }
+
+        if !changedIds.isEmpty {
+            snapshot.reloadItems(changedIds)
+        }
+        channelFingerprints = newFingerprints
+        diffableDataSource?.apply(snapshot, animatingDifferences: animation)
+    }
+
+    open func applyDiffableUpdatesOnly(at indexPaths: [IndexPath]) {
+        indexPaths.forEach { updateVisibleCell(indexPath: $0) }
+    }
+
+    open func updateVisibleCell(indexPath: IndexPath) {
+        guard let cell = tableView.cellForRow(at: indexPath) as? ChannelCell else { return }
+        cell.parentAppearance = appearance.cellAppearance
+        if let item = channelListViewModel.layoutModel(at: indexPath) {
+            cell.data = item
+        }
+    }
+
     open override func setupLayout() {
         super.setupLayout()
         SceytChatUIKit.shared.config.storageConfig.userDefaults.set(false, forKey: "_UIConstraintBasedLayoutLogUnsatisfiable")
@@ -79,25 +153,19 @@ open class ChannelListViewController: ViewController,
         tableView.pin(to: view)
         emptyView.pin(to: view.safeAreaLayoutGuide)
     }
-    
+
     open override func setupAppearance() {
         super.setupAppearance()
         navigationController?.navigationBar.apply(appearance: appearance.navigationBarAppearance)
         
-
-//        navigationItem.standardAppearance = NavigationController.appearance.standard
-//        navigationItem.standardAppearance?.backgroundColor = .surface1
-//        navigationItem.scrollEdgeAppearance = NavigationController.appearance.standard
-//        navigationItem.scrollEdgeAppearance?.backgroundColor = appearance.backgroundColor
-
         tabBarItem.badgeColor = appearance.tabBarItemBadgeColor
         view.backgroundColor = appearance.backgroundColor
         tableView.backgroundColor = .clear
         emptyView.parentAppearance = appearance.emptyViewAppearance
         searchController.parentAppearance = appearance.searchControllerAppearance
         searchResultsViewController.parentAppearance = appearance.searchResultControllerAppearance
-}
-    
+    }
+
     open override func setupDone() {
         super.setupDone()
         channelListViewModel.startDatabaseObserver()
@@ -107,25 +175,24 @@ open class ChannelListViewController: ViewController,
                 self?.onEvent($0)
             }.store(in: &subscriptions)
     }
-    
-    
+
     open override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         isViewDidAppear = true
     }
-    
+
     open override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         tableView.visibleCells.forEach {
             ($0 as? ChannelCell)?.subscribeForPresence()
         }
     }
-    
+
     open override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         isViewDidAppear = false
     }
-    
+
     open override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         if let indexPath = tableView.indexPathForSelectedRow {
@@ -133,16 +200,16 @@ open class ChannelListViewController: ViewController,
         }
         channelListViewModel.deselectChannel()
     }
-    
+
     open func adjustTableViewToKeyboard(notification: Notification) {
         tableView.adjustInsetsToKeyboard(notification: notification, container: view)
     }
-    
+
     @objc
     func newChannelAction(_ sender: UIBarItem) {
         channelListRouter.showNewChannel()
     }
-    
+
     @objc
     private func leftButtonAction(_ sender: UIBarItem, event: UIEvent) {
         guard let touch = event.allTouches?.first
@@ -157,17 +224,16 @@ open class ChannelListViewController: ViewController,
             }
         }
     }
-    
+
     // MARK: ViewModel Event
-    
+
     open func onEvent(_ event: ChannelListViewModel.Event) {
-        //        guard view.superview != nil else { return }
         switch event {
         case let .change(paths):
             updateTableView(paths: paths)
             showEmptyViewIfNeeded()
         case .reload:
-            tableView.reloadData()
+            reloadTableView()
             showEmptyViewIfNeeded()
         case .reloadSearch:
             searchResultsViewController.reloadData()
@@ -203,38 +269,88 @@ open class ChannelListViewController: ViewController,
             channelListRouter.showChannelViewController(channel: channel)
         }
     }
-    
-    open func updateTableView(paths: ChannelListViewModel.Paths) {
-        if view.window == nil || tableView.visibleCells.isEmpty || !isViewDidAppear {
-            tableView.reloadData()
+
+    open func reloadTableView() {
+        if dataSourceMode == .diffable {
+            applyCurrentSnapshot()
         } else {
-            UIView.performWithoutAnimation {
-                tableView.performBatchUpdates {
-                    if !paths.sectionInserts.isEmpty {
-                        tableView.insertSections(paths.sectionInserts, with: .none)
+            tableView.reloadData()
+        }
+    }
+
+    open func updateTableView(paths: ChannelListViewModel.Paths) {
+        if dataSourceMode == .diffable {
+            let hasStructuralChanges = !paths.inserts.isEmpty
+                || !paths.deletes.isEmpty
+                || !paths.moves.isEmpty
+                || !paths.sectionInserts.isEmpty
+                || !paths.sectionDeletes.isEmpty
+            if hasStructuralChanges || paths.updates.isEmpty {
+                let hasDraftMove = !paths.moves.isEmpty
+                && paths.moves.allSatisfy { move in
+                    guard let channel = channelListViewModel.channel(at: move.to) else { return false }
+                    return channel.draftMessage?.string != channelFingerprints[channel.id]?.draftMessageText
+                }
+                && paths.inserts.isEmpty
+                && paths.deletes.isEmpty
+                && paths.sectionInserts.isEmpty
+                && paths.sectionDeletes.isEmpty
+                
+                applyCurrentSnapshot(animation: !hasDraftMove)
+            } else {
+                let hasLastMessageIdChanged = paths.updates.contains { indexPath in
+                    guard let channel = channelListViewModel.channel(at: indexPath) else { return false }
+                    let fp = channelFingerprints[channel.id]
+                    return channel.lastMessage?.tid != fp?.lastMessageTid
+                    || channel.lastMessage?.id != fp?.lastMessageId
+                }
+
+                if hasLastMessageIdChanged {
+                    applyCurrentSnapshot(animation: true)
+                } else {
+                    let hasDraftChange = paths.updates.contains { indexPath in
+                        guard let channel = channelListViewModel.channel(at: indexPath) else { return false }
+                        return channel.draftMessage?.string != channelFingerprints[channel.id]?.draftMessageText
                     }
-                    if !paths.sectionDeletes.isEmpty {
-                        tableView.deleteSections(paths.sectionDeletes, with: .none)
+                    if hasDraftChange {
+                        applyCurrentSnapshot(animation: false)
+                    } else {
+                        applyDiffableUpdatesOnly(at: paths.updates)
                     }
-                    tableView.insertRows(at: paths.inserts, with: .none)
-                    tableView.reloadRows(at: paths.updates, with: .none)
-                    tableView.deleteRows(at: paths.deletes, with: .none)
-                    paths.moves.forEach { move in
-                        tableView.moveRow(at: move.from, to: move.to)
-                    }
-                } completion: { [weak self] _ in
-                    UIView.performWithoutAnimation {
-                        self?.tableView.reloadRows(at: paths.moves.map { $0.to }, with: .none)
+                }
+            }
+        } else {
+            if view.window == nil || tableView.visibleCells.isEmpty || !isViewDidAppear {
+                tableView.reloadData()
+            } else {
+                UIView.performWithoutAnimation {
+                    tableView.performBatchUpdates {
+                        if !paths.sectionInserts.isEmpty {
+                            tableView.insertSections(paths.sectionInserts, with: .none)
+                        }
+                        if !paths.sectionDeletes.isEmpty {
+                            tableView.deleteSections(paths.sectionDeletes, with: .none)
+                        }
+                        tableView.insertRows(at: paths.inserts, with: .none)
+                        tableView.reloadRows(at: paths.updates, with: .none)
+                        tableView.deleteRows(at: paths.deletes, with: .none)
+                        paths.moves.forEach { move in
+                            tableView.moveRow(at: move.from, to: move.to)
+                        }
+                    } completion: { [weak self] _ in
+                        UIView.performWithoutAnimation {
+                            self?.tableView.reloadRows(at: paths.moves.map { $0.to }, with: .none)
+                        }
                     }
                 }
             }
         }
     }
-    
+
     open func showEmptyViewIfNeeded() {
         emptyView.isHidden = channelListViewModel.numberOfSections > 0
     }
-    
+
     open func updateUnreadMessages(count: Int) {
         RunLoop.main.perform { [weak self] in
             guard let self
@@ -245,23 +361,23 @@ open class ChannelListViewController: ViewController,
         }
         updateApplicationBadgeNumberWithUnreadMessagesCount(count)
     }
-    
+
     open func updateApplicationBadgeNumberWithUnreadMessagesCount( _ count: Int) {
         UIApplication.shared.applicationIconBadgeNumber = count
     }
-    
+
     open func updateConnectionState(_ state: ConnectionState) {
         title = L10n.Channel.List.title
         tabBarItem.title = L10n.Channel.List.title
         navigationItem.titleView = Components.connectionStateView.init(state: state, appearance: appearance.connectionIndicatorAppearance)
     }
-    
+
     open func onSwipeAction(actions: ChannelSwipeActionsConfiguration.Actions,
                             indexPath: IndexPath) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             switchAction()
         }
-        
+
         func switchAction() {
             switch actions {
             case .delete:
@@ -292,7 +408,7 @@ open class ChannelListViewController: ViewController,
     }
 
     // MARK: UITableViewDelegate
-    
+
     open func tableView(_ tableView: UITableView,
                         trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard let channel = channelListViewModel.channel(at: indexPath)
@@ -324,7 +440,7 @@ open class ChannelListViewController: ViewController,
     open func numberOfSections(in tableView: UITableView) -> Int {
         channelListViewModel.numberOfSections
     }
-    
+
     open func tableView(_ tableView: UITableView,
                         numberOfRowsInSection section: Int) -> Int {
         channelListViewModel.numberOfChannel(at: section)
@@ -344,23 +460,92 @@ open class ChannelListViewController: ViewController,
                 tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
             }
         }
-        
+
         return cell
     }
 
     open override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        
+
         searchController.setupAppearance()
     }
-    
+
     // MARK: - UISearchResultsUpdating
-    
+
     public var lastSearchText: String?
     public func updateSearchResults(for searchController: UISearchController) {
         NSObject.cancelPreviousPerformRequests(withTarget: channelListViewModel, selector: #selector(ChannelListViewModel.search(query:)), object: lastSearchText)
         let text = searchController.searchBar.text
         lastSearchText = text
         channelListViewModel.perform(#selector(ChannelListViewModel.search(query:)), with: text, afterDelay: 0.01)
+    }
+}
+
+// MARK: - Diffable Data Source Fingerprinting
+
+private extension ChannelListViewController {
+    // Tracks the last-seen content fingerprint for each channel so we can
+    // call reloadItems only for rows whose visible content actually changed,
+    // instead of reloading every cell on every snapshot apply.
+    struct ChannelFingerprint: Equatable {
+        // Channel header / avatar
+        let subject: String?
+        let avatarUrl: String?
+
+        // Badge counters
+        let newMessageCount: UInt64
+        let newMentionCount: UInt64
+        let newReactionMessageCount: UInt64
+        let unread: Bool
+
+        // Icons & tinting
+        let muted: Bool
+        let pinnedAt: Date?
+        let messageRetentionPeriod: TimeInterval
+
+        // Draft text (NSAttributedString is not Equatable, use plain string)
+        let draftMessageText: String?
+
+        // Peer presence (online dot for direct channels)
+        let peerPresenceState: ChatUser.Presence.State?
+
+        // Last message
+        let lastMessageId: MessageId?
+        let lastMessageTid: Int64?
+        let lastMessageState: ChatMessage.State?
+        let lastMessageDeliveryStatus: ChatMessage.DeliveryStatus?
+        let lastMessageUpdatedAt: Date?
+        let lastMessageAttachmentType: String?
+        let lastMessageMetadata: String?
+
+        // Last reaction (drives "hasReaction" preview)
+        let lastReactionId: ReactionId?
+        let lastReactionKey: String?
+    }
+
+    func makeFingerprint(for channel: ChatChannel) -> ChannelFingerprint {
+        let lastMsg = channel.lastMessage
+        return ChannelFingerprint(
+            subject: channel.subject,
+            avatarUrl: channel.avatarUrl,
+            newMessageCount: channel.newMessageCount,
+            newMentionCount: channel.newMentionCount,
+            newReactionMessageCount: channel.newReactionMessageCount,
+            unread: channel.unread,
+            muted: channel.muted,
+            pinnedAt: channel.pinnedAt,
+            messageRetentionPeriod: channel.messageRetentionPeriod,
+            draftMessageText: channel.draftMessage?.string,
+            peerPresenceState: channel.peer?.presence.state,
+            lastMessageId: lastMsg?.id,
+            lastMessageTid: lastMsg?.tid,
+            lastMessageState: lastMsg?.state,
+            lastMessageDeliveryStatus: lastMsg?.deliveryStatus,
+            lastMessageUpdatedAt: lastMsg?.updatedAt,
+            lastMessageAttachmentType: lastMsg?.attachments?.last?.type,
+            lastMessageMetadata: lastMsg?.metadata,
+            lastReactionId: channel.lastReaction?.id,
+            lastReactionKey: channel.lastReaction?.key
+        )
     }
 }

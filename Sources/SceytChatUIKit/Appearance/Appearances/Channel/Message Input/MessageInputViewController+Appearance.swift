@@ -15,11 +15,14 @@ extension MessageInputViewController: AppearanceProviding {
         sendMessageIcon: .messageSendAction,
         voiceRecordIcon: .audioPlayerMic,
         cameraIcon: .chatActionCamera,
+        viewOnceIcon: .addCircleDashed,
+        viewOnceActiveIcon: .iconViewOnceSelected,
         sendVoiceMessageIcon: .messageSendAction,
         enableVoiceRecord: true,
         enableSendAttachment: true,
         enableMention: true,
         enableTextStyling: true,
+        enableViewOnce: false,
         inputAppearance: InputTextView.Appearance(
             reference: InputTextView.appearance
         ),
@@ -76,6 +79,12 @@ extension MessageInputViewController: AppearanceProviding {
         public var cameraIcon: UIImage
 
         @Trackable<Appearance, UIImage>
+        public var viewOnceIcon: UIImage
+
+        @Trackable<Appearance, UIImage>
+        public var viewOnceActiveIcon: UIImage
+
+        @Trackable<Appearance, UIImage>
         public var sendVoiceMessageIcon: UIImage
         
         @Trackable<Appearance, Bool>
@@ -89,7 +98,10 @@ extension MessageInputViewController: AppearanceProviding {
         
         @Trackable<Appearance, Bool>
         public var enableTextStyling: Bool
-        
+
+        @Trackable<Appearance, Bool>
+        public var enableViewOnce: Bool
+
         @Trackable<Appearance, InputTextView.Appearance>
         public var inputAppearance: InputTextView.Appearance
         
@@ -142,11 +154,14 @@ extension MessageInputViewController: AppearanceProviding {
             sendMessageIcon: UIImage,
             voiceRecordIcon: UIImage,
             cameraIcon: UIImage,
+            viewOnceIcon: UIImage,
+            viewOnceActiveIcon: UIImage,
             sendVoiceMessageIcon: UIImage,
             enableVoiceRecord: Bool,
             enableSendAttachment: Bool,
             enableMention: Bool,
             enableTextStyling: Bool,
+            enableViewOnce: Bool,
             inputAppearance: InputTextView.Appearance,
             mentionLabelAppearance: LabelAppearance,
             joinButtonAppearance: ButtonAppearance,
@@ -169,11 +184,14 @@ extension MessageInputViewController: AppearanceProviding {
             self._sendMessageIcon = Trackable(value: sendMessageIcon)
             self._voiceRecordIcon = Trackable(value: voiceRecordIcon)
             self._cameraIcon = Trackable(value: cameraIcon)
+            self._viewOnceIcon = Trackable(value: viewOnceIcon)
+            self._viewOnceActiveIcon = Trackable(value: viewOnceActiveIcon)
             self._sendVoiceMessageIcon = Trackable(value: sendVoiceMessageIcon)
             self._enableVoiceRecord = Trackable(value: enableVoiceRecord)
             self._enableSendAttachment = Trackable(value: enableSendAttachment)
             self._enableMention = Trackable(value: enableMention)
             self._enableTextStyling = Trackable(value: enableTextStyling)
+            self._enableViewOnce = Trackable(value: enableViewOnce)
             self._inputAppearance = Trackable(value: inputAppearance)
             self._mentionLabelAppearance = Trackable(value: mentionLabelAppearance)
             self._joinButtonAppearance = Trackable(value: joinButtonAppearance)
@@ -199,11 +217,14 @@ extension MessageInputViewController: AppearanceProviding {
             sendMessageIcon: UIImage? = nil,
             voiceRecordIcon: UIImage? = nil,
             cameraIcon: UIImage? = nil,
+            viewOnceIcon: UIImage? = nil,
+            viewOnceActiveIcon: UIImage? = nil,
             sendVoiceMessageIcon: UIImage? = nil,
             enableVoiceRecord: Bool? = nil,
             enableSendAttachment: Bool? = nil,
             enableMention: Bool? = nil,
             enableTextStyling: Bool? = nil,
+            enableViewOnce: Bool? = nil,
             inputAppearance: InputTextView.Appearance? = nil,
             mentionLabelAppearance: LabelAppearance? = nil,
             joinButtonAppearance: ButtonAppearance? = nil,
@@ -226,11 +247,14 @@ extension MessageInputViewController: AppearanceProviding {
             self._sendMessageIcon = Trackable(reference: reference, referencePath: \.sendMessageIcon)
             self._voiceRecordIcon = Trackable(reference: reference, referencePath: \.voiceRecordIcon)
             self._cameraIcon = Trackable(reference: reference, referencePath: \.cameraIcon)
+            self._viewOnceIcon = Trackable(reference: reference, referencePath: \.viewOnceIcon)
+            self._viewOnceActiveIcon = Trackable(reference: reference, referencePath: \.viewOnceActiveIcon)
             self._sendVoiceMessageIcon = Trackable(reference: reference, referencePath: \.sendVoiceMessageIcon)
             self._enableVoiceRecord = Trackable(reference: reference, referencePath: \.enableVoiceRecord)
             self._enableSendAttachment = Trackable(reference: reference, referencePath: \.enableSendAttachment)
             self._enableMention = Trackable(reference: reference, referencePath: \.enableMention)
             self._enableTextStyling = Trackable(reference: reference, referencePath: \.enableTextStyling)
+            self._enableViewOnce = Trackable(reference: reference, referencePath: \.enableViewOnce)
             self._inputAppearance = Trackable(reference: reference, referencePath: \.inputAppearance)
             self._mentionLabelAppearance = Trackable(reference: reference, referencePath: \.mentionLabelAppearance)
             self._joinButtonAppearance = Trackable(reference: reference, referencePath: \.joinButtonAppearance)
@@ -253,11 +277,14 @@ extension MessageInputViewController: AppearanceProviding {
             if let sendMessageIcon { self.sendMessageIcon = sendMessageIcon }
             if let voiceRecordIcon { self.voiceRecordIcon = voiceRecordIcon }
             if let cameraIcon { self.cameraIcon = cameraIcon }
+            if let viewOnceIcon { self.viewOnceIcon = viewOnceIcon }
+            if let viewOnceActiveIcon { self.viewOnceActiveIcon = viewOnceActiveIcon }
             if let sendVoiceMessageIcon { self.sendVoiceMessageIcon = sendVoiceMessageIcon }
             if let enableVoiceRecord { self.enableVoiceRecord = enableVoiceRecord }
             if let enableSendAttachment { self.enableSendAttachment = enableSendAttachment }
             if let enableMention { self.enableMention = enableMention }
             if let enableTextStyling { self.enableTextStyling = enableTextStyling }
+            if let enableViewOnce { self.enableViewOnce = enableViewOnce }
             if let inputAppearance { self.inputAppearance = inputAppearance }
             if let mentionLabelAppearance { self.mentionLabelAppearance = mentionLabelAppearance }
             if let joinButtonAppearance { self.joinButtonAppearance = joinButtonAppearance }

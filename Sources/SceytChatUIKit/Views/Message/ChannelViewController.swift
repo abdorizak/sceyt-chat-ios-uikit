@@ -150,6 +150,7 @@ open class ChannelViewController: ViewController,
     }
     
     private var isScrollingBottom = false
+    private var isUpdatingInputViewHeight = false
     private var checkOnlyFirstTimeReceivedMessagesFromArchive = true
     private var isViewDidAppear = false
     private var contextMenu: ContextMenu!
@@ -289,8 +290,7 @@ open class ChannelViewController: ViewController,
 
         joinGlobalChannelButton.addTarget(self, action: #selector(joinButtonAction(_:)), for: .touchUpInside)
         titleView.profileImageView.isUserInteractionEnabled = false
-        titleViewTapGestureRecognizer.addTarget(self, action: #selector(showChannelProfileAction))
-        titleView.addGestureRecognizer(titleViewTapGestureRecognizer)
+        titleView.tapButton.addTarget(self, action: #selector(showChannelProfileAction), for: .touchUpInside)
         viewTapGestureRecognizer.addTarget(self, action: #selector(viewTapped(gesture:)))
         viewTapGestureRecognizer.delegate = self
         viewTapGestureRecognizer.cancelsTouchesInView = true
@@ -406,6 +406,7 @@ open class ChannelViewController: ViewController,
         customInputViewController.onContentHeightUpdate = { [weak self] height, completion in
             guard let self else { return }
             if height != self.messageInputViewHeightConstraint.constant {
+                self.isUpdatingInputViewHeight = true
                 UIView.animate(withDuration: 0.25) { [weak self] in
                     guard let self else { return }
                     let bottom = self.collectionView.contentInset.bottom
@@ -429,7 +430,10 @@ open class ChannelViewController: ViewController,
                         ),
                         animated: false
                     )
-                } completion: { _ in completion?() }
+                } completion: { [weak self] _ in
+                    self?.isUpdatingInputViewHeight = false
+                    completion?()
+                }
             }
         }
 
@@ -757,9 +761,9 @@ open class ChannelViewController: ViewController,
         } else {
             navigationItem.setHidesBackButton(false, animated: false)
             navigationItem.leftItemsSupplementBackButton = true
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleView)
             navigationItem.title = nil
-            navigationItem.titleView = nil
+            navigationItem.titleView = titleView
+            navigationItem.leftBarButtonItem = nil
             navigationItem.rightBarButtonItems = []
         }
         selectingView.isHidden = !channelViewModel.isEditing
@@ -770,7 +774,7 @@ open class ChannelViewController: ViewController,
         definesPresentationContext = true
         navigationItem.setHidesBackButton(true, animated: false)
         navigationItem.leftBarButtonItem = nil
-        navigationItem.rightBarButtonItems = nil
+        navigationItem.rightBarButtonItems = []
         navigationItem.titleView = searchBar
         
         if isViewDidAppear {
@@ -1263,7 +1267,9 @@ open class ChannelViewController: ViewController,
         updateUnreadViewVisibility()
         updateLastNavigatedIndexPath()
         updatePinnedHeaderVisibility()
-        self.addMoreMessage(scrollDirection: self.lastScrollDirection, force: false)
+        if !isUpdatingInputViewHeight {
+            self.addMoreMessage(scrollDirection: self.lastScrollDirection, force: false)
+        }
     }
     
     open func scrollViewDidScrollToTop(_ scrollView: UIScrollView) {
@@ -1516,6 +1522,8 @@ open class ChannelViewController: ViewController,
                 self.router.playFrom(url: url)
             case .playedAudio(_):
                 self.channelViewModel.markMessages([model.message], as: .played)
+            case .openedViewOnce(_):
+                self.channelViewModel.markMessages([model.message], as: .opened)
             case .didTapLink(let link):
                 self.showLink(link)
             case .didLongPressLink(let link):
@@ -1545,7 +1553,7 @@ open class ChannelViewController: ViewController,
             case .didTapPollOption(let optionIndex, let pollViewModel):
                 self.didTapPollOption(layoutModel: model, optionIndex: optionIndex, pollViewModel: pollViewModel)
             case .didTapReadMore:
-                
+
                 self.channelViewModel.invalidateLayout()
                 // Invalidate the collection view layout
                 self.collectionView.collectionViewLayout.invalidateLayout()
@@ -1675,10 +1683,13 @@ open class ChannelViewController: ViewController,
         let m = UserSendMessage(
             sendText: shouldClearText ? inputTextView.attributedText : .init(),
             attachments: selectedMediaView.items,
-            linkMetadata: linkMetadata
+            linkMetadata: linkMetadata,
+            viewOnce: customInputViewController.isViewOnceEnabled
         )
 
-        m.didUserDismissLinkPreview = customInputViewController.didUserDismissLinkPreview
+        let isLinkPreviewVisible = customInputViewController.lastDetectedLinkMetadata != nil
+                                  && !customInputViewController.didUserDismissLinkPreview
+        m.didUserDismissLinkPreview = !isLinkPreviewVisible
         if let ma = messageAction {
             switch ma {
             case (let message, .reply):
@@ -1696,6 +1707,7 @@ open class ChannelViewController: ViewController,
     
     open func sendMessage(_ message: UserSendMessage, shouldClearText: Bool = true) {
         userSelectOnRepliedMessage = nil
+        isScrollingBottom = true
         logger.verbose("[MESSAGE SEND] sendMessage")
         let canShowUnread = canShowUnreadCountView
         canShowUnreadCountView = false
@@ -1929,25 +1941,103 @@ open class ChannelViewController: ViewController,
     }
     
     open func copy(layoutModel: MessageLayoutModel) {
-        let attr = layoutModel.attributedView.content
-        let pb = UIPasteboard.general
+        guard !layoutModel.message.body.isEmpty else {
+            UIPasteboard.general.string = ""
+            return
+        }
+        
+        let attributedText = prepareAttributedTextForCopy(from: layoutModel)
+        copyToPasteboard(attributedText, fallbackText: layoutModel.message.body)
+    }
+    
+    /// Prepares attributed text for copying by normalizing colors and removing underlines from URLs
+    /// - Parameter layoutModel: The message layout model containing the content
+    /// - Returns: A mutable attributed string ready for copying
+    private func prepareAttributedTextForCopy(from layoutModel: MessageLayoutModel) -> NSMutableAttributedString {
+        let attr = layoutModel.attributedView.content.mutableCopy() as! NSMutableAttributedString
 
-        // Store custom attributed string with all attributes preserved
-        if let archivedData = try? NSKeyedArchiver.archivedData(withRootObject: attr, requiringSecureCoding: false) {
-            if #available(iOS 14.0, *) {
-                pb.items = [[
-                    "com.sceyt.attributedstring": archivedData,  // Custom type for full attributes
-                    UTType.plainText.identifier: attr.string      // Plain text fallback
-                ]]
-            } else {
-                do {
-                    try UIPasteboard.general.set(layoutModel.attributedView.content)
-                } catch {
-                    UIPasteboard.general.string = layoutModel.message.body
+        // Process links and phone numbers
+        for item in layoutModel.attributedView.items {
+            let range = item.range
+            guard isValidRange(item.range, in: attr.length) else { continue }
+            
+            switch item {
+            case .link(_, let url):
+                if let url = url {
+                    resetLinkTextColor(from: attr, at: item.range)
+                    removeUnderline(from: attr, at: item.range)
                 }
+                
+            case .phone(_, let phoneNumber):
+                if let phoneNumber = phoneNumber, !phoneNumber.isEmpty {
+                    resetLinkTextColor(from: attr, at: item.range)
+                    removeUnderline(from: attr, at: item.range)
+                }
+                break
+            case .mention:
+                break
             }
+        }
+        return attr
+    }
+    
+    /// Validates that a range is within the bounds of the string
+    /// - Parameters:
+    ///   - range: The range to validate
+    ///   - length: The length of the string
+    /// - Returns: True if the range is valid, false otherwise
+    private func isValidRange(_ range: NSRange, in length: Int) -> Bool {
+        return range.location >= 0 &&
+               range.length > 0 &&
+               range.location + range.length <= length
+    }
+    
+    /// Removes underline styling from the specified range in the attributed string
+    /// - Parameters:
+    ///   - attributedString: The attributed string to modify
+    ///   - range: The range where underline should be removed
+    private func removeUnderline(from attributedString: NSMutableAttributedString, at range: NSRange) {
+        if attributedString.attribute(.underlineStyle, at: range.location, effectiveRange: nil) != nil {
+            attributedString.removeAttribute(.underlineStyle, range: range)
+            attributedString.removeAttribute(.underlineColor, range: range)
+        }
+    }
+    
+    /// Resets link styling color from the specified range in the attributed string
+    /// - Parameters:
+    ///   - attributedString: The attributed string to modify
+    ///   - range: The range where link should be reseted
+    private func resetLinkTextColor(from attributedString: NSMutableAttributedString, at range: NSRange) {
+        if attributedString.attribute(.underlineStyle, at: range.location, effectiveRange: nil) != nil {
+            attributedString.removeAttribute(.foregroundColor, range: range)
+            attributedString.addAttribute(.foregroundColor, value: inputTextView.textColor, range: range)
+        }
+    }
+    
+    /// Copies attributed text to the pasteboard with multiple format support
+    /// - Parameters:
+    ///   - attributedText: The attributed text to copy
+    ///   - fallbackText: Plain text fallback if archiving fails
+    private func copyToPasteboard(_ attributedText: NSAttributedString, fallbackText: String) {
+        let pasteboard = UIPasteboard.general
+        
+        guard let archivedData = try? NSKeyedArchiver.archivedData(withRootObject: attributedText, requiringSecureCoding: false) else {
+            pasteboard.string = fallbackText
+            return
+        }
+        
+        if #available(iOS 14.0, *) {
+            var items: [String: Any] = [
+                UTType.plainText.identifier: attributedText.string,
+                "com.sceyt.attributedstring": archivedData
+            ]
+            pasteboard.items = [items]
         } else {
-            pb.string = layoutModel.message.body
+            do {
+                try pasteboard.set(attributedText)
+            } catch {
+                pasteboard.string = fallbackText
+            }
         }
     }
     
@@ -2709,7 +2799,7 @@ open class ChannelViewController: ViewController,
     }
     
     deinit {
-        SimpleSinglePlayer.reset()
+        SimpleSinglePlayer.stop()
         avatarTask?.cancel()
         navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         NotificationCenter.default.removeObserver(self)

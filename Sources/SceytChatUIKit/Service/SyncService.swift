@@ -55,7 +55,12 @@ public final class SyncService: NSObject {
     }
     
     public class func resendPendingMessage() {
+        guard Bundle.isMainApp else {
+            logger.verbose("SyncService: resendPendingMessage skipped - running in app extension")
+            return
+        }
         logger.verbose("SyncService: makeMessageResendOperations")
+
         Components.channelMessageProvider
             .fetchPendingMessages { messages in
                 logger.verbose("SyncService: makeMessageResendOperations fetched \(messages.count) messages")

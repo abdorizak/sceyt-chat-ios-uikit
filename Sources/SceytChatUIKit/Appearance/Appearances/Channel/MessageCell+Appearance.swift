@@ -121,7 +121,7 @@ extension MessageCell: AppearanceProviding {
         forwardedIcon: .forwardedMessage,
         voicePlayIcon: .audioPlayerPlay,
         voicePauseIcon: .audioPlayerPause,
-        
+        voiceViewOnceIcon: .iconAudioViewOnce,
         // Other Appearances
         //        unreadMessagesSeparatorAppearance: MessageCell.UnreadMessagesSeparatorView.appearance,
         unreadMessagesSeparatorAppearance: UnreadMessagesSeparatorView.Appearance(), // review!!!
@@ -307,7 +307,10 @@ extension MessageCell: AppearanceProviding {
         
         @Trackable<Appearance, UIImage>
         public var voicePauseIcon: UIImage
-        
+
+        @Trackable<Appearance, UIImage>
+        public var voiceViewOnceIcon: UIImage
+
         // Other Appearances
         @Trackable<Appearance, UnreadMessagesSeparatorView.Appearance>
         public var unreadMessagesSeparatorAppearance: UnreadMessagesSeparatorView.Appearance
@@ -441,7 +444,8 @@ extension MessageCell: AppearanceProviding {
             forwardedIcon: UIImage,
             voicePlayIcon: UIImage,
             voicePauseIcon: UIImage,
-            
+            voiceViewOnceIcon: UIImage,
+
             // Other Appearances
             unreadMessagesSeparatorAppearance: MessageCell.UnreadMessagesSeparatorView.Appearance,
             replyMessageAppearance: ReplyMessageAppearance,
@@ -527,7 +531,8 @@ extension MessageCell: AppearanceProviding {
             self._forwardedIcon = Trackable(value: forwardedIcon)
             self._voicePlayIcon = Trackable(value: voicePlayIcon)
             self._voicePauseIcon = Trackable(value: voicePauseIcon)
-            
+            self._voiceViewOnceIcon = Trackable(value: voiceViewOnceIcon)
+
             // Other Appearances
             self._unreadMessagesSeparatorAppearance = Trackable(value: unreadMessagesSeparatorAppearance)
             self._replyMessageAppearance = Trackable(value: replyMessageAppearance)
@@ -614,7 +619,8 @@ extension MessageCell: AppearanceProviding {
             forwardedIcon: UIImage? = nil,
             voicePlayIcon: UIImage? = nil,
             voicePauseIcon: UIImage? = nil,
-            
+            voiceViewOnceIcon: UIImage? = nil,
+
             // Other Appearances
             unreadMessagesSeparatorAppearance: MessageCell.UnreadMessagesSeparatorView.Appearance? = nil,
             replyMessageAppearance: ReplyMessageAppearance? = nil,
@@ -688,6 +694,7 @@ extension MessageCell: AppearanceProviding {
             self._forwardedIcon = Trackable(reference: reference, referencePath: \.forwardedIcon)
             self._voicePlayIcon = Trackable(reference: reference, referencePath: \.voicePlayIcon)
             self._voicePauseIcon = Trackable(reference: reference, referencePath: \.voicePauseIcon)
+            self._voiceViewOnceIcon = Trackable(reference: reference, referencePath: \.voiceViewOnceIcon)
             self._unreadMessagesSeparatorAppearance = Trackable(reference: reference, referencePath: \.unreadMessagesSeparatorAppearance)
             self._replyMessageAppearance = Trackable(reference: reference, referencePath: \.replyMessageAppearance)
             self._selectionCheckboxAppearance = Trackable(reference: reference, referencePath: \.selectionCheckboxAppearance)
@@ -760,6 +767,7 @@ extension MessageCell: AppearanceProviding {
             if let forwardedIcon { self.forwardedIcon = forwardedIcon }
             if let voicePlayIcon { self.voicePlayIcon = voicePlayIcon }
             if let voicePauseIcon { self.voicePauseIcon = voicePauseIcon }
+            if let voiceViewOnceIcon { self.voiceViewOnceIcon = voiceViewOnceIcon }
             if let unreadMessagesSeparatorAppearance { self.unreadMessagesSeparatorAppearance = unreadMessagesSeparatorAppearance }
             if let replyMessageAppearance { self.replyMessageAppearance = replyMessageAppearance }
             if let selectionCheckboxAppearance { self.selectionCheckboxAppearance = selectionCheckboxAppearance }

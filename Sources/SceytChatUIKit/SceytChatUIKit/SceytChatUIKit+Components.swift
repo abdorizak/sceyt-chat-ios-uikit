@@ -68,6 +68,7 @@ extension SceytChatUIKit {
         public static var mediaPreviewerCarouselViewController: MediaPreviewerCarouselViewController.Type = MediaPreviewerCarouselViewController.self
         public static var mediaPreviewerNavigationController: MediaPreviewerNavigationController.Type = MediaPreviewerNavigationController.self
         public static var mediaPreviewerViewController: MediaPreviewerViewController.Type = MediaPreviewerViewController.self
+        public static var mediaPreviewerAudioViewController: MediaPreviewerAudioViewController.Type = MediaPreviewerAudioViewController.self
         public static var menuController: MenuController.Type = MenuController.self
         public static var messageInfoViewController: MessageInfoViewController.Type = MessageInfoViewController.self
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self
@@ -230,6 +231,8 @@ extension SceytChatUIKit {
                 
             }
         }
+        public static var chatRemoteNotificationHandler: ChatRemoteNotificationHandler.Type = ChatRemoteNotificationHandler.self
+        public static var pushNotificationParser: DefaultPushNotificationParser.Type = DefaultPushNotificationParser.self
         public static var attachmentTransfer: AttachmentTransfer.Type = AttachmentTransfer.self
         public static var channelAttachmentProvider: ChannelAttachmentProvider.Type = ChannelAttachmentProvider.self
         public static var channelCreator: ChannelCreator.Type = ChannelCreator.self

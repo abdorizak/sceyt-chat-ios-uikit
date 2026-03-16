@@ -34,6 +34,8 @@ extension SceytChatUIKit {
         
         public var mentionUserNameFormatter: any UserFormatting = UserNameFormatter()
         
+        public var replyUserNameFormatter: any UserFormatting = ReplyUserNameFormatter()
+        
         public var reactedUserNameFormatter: any ChannelFormatting = ReactedUserNameFormatter()
         
         public var reactionFormatter: any ReactionFormatting = ReactionFormatter()

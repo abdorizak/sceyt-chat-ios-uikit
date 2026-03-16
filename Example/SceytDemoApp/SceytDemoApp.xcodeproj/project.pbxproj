@@ -36,6 +36,7 @@
 		5694FF382C664FBA008DA2DC /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5694FF372C664FBA008DA2DC /* SceytChatUIKit */; };
 		56F069CF2CC62D61003D74D8 /* SceytChatUIKit in Frameworks */ = {isa = PBXBuildFile; productRef = 56F069CE2CC62D61003D74D8 /* SceytChatUIKit */; };
 		56F88D9E2C00D3890010C3E4 /* UserDisplayNameFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F88D9D2C00D3890010C3E4 /* UserDisplayNameFormatter.swift */; };
+		A10954582F4EF457000D6FC9 /* ChannelsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10954572F4EF457000D6FC9 /* ChannelsViewController.swift */; };
 		C51C930E2B565C9C0069F9DA /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C930D2B565C9C0069F9DA /* LoginViewController.swift */; };
 		C51C93102B5660CB0069F9DA /* ConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C930F2B5660CB0069F9DA /* ConnectionService.swift */; };
 		C51C93122B566FF50069F9DA /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51C93112B566FF50069F9DA /* UserProfile.swift */; };
@@ -75,6 +76,7 @@
 		5692FDFF2CC159B300803B3F /* CustomChannelInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomChannelInfoViewController.swift; sourceTree = "<group>"; };
 		56D0BBCB2CD4F7AE00FF7208 /* SceytDemoApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SceytDemoApp.entitlements; sourceTree = "<group>"; };
 		56F88D9D2C00D3890010C3E4 /* UserDisplayNameFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserDisplayNameFormatter.swift; sourceTree = "<group>"; };
+		A10954572F4EF457000D6FC9 /* ChannelsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelsViewController.swift; sourceTree = "<group>"; };
 		C51C930D2B565C9C0069F9DA /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
 		C51C930F2B5660CB0069F9DA /* ConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionService.swift; sourceTree = "<group>"; };
 		C51C93112B566FF50069F9DA /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 			children = (
 				5649B9A42CBFA76800E3B190 /* Profile */,
 				C54DF6BE2AECF09100767983 /* TabBarController.swift */,
+				A10954572F4EF457000D6FC9 /* ChannelsViewController.swift */,
 				5692FDFF2CC159B300803B3F /* CustomChannelInfoViewController.swift */,
 			);
 			path = Main;
@@ -316,6 +319,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5649B9B32CBFB45D00E3B190 /* ProfileEditAvatarCell.swift in Sources */,
+				A10954582F4EF457000D6FC9 /* ChannelsViewController.swift in Sources */,
 				5649B99F2CBE907400E3B190 /* EditProfileViewController.swift in Sources */,
 				5649B9B72CBFB4E600E3B190 /* UIView+Extensiosn.swift in Sources */,
 				5649B9BB2CBFBA0000E3B190 /* RequestManager.swift in Sources */,
@@ -494,7 +498,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SceytDemoApp/SceytDemoApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 289SR6UP83;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SceytDemoApp/Info.plist;
@@ -513,7 +517,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sceyt.chat.demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -533,7 +537,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SceytDemoApp/SceytDemoApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 289SR6UP83;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SceytDemoApp/Info.plist;
@@ -552,7 +556,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sceyt.chat.demo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
