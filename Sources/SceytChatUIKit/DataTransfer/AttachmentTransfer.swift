@@ -95,6 +95,11 @@ open class AttachmentTransfer: DataProvider {
                 var tasks = [SCTDataSessionTaskInfo]()
                 let existTasks = self.taskGroups[message.id != 0 ? Int64(message.id) : message.tid]
                 for attachment in attachments {
+                    self.repairAttachmentFilePathIfNeeded(attachment, dataSession: dataSession)
+                    if let resolvedFilePath = dataSession.getFilePath(attachment: attachment),
+                       resolvedFilePath != attachment.filePath {
+                        attachment.filePath = resolvedFilePath
+                    }
                     guard attachment.filePath != nil
                     else { continue }
                     if existTasks?.contains(where: { $0.attachment.filePath == attachment.filePath }) == true {
@@ -162,8 +167,9 @@ open class AttachmentTransfer: DataProvider {
         else { return [] }
         
         for att in attachments {
+            let resolvedLocalFilePath = dataSession(for: message)?.getFilePath(attachment: att)
             if att.status == .pending,
-               let filePath = dataSession(for: message)?.getFilePath(attachment: att), !filePath.isEmpty
+               let filePath = resolvedLocalFilePath, !filePath.isEmpty
             {
                 att.status = .done
                 att.transferProgress = 1
@@ -180,6 +186,12 @@ open class AttachmentTransfer: DataProvider {
                         $0.completion?(attachmentCompletion)
                     }
                 }
+            } else if att.type != "link",
+                      att.status == .done,
+                      resolvedLocalFilePath == nil
+            {
+                att.status = .pending
+                att.transferProgress = 0
             }
         }
 
@@ -534,6 +546,31 @@ open class AttachmentTransfer: DataProvider {
         return dataSession.getFilePath(attachment: attachment)
     }
     
+    private func repairAttachmentFilePathIfNeeded(_ attachment: ChatMessage.Attachment, dataSession: SCTDataSession) {
+        guard let currentPath = attachment.filePath,
+              !FileManager.default.fileExists(atPath: currentPath)
+        else { return }
+        
+        if let recoveredPath = dataSession.getFilePath(attachment: attachment),
+           FileManager.default.fileExists(atPath: recoveredPath) {
+            attachment.filePath = recoveredPath
+            return
+        }
+
+        if let temporaryPath = recoverTemporaryPath(for: attachment) {
+            attachment.filePath = temporaryPath
+        }
+    }
+
+    private func recoverTemporaryPath(for attachment: ChatMessage.Attachment) -> String? {
+        let fileName = attachment.name ?? (attachment.filePath as NSString?)?.lastPathComponent
+        guard let fileName, !fileName.isEmpty else { return nil }
+        
+        let tmpPath = FileManager.default.temporaryDirectory.appendingPathComponent(fileName).path
+        guard FileManager.default.fileExists(atPath: tmpPath) else { return nil }
+        return tmpPath
+    }
+
     func thumbnailFile(for attachment: ChatMessage.Attachment, preferred size: CGSize) -> String? {
         guard let dataSession = dataSession(forAttachment: attachment)
         else { return nil }

@@ -36,6 +36,7 @@ open class TextLabel: View {
         textStorage.addLayoutManager(layoutManager)
         layoutManager.addTextContainer(textContainer)
         textContainer.lineFragmentPadding = 0
+        textContainer.lineBreakMode = .byTruncatingTail
         isUserInteractionEnabled = true
         contentMode = .redraw
     }

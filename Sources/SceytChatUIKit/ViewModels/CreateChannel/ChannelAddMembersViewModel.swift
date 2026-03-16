@@ -10,6 +10,10 @@ import Foundation
 import SceytChat
 import Combine
 
+public extension Notification.Name {
+    static let didAddChannelMembers = Notification.Name("didAddChannelMembers")
+}
+
 open class ChannelAddMembersViewModel: SelectChannelMembersViewModel {
     
     @Published public var event1: Event?
@@ -48,11 +52,18 @@ open class ChannelAddMembersViewModel: SelectChannelMembersViewModel {
 //        hud.isLoading = true
 
         provider
-            .add(members: newMembers) { [weak self] error in
+            .add(members: newMembers) { [weak self] members, error in
 //                hud.isLoading = false
                 if let error = error {
                     self?.event1 = .error(error)
                 } else {
+                    if let channelId = self?.channel.id {
+                        NotificationCenter.default.post(
+                            name: .didAddChannelMembers,
+                            object: nil,
+                            userInfo: ["channelId": channelId]
+                        )
+                    }
                     self?.event1 = .success
                 }
             }

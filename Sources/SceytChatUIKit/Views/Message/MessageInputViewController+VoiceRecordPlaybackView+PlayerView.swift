@@ -134,7 +134,7 @@ extension MessageInputViewController.VoiceRecordPlaybackView {
             else { return stop() }
             
             state = .playing
-            SimpleSinglePlayer.play(url, durationBlock: setDuration, stopBlock: stop)
+            SimpleSinglePlayer.play(url, id: 0, durationBlock: setDuration, stopBlock: stop)
         }
         
         open func pause() {

@@ -36,7 +36,8 @@ public class MessageDTO: NSManagedObject {
     @NSManaged public var disableMentionsCount: Bool
     @NSManaged public var replied: Bool
     @NSManaged public var unlisted: Bool
-    
+    @NSManaged public var viewOnce: Bool
+
     @NSManaged public var markerTotal: [String: Int]?
     @NSManaged public var reactionTotal: Set<ReactionTotalDTO>?
     @NSManaged public var userMarkers: Set<MarkerDTO>?
@@ -130,7 +131,6 @@ public class MessageDTO: NSManagedObject {
         incoming = map.incoming
         body = map.body
         metadata = map.metadata
-        
         if createdAt.bridgeDate < Date(timeIntervalSince1970: 60 * 60 * 24 * 2) {
             createdAt = map.createdAt.bridgeDate
         }
@@ -140,6 +140,7 @@ public class MessageDTO: NSManagedObject {
         replyCount = Int32(map.replyCount)
         displayCount = Int64(map.displayCount)
         disableMentionsCount = map.disableMentionsCount
+        viewOnce = map.viewOnce
         if deliveryStatus == MessageDeliveryStatus.pending.rawValue {
             deliveryStatus = Int16(map.deliveryStatus.rawValue)
         } else if deliveryStatus == MessageDeliveryStatus.failed.rawValue,

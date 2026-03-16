@@ -21,7 +21,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     open lazy var recordButton = UIImageView()
         .contentMode(.center)
         .withoutAutoresizingMask
-    
+
+    open lazy var cameraButton = UIButton()
+        .withoutAutoresizingMask
+
+    open lazy var viewOnceButton = UIButton()
+        .withoutAutoresizingMask
+
     open lazy var separatorViewTop = UIView()
         .withoutAutoresizingMask
     
@@ -61,12 +67,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                 self.showNoMicrophonePermission()
             case .recordingUnavailable:
                 self.showRecordingUnavailable()
-            case let .recorded(url, metadata):
+            case let .recorded(url, metadata, viewOnce):
                 self.recordedView.isHidden = false
-                self.recordedView.setup(url: url, metadata: metadata)
-            case let .send(url, metadata):
+                self.recordedView.setup(url: url, metadata: metadata, viewOnce: viewOnce)
+            case let .send(url, metadata, viewOnce):
                 if let url = Components.storage.copyFile(url) {
                     self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
+                    self.isViewOnceEnabled = viewOnce
                     self.action = .send(false)
                 }
             case .didStartRecording:
@@ -93,6 +100,17 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         }
     }
 
+    open var shouldHideCameraButton = true {
+        didSet {
+            updateState()
+        }
+    }
+
+    open var cameraButtonWidth: CGFloat { 48.0 }
+    open var recordButtonWidth: CGFloat { 52.0 }
+    open var sendButtonWidth: CGFloat { 52.0 }
+    open var viewOnceButtonWidth: CGFloat { 28.0 }
+
     open var shouldHidePollOption = false
 
     public var canRunMentionUserLogic = true
@@ -114,7 +132,13 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     open var onCreatePoll: ((CreatePollModel) -> Void)?
 
     @Published public var action: Action?
-    
+
+    internal var isViewOnceEnabled: Bool = false {
+        didSet {
+            updateViewOnceButtonAppearance()
+        }
+    }
+
     private var selectedPhotoAssetIdentifiers = Set<String>()
     public private(set) var linkMetadata: LinkMetadata?
     public private(set) var lastDetectedLinkMetadata: LinkMetadata? {
@@ -127,6 +151,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
     public private(set) var didUserDismissLinkPreview = false
     private var actionViewHeightLayoutConstraint: NSLayoutConstraint!
     private var inputTextViewLeadingConstraint: NSLayoutConstraint?
+    open var inputTextViewTrailingConstraint: NSLayoutConstraint?
     
     deinit {
         recorderView.stop()
@@ -194,21 +219,22 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             switch $0 {
             case .cancel:
                 self.recordedView.isHidden = true
-            case let .send(url, metadata):
+            case let .send(url, metadata, viewOnce):
                 self.recordedView.isHidden = true
                 if let url = Components.storage.copyFile(url) {
                     self.selectedMediaView.insert(view: AttachmentModel(voiceUrl: url, metadata: metadata))
+                    self.isViewOnceEnabled = viewOnce
                     self.action = .send(false)
                 }
             }
         }
         
-        updateState()
-        
         actionView.cancelButton.addTarget(self, action: #selector(actionViewCancelAction), for: .touchUpInside)
         addMediaButton.addTarget(self, action: #selector(addMediaButtonAction(_:)), for: .touchUpInside)
         sendButton.addTarget(self, action: #selector(sendButtonAction(_:)), for: .touchUpInside)
-        
+        cameraButton.addTarget(self, action: #selector(cameraButtonAction(_:)), for: .touchUpInside)
+        viewOnceButton.addTarget(self, action: #selector(viewOnceButtonAction(_:)), for: .touchUpInside)
+
         let longPress = UILongPressGestureRecognizer(target: recorderView, action: #selector(Components.messageInputVoiceRecorderView.onLongPress))
         longPress.minimumPressDuration = 0.05
         recordButton.isUserInteractionEnabled = true
@@ -226,6 +252,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         addMediaButton.setImage(appearance.attachmentIcon, for: .normal)
         sendButton.setImage(appearance.sendMessageIcon, for: .normal)
         recordButton.image = appearance.voiceRecordIcon
+        cameraButton.setImage(appearance.cameraIcon, for: .normal)
+        updateViewOnceButtonAppearance()
         separatorViewTop.backgroundColor = appearance.separatorColor
         separatorViewCenter.backgroundColor = appearance.separatorColor
         recorderView.parentAppearance = appearance.voiceRecorderAppearance
@@ -244,6 +272,8 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         view.addSubview(addMediaButton)
         view.addSubview(sendButton)
         view.addSubview(recordButton)
+        view.addSubview(cameraButton)
+        view.addSubview(viewOnceButton)
         view.addSubview(recordedView)
         view.addSubview(separatorViewCenter)
         view.addSubview(separatorViewTop)
@@ -269,21 +299,33 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         
         addMediaButton.pin(to: view, anchors: [.leading(), .bottom()])
         addMediaButton.resize(anchors: [.height(52), .width(52)])
-        
+
         sendButton.pin(to: view, anchors: [.trailing(), .bottom()])
-        sendButton.resize(anchors: [.height(52), .width(52)])
-        
-        recordButton.pin(to: sendButton)
-        
+        sendButton.resize(anchors: [.height(52), .width(sendButtonWidth)])
+
+        recordButton.pin(to: view, anchors: [.trailing(), .bottom()])
+        recordButton.resize(anchors: [.height(52), .width(recordButtonWidth)])
+
+        cameraButton.trailingAnchor.pin(to: recordButton.leadingAnchor)
+        cameraButton.pin(to: view, anchors: [.bottom()])
+        cameraButton.resize(anchors: [.height(52), .width(cameraButtonWidth)])
+
+        viewOnceButton.trailingAnchor.pin(to: inputTextView.trailingAnchor, constant: -4.0)
+        viewOnceButton.pin(to: view, anchors: [.bottom()])
+        viewOnceButton.resize(anchors: [.height(52), .width(viewOnceButtonWidth)])
+
         updateMediaButtonAppearance(isHidden: shouldHideMediaButton, animated: false)
-        inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
-        inputTextView.trailingAnchor.pin(to: recordButton.leadingAnchor)
+
+        // Initial trailing constraint (will be updated by updateTrailingInputButtons)
+        inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
         inputTextView.topAnchor.pin(to: selectedMediaView.bottomAnchor, constant: 8).priority(.defaultLow)
         inputTextView.heightAnchor.pin(greaterThanOrEqualToConstant: 36)
         inputTextView.bottomAnchor.pin(to: view.bottomAnchor, constant: -8)
         
         recordedView.pin(to: view, anchors: [.leading, .trailing, .top])
         recordedView.isHidden = true
+        
+        updateState(false)
     }
     
     open override func setupDone() {
@@ -293,19 +335,64 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         canRunMentionUserLogic = appearance.enableMention
     }
     
-    open func updateState() {
-        sendButton.isHidden = inputTextView.text.replacingOccurrences(of: "\u{fffc}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedMediaView.items.isEmpty
+    open func updateState(_ animated: Bool = true) {
+        updateTrailingInputButtons(animated)
+        updateViewOnceButtonVisibility()
+
         style = selectedMediaView.items.count > 0 ? .large : .small
         separatorViewCenter.isHidden = selectedMediaView.items.count == 0
         if sendButton.isHidden {
             sendButton.cancelTracking(with: nil)
         }
-        recordButton.isHidden = !sendButton.isHidden || shouldHideRecordButton
+
         if !selectedMediaView.items.isEmpty, lastDetectedLinkMetadata != nil {
             removeActionView()
         } else if selectedMediaView.items.isEmpty {
             findLink()
         }
+    }
+    
+    open func updateTrailingInputButtons(_ animated: Bool = true) {
+        let shouldShowSendButton = !inputTextView.text.replacingOccurrences(of: "\u{fffc}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !selectedMediaView.items.isEmpty
+        let shouldShowViewOnceButton = appearance.enableViewOnce && selectedMediaView.items.count == 1
+
+        // Update button visibility
+        sendButton.isHidden = !shouldShowSendButton
+        viewOnceButton.isHidden = !shouldShowViewOnceButton
+        cameraButton.isHidden = shouldShowSendButton || shouldHideCameraButton
+        recordButton.isHidden = shouldShowSendButton || shouldHideRecordButton
+
+        // Update inputTextView right padding based on viewOnceButton visibility
+        updateInputTextViewPadding(viewOnceButtonVisible: !viewOnceButton.isHidden)
+
+        // Guard: Only update constraint if buttons are in view hierarchy (setupLayout has been called)
+        guard inputTextViewTrailingConstraint != nil else { return }
+
+        // Update inputTextView trailing constraint based on visible buttons
+        if let inputTextViewTrailingConstraint {
+            view.removeConstraint(inputTextViewTrailingConstraint)
+        }
+
+        if !sendButton.isHidden {
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: sendButton.leadingAnchor)
+        } else if !cameraButton.isHidden {
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: cameraButton.leadingAnchor)
+        } else if !recordButton.isHidden {
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: recordButton.leadingAnchor)
+        } else {
+            // If all buttons are hidden, connect to view trailing
+            inputTextViewTrailingConstraint = inputTextView.trailingAnchor.pin(to: view.trailingAnchor, constant: -8)
+        }
+    }
+
+    open func updateInputTextViewPadding(viewOnceButtonVisible: Bool) {
+        let rightPadding: CGFloat = viewOnceButtonVisible ? 34 : 12
+        inputTextView.textContainerInset = .init(
+            top: inputTextView.textContainerInset.top,
+            left: inputTextView.textContainerInset.left,
+            bottom: inputTextView.textContainerInset.bottom,
+            right: rightPadding
+        )
     }
     
     open func updateMediaButtonAppearance(isHidden: Bool, animated: Bool = true) {
@@ -329,6 +416,24 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             UIView.animate(withDuration: 0.3, animations: changes)
         } else {
             changes()
+        }
+    }
+
+    open func updateViewOnceButtonAppearance() {
+        viewOnceButton.backgroundColor = .clear
+        if isViewOnceEnabled {
+            viewOnceButton.setImage(appearance.viewOnceActiveIcon, for: .normal)
+        } else {
+            viewOnceButton.setImage(appearance.viewOnceIcon, for: .normal)
+        }
+    }
+
+    open func updateViewOnceButtonVisibility() {
+        let shouldShow = appearance.enableViewOnce && selectedMediaView.items.count == 1
+
+        // Reset state when conditions change
+        if !shouldShow && isViewOnceEnabled {
+            isViewOnceEnabled = false
         }
     }
 
@@ -526,7 +631,9 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
 
             case .failure:
                 DispatchQueue.main.async {
-                    if self.lastDetectedLinkMetadata != nil, self.currentState == nil {
+                    if url == self.getLink(),
+                       self.lastDetectedLinkMetadata != nil,
+                       self.currentState == nil {
                         self.removeActionView()
                     }
                 }
@@ -552,6 +659,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             inputTextView.attributedText = cachedMessage
             cachedMessage = nil
         }
+        isViewOnceEnabled = false
         removeActionView()
         selectedMediaView.removeAll()
         action = .cancel
@@ -584,7 +692,18 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             }
         }
     }
-    
+
+    @objc
+    open func cameraButtonAction(_ sender: UIButton) {
+        inputTextView.resignFirstResponder()
+        openCameraPicker()
+    }
+
+    @objc
+    open func viewOnceButtonAction(_ sender: UIButton) {
+        isViewOnceEnabled.toggle()
+    }
+
     open func openPhotoPicker() {
         logger.verbose("[ATTACHMENT] openPhotoPicker")
         router.showPhotos(selectedPhotoAssetIdentifiers: selectedPhotoAssetIdentifiers)
@@ -680,6 +799,7 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         nextState = nil
         didUserDismissLinkPreview = false
         lastDetectedLinkMetadata = nil
+        isViewOnceEnabled = false
     }
     
     open func addReply(layoutModel: MessageLayoutModel) {
@@ -698,7 +818,11 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
         let title = appearance.replyMessageAppearance.senderNameFormatter.format(message.user)
         var image: UIImage?
         var showPlayIcon = false
-        if let attachment = message.attachments?.first {
+
+        // Don't show thumbnails for view_once messages
+        if message.isViewOnceMessage {
+            image = nil
+        } else if let attachment = message.attachments?.first {
             switch attachment.type {
             case "image":
                 image = attachment.thumbnailImage
@@ -731,18 +855,57 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
                     .foregroundColor: appearance.replyMessageAppearance.senderNameLabelAppearance.foregroundColor
                 ]))
         actionView.titleLabel.attributedText = titleAttributedString
-        
-        actionView.messageLabel.attributedText = appearance.replyMessageAppearance.messageBodyFormatter.format(
-            .init(
-                message: message,
-                bodyLabelAppearance: appearance.replyMessageAppearance.bodyLabelAppearance,
-                mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
-                attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
-                attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
-                attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
-                mentionUserNameFormatter: appearance.replyMessageAppearance.mentionUserNameFormatter
+
+        // Show custom text for view_once messages
+        if message.isViewOnceMessage {
+            let attachmentType = message.attachments?.first?.type
+            let attachmentName: String
+            switch attachmentType {
+            case "video":
+                attachmentName = L10n.Attachment.video
+            case "image":
+                attachmentName = L10n.Attachment.image
+            case "voice":
+                attachmentName = L10n.Attachment.voice
+            case "file":
+                attachmentName = L10n.Attachment.file
+            default:
+                attachmentName = ""
+            }
+            let font = appearance.replyMessageAppearance.bodyLabelAppearance.font
+            let color = appearance.replyMessageAppearance.bodyLabelAppearance.foregroundColor
+
+            let text = NSMutableAttributedString(
+                string: attachmentName,
+                attributes: [
+                    .font: font,
+                    .foregroundColor: color
+                ]
             )
-        )
+
+            // Add addCircleDashed icon at the beginning
+            let tintedIcon = Images.addCircleDashed.withTintColor(color, renderingMode: .alwaysTemplate)
+            let attachment = NSTextAttachment()
+            attachment.bounds = CGRect(x: 0, y: (font.capHeight - 16.0).rounded() / 2, width: 16.0, height: 16.0)
+            attachment.image = tintedIcon
+            let iconAttributedString = NSMutableAttributedString(attachment: attachment)
+            iconAttributedString.append(NSAttributedString(string: " ", attributes: [.font: font]))
+            text.insert(iconAttributedString, at: 0)
+
+            actionView.messageLabel.attributedText = text
+        } else {
+            actionView.messageLabel.attributedText = appearance.replyMessageAppearance.messageBodyFormatter.format(
+                .init(
+                    message: message,
+                    bodyLabelAppearance: appearance.replyMessageAppearance.bodyLabelAppearance,
+                    mentionLabelAppearance: appearance.replyMessageAppearance.mentionLabelAppearance,
+                    attachmentDurationLabelAppearance: appearance.replyMessageAppearance.attachmentDurationLabelAppearance,
+                    attachmentDurationFormatter: appearance.replyMessageAppearance.attachmentDurationFormatter,
+                    attachmentNameFormatter: appearance.replyMessageAppearance.attachmentNameFormatter,
+                    mentionUserNameFormatter: appearance.replyMessageAppearance.mentionUserNameFormatter
+                )
+            )
+        }
 
         actionView.backgroundColor = appearance.replyMessageAppearance.backgroundColor
         actionView.isHidden = false
@@ -1087,7 +1250,14 @@ open class MessageInputViewController: ViewController, UITextViewDelegate {
             return true
         }
 
-        return !deleteMentionText(in: range)
+        // Only check for mention deletion when actually deleting (empty replacement text or range.length > 0)
+        let isDeletion = text.isEmpty
+        if isDeletion {
+            let shouldDelete = deleteMentionText(in: range)
+            return !shouldDelete
+        }
+
+        return true
     }
     
     public func textViewDidChange(_ textView: UITextView) {

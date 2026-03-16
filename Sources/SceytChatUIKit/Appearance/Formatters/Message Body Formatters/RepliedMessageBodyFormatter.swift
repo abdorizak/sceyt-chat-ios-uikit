@@ -10,6 +10,9 @@ import Foundation
 
 open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
     
+    /// Controls whether audio duration should be displayed in reply messages
+    open var showAudioDuration: Bool = true
+    
     public init() {}
     
     open func format(_ messageBodyAttributes: RepliedMessageBodyFormatterAttributes) -> NSAttributedString {
@@ -44,7 +47,7 @@ open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
                             attributes[.foregroundColor] = messageBodyAttributes.mentionLabelAppearance.foregroundColor
                             attributes[.font] = messageBodyAttributes.mentionLabelAppearance.font
                             attributes[.mention] = userId
-                            let mention = NSAttributedString(string: SceytChatUIKit.shared.config.mentionTriggerPrefix + messageBodyAttributes.mentionUserNameFormatter.format(user),
+                            let mention = NSAttributedString(string: SceytChatUIKit.shared.config.mentionTriggerPrefix + messageBodyAttributes.replyUserNameFormatter.format(user),
                                                              attributes: attributes)
                             attributedBody.safeReplaceCharacters(in: range, with: mention)
                         }
@@ -86,10 +89,12 @@ open class RepliedMessageBodyFormatter: RepliedMessageBodyFormatting {
                                                             .font: messageBodyAttributes.bodyLabelAppearance.font,
                                                             .foregroundColor: messageBodyAttributes.bodyLabelAppearance.foregroundColor
                                                          ])
-                    body.append(.init(string: " \(messageBodyAttributes.attachmentDurationFormatter.format(Double(attachment.voiceDecodedMetadata?.duration ?? 0)))", attributes: [
-                        .font: messageBodyAttributes.attachmentDurationLabelAppearance.font,
-                        .foregroundColor: messageBodyAttributes.attachmentDurationLabelAppearance.foregroundColor
-                    ]))
+                    if showAudioDuration, let duration = attachment.voiceDecodedMetadata?.duration {
+                        body.append(.init(string: " \(messageBodyAttributes.attachmentDurationFormatter.format(Double(duration)))", attributes: [
+                            .font: messageBodyAttributes.attachmentDurationLabelAppearance.font,
+                            .foregroundColor: messageBodyAttributes.attachmentDurationLabelAppearance.foregroundColor
+                        ]))
+                    }
                     return body
                 default:
                     body = messageBodyAttributes.attachmentNameFormatter.format(attachment)

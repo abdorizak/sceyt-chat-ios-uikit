@@ -83,10 +83,17 @@
 "channel.info.segment.files" = "Files";
 "channel.info.segment.links" = "Links";
 "channel.info.segment.voice" = "Voice";
-"channel.info.segment.medias.noItems" = "No media items yet";
-"channel.info.segment.files.noItems" = "No file items yet";
-"channel.info.segment.links.noItems" = "No link items yet";
-"channel.info.segment.voice.noItems" = "No voice items yet";
+"channel.info.segment.groups" = "Groups";
+"channel.info.segment.medias.noItems" = "No Media";
+"channel.info.segment.medias.noItemsSubTitle" = "Shared media will appear here.";
+"channel.info.segment.files.noItems" = "No Files";
+"channel.info.segment.files.noItemsSubTitle" = "Shared files will appear here.";
+"channel.info.segment.links.noItems" = "No links";
+"channel.info.segment.links.noItemsSubTitle" = "Shared links will appear here.";
+"channel.info.segment.voice.noItems" = "No voice messages";
+"channel.info.segment.voice.noItemsSubTitle" = "Shared voice messages will appear here.";
+"channel.info.segment.groups.noItems" = "No groups in common";
+"channel.info.segment.groups.noItemsSubTitle" = "Groups in common will appear here.";
 
 "channel.profile.qrCodeTitle" = "QR Code for Invites";
 "channel.profile.qrCodeShare" = "Share QR Code";
@@ -214,6 +221,7 @@
 "message.list.borders-today" = "Today";
 "message.deleted" = "Message was deleted.";
 "message.info.edited" = "edited";
+"message.readMore" = "Read more";
 "message.attachment.image" = "Photo";
 "message.attachment.video" = "Video";
 "message.attachment.link" = "Link";
@@ -253,6 +261,8 @@
 
 //Time Intervals
 "time.interval.off" = "Off";
+"time.interval.second.one" = "1 second";
+"time.interval.second.multiple" = "%d seconds";
 "time.interval.minute.one" = "1 minute";
 "time.interval.minute.multiple" = "%d minutes";
 "time.interval.hour.one" = "1 hour";
@@ -263,6 +273,12 @@
 "time.interval.week.multiple" = "%d weeks";
 "time.interval.month.one" = "1 month";
 "time.interval.month.multiple" = "%d months";
+"time.interval.year.one" = "1 year";
+"time.interval.year.multiple" = "%d years";
+
+//Time Interval Formatting (using ListFormatter pattern)
+"time.interval.format.middle" = "%@, %@";
+"time.interval.format.end" = "%@ and %@";
 
 //Presence
 "user.presence.online" = "online";
@@ -390,3 +406,10 @@
 "poll.endPoll.alert.message" = "Are you sure you want to end this poll? People will no longer be able to vote.";
 "poll.endPoll.alert.end" = "End";
 "message.unsupported.text" = "This message is not supported.";
+
+"viewOnce.info.title" = "View once messages";
+"viewOnce.info.description" = "Any photo, video, or voice message you send will disappear from the chat after it's been opened.\nTo keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.";
+"viewOnce.screenshot.alert.title" = "Screenshot Blocked";
+"viewOnce.screenshot.alert.message" = "Screen capture has been restricted to ensure user privacy.";
+"viewOnce.selfDestructed" = "Message self-destructed";
+"viewOnce.selfDestructedAttachment" = "Self-destructed %@";

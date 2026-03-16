@@ -13,15 +13,21 @@ open class MediaPreviewerNavigationController: NavigationController, PreviewerTr
     var sourceView: UIImageView? { mediaPreviewerCarouselViewController.sourceView }
     var sourceFrameRelativeToWindow: CGRect? { mediaPreviewerCarouselViewController.sourceFrameRelativeToWindow }
     var targetView: UIImageView? { mediaPreviewerCarouselViewController.targetView }
-    
-    private let imageViewerPresentationDelegate: ImageViewerTransitionPresentationManager
-    
+
+    private let imageViewerPresentationDelegate: ImageViewerTransitionPresentationManager?
+
     required public init(_ mediaPreviewerCarouselViewController: MediaPreviewerCarouselViewController) {
-        self.imageViewerPresentationDelegate = ImageViewerTransitionPresentationManager(imageContentMode: mediaPreviewerCarouselViewController.imageContentMode)
+        let viewOnce = mediaPreviewerCarouselViewController.viewOnce
+        self.imageViewerPresentationDelegate = viewOnce ? nil : ImageViewerTransitionPresentationManager(imageContentMode: mediaPreviewerCarouselViewController.imageContentMode)
         self.mediaPreviewerCarouselViewController = mediaPreviewerCarouselViewController
         super.init(rootViewController: mediaPreviewerCarouselViewController)
-        transitioningDelegate = imageViewerPresentationDelegate
-        modalPresentationStyle = .custom
+
+        if !viewOnce {
+            transitioningDelegate = imageViewerPresentationDelegate
+            modalPresentationStyle = .custom
+        } else {
+            modalPresentationStyle = .fullScreen
+        }
         modalPresentationCapturesStatusBarAppearance = true
     }
     

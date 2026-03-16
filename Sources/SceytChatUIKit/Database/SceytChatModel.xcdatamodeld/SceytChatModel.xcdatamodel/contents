@@ -143,6 +143,7 @@
         <attribute name="type" attributeType="String" defaultValueString=""/>
         <attribute name="unlisted" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="viewOnce" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <relationship name="attachments" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AttachmentDTO" inverseName="message" inverseEntity="AttachmentDTO"/>
         <relationship name="bodyAttributes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="BodyAttributeDTO" inverseName="message" inverseEntity="BodyAttributeDTO"/>
         <relationship name="changedBy" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserDTO" inverseName="messageChange" inverseEntity="UserDTO"/>

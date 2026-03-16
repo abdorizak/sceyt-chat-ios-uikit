@@ -42,11 +42,12 @@ public class SceytChatUIKit {
         }
     }()
     
-
-    public static func initialize(apiUrl: String, appId: String, clientId: String = "") {
+    public static func initialize(apiUrl: String, appId: String, clientId: String = "", chatClientOnly: Bool = false) {
         ChatClient.initialize(apiUrl: apiUrl, appId: appId, clientId: clientId)
-        SceytChatUIKit.shared.chatClient.add(delegate: Components.clientConnectionHandler.default, identifier: String(reflecting: ClientConnectionHandler.self))
-        shared.channelEventHandler.startEventHandler()
+        if !chatClientOnly {
+            SceytChatUIKit.shared.chatClient.add(delegate: Components.clientConnectionHandler.default, identifier: String(reflecting: ClientConnectionHandler.self))
+            shared.channelEventHandler.startEventHandler()
+        }
     }
     
     public var isConnected: Bool {

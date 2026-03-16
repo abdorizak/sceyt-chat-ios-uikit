@@ -30,6 +30,34 @@ public protocol PreviewDataSourceItemObservable: AnyObject {
     func didUpdate(previewItem: PreviewItem)
 }
 
+open class SingleItemPreviewDataSource: PreviewDataSource {
+    private let item: PreviewItem
+    public weak var delegate: AttachmentPreviewDataSourceDelegate?
+
+    public init(item: PreviewItem) {
+        self.item = item
+    }
+
+    public var numberOfImages: Int { 1 }
+    public var isLoading: Bool { false }
+
+    public func previewItem(at index: Int) -> PreviewItem? {
+        index == 0 ? item : nil
+    }
+
+    public func indexOfItem(_ item: PreviewItem) -> Int? {
+        item == self.item ? 0 : nil
+    }
+
+    public func canShowPreviewer() -> Bool {
+        delegate?.canShowPreviewer() ?? true
+    }
+
+    public func setOnLoading(_ callback: @escaping (Bool) -> Void) {}
+    public func setOnReload(_ callback: @escaping () -> Void) {}
+    public func observe(_ observable: PreviewDataSourceItemObservable) {}
+}
+
 open class AttachmentPreviewDataSource: PreviewDataSource {
     
     private var ascending: Bool
@@ -41,14 +69,18 @@ open class AttachmentPreviewDataSource: PreviewDataSource {
     open lazy var attachmentObserver: DatabaseObserver<AttachmentDTO, ChatMessage.Attachment> = {
         let predicate: NSPredicate
         if attachmentTypes.isEmpty {
-            predicate = .init(format: "channelId == %lld", channel.id)
+            predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+                NSPredicate(format: "channelId == %lld", channel.id),
+                NSPredicate(format: "message.type != %@", ChatMessage.MessageType.viewOnce)
+            ])
         } else {
             predicate =
                 NSCompoundPredicate(andPredicateWithSubpredicates: [
                     NSPredicate(format: "channelId == %lld", channel.id),
                     NSCompoundPredicate(orPredicateWithSubpredicates:
                         attachmentTypes.map { NSPredicate(format: "type = %@", $0) }
-                    )
+                    ),
+                    NSPredicate(format: "message.type != %@", ChatMessage.MessageType.viewOnce)
                 ])
         }
 
@@ -146,12 +178,28 @@ open class AttachmentPreviewDataSource: PreviewDataSource {
     }
 
     public func indexOfItem(_ item: PreviewItem) -> Int? {
-        for index in 0 ..< attachmentObserver.numberOfItems(in: 0) {
+        let count = attachmentObserver.numberOfItems(in: 0)
+
+        // First pass: exact match (works once the server has assigned a real id)
+        for index in 0..<count {
             if let attachment = attachmentObserver.item(at: IndexPath(row: index, section: 0)),
                attachment == item.attachment {
                 return index
             }
         }
+
+        // Second pass: the attachment was still pending (id == 0) when setupPreviewer()
+        // stored it in the tap recognizer. By tap time the DB has the real id, so the
+        // exact match above fails. Fall back to matching by URL so we open the correct media.
+        if item.attachment.id == 0, let itemUrl = item.attachment.url, !itemUrl.isEmpty {
+            for index in 0..<count {
+                if let attachment = attachmentObserver.item(at: IndexPath(row: index, section: 0)),
+                   attachment.url == itemUrl {
+                    return index
+                }
+            }
+        }
+
         return nil
     }
 

@@ -120,6 +120,9 @@ public extension MessageDatabaseSession {
 }
 
 extension NSManagedObjectContext: MessageDatabaseSession {
+    /// Serial queue to prevent race conditions when adding/deleting reactions concurrently
+    private static let reactionQueue = DispatchQueue(label: "com.sceyt.database.reactions", qos: .userInitiated)
+
     @discardableResult
     public func createOrUpdate(message: Message, channelId: ChannelId, changedBy: User?) -> MessageDTO {
         let dto = MessageDTO.fetchOrCreate(id: message.id, tid: message.incoming ? 0 : Int64(message.tid), context: self).map(message)
@@ -254,12 +257,12 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             } else if $0.tid != 0 {
                 attachmentDTO = AttachmentDTO.fetch(tid: $0.tid, message: dto, context: self)
                 logger.verbose("[AttachmentDTO] update MESSAGE found by tid \($0.tid) \(attachmentDTO != nil) \($0.description)")
+            } else if let url = $0.url {
+                attachmentDTO = AttachmentDTO.fetchOrCreate(url: url, message: dto, context: self)
+                logger.verbose("[AttachmentDTO] update MESSAGE found by url \(url) \(attachmentDTO != nil) \($0.description)")
             } else if let filePath = $0.filePath {
                 attachmentDTO = AttachmentDTO.fetchOrCreate(filePath: filePath, message: dto, context: self)
                 logger.verbose("[AttachmentDTO] update MESSAGE found by filePath \(filePath) \(attachmentDTO != nil) \($0.description)")
-            } else if let url = $0.url {
-                logger.verbose("[AttachmentDTO] update MESSAGE found by url \(url) \(attachmentDTO != nil) \($0.description)")
-                attachmentDTO = AttachmentDTO.fetchOrCreate(url: url, message: dto, context: self)
             }
             guard let attachmentDTO else { return }
             if let url = $0.url {
@@ -268,7 +271,15 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             if let filePath = $0.filePath {
                 attachmentDTO.filePath = filePath
             }
-            
+            if attachmentDTO.message == nil {
+                attachmentDTO.message = dto
+            }
+            if attachmentDTO.messageId == 0 {
+                attachmentDTO.messageId = dto.id
+            }
+            if attachmentDTO.type.isEmpty, !$0.type.isEmpty {
+                attachmentDTO.type = $0.type
+            }
             attachmentDTO.transferProgress = $0.transferProgress
             attachmentDTO.status = $0.status.rawValue
             attachmentDTO.name = $0.name
@@ -365,59 +376,67 @@ extension NSManagedObjectContext: MessageDatabaseSession {
     
     @discardableResult
     public func add(reaction: Reaction) -> ReactionDTO? {
-        guard let message = MessageDTO.fetch(id: reaction.messageId, context: self)
-        else { return nil }
-        let rdto = ReactionDTO.fetchOrCreate(userId: reaction.user.id, key: reaction.key, messageId: reaction.messageId, context: self).map(reaction)
-        rdto.user = createOrUpdate(user: reaction.user)
-        if let rTotalDto = ReactionTotalDTO.fetch(messageId: reaction.messageId, key: reaction.key, context: self) {
-            rTotalDto.count += 1
-            rTotalDto.score += Int64(reaction.score)
-        } else {
-            let rTotalDto = ReactionTotalDTO.insertNewObject(into: self)
-            rTotalDto.count = 1
-            rTotalDto.score = Int64(reaction.score)
-            rTotalDto.key = reaction.key
-            message.reactionTotal?.insert(rTotalDto)
-        }
-        
-        rdto.message = message
-        if !message.incoming,
-           let channel = ChannelDTO.fetch(id: ChannelId(message.channelId), context: self)
-        {
-            if channel.lastReaction == nil {
-                channel.lastReaction = rdto
-            } else if channel.lastReaction!.id < rdto.id {
-                channel.lastReaction = rdto
+        // Use serial queue to prevent race conditions when multiple contexts
+        // try to update the same reaction total concurrently
+        Self.reactionQueue.sync {
+            guard let message = MessageDTO.fetch(id: reaction.messageId, context: self)
+            else { return nil }
+            let rdto = ReactionDTO.fetchOrCreate(userId: reaction.user.id, key: reaction.key, messageId: reaction.messageId, context: self).map(reaction)
+            rdto.user = createOrUpdate(user: reaction.user)
+            if let rTotalDto = ReactionTotalDTO.fetch(messageId: reaction.messageId, key: reaction.key, context: self) {
+                rTotalDto.count += 1
+                rTotalDto.score += Int64(reaction.score)
+            } else {
+                let rTotalDto = ReactionTotalDTO.insertNewObject(into: self)
+                rTotalDto.count = 1
+                rTotalDto.score = Int64(reaction.score)
+                rTotalDto.key = reaction.key
+                message.reactionTotal?.insert(rTotalDto)
             }
+
+            rdto.message = message
+            if !message.incoming,
+               let channel = ChannelDTO.fetch(id: ChannelId(message.channelId), context: self)
+            {
+                if channel.lastReaction == nil {
+                    channel.lastReaction = rdto
+                } else if channel.lastReaction!.id < rdto.id {
+                    channel.lastReaction = rdto
+                }
+            }
+            return rdto
         }
-        return rdto
     }
     
     @discardableResult
     public func delete(reaction: Reaction) -> ReactionDTO? {
-        var channelDto: ChannelDTO?
-        if let dto = ReactionDTO.fetch(userId: reaction.user.id, key: reaction.key, messageId: reaction.messageId, context: self) {
-            if let messageDto = MessageDTO.fetch(id: reaction.messageId, context: self) {
-                channelDto = ChannelDTO.fetch(id: ChannelId(messageDto.channelId), context: self)
-                messageDto.userReactions?.remove(dto)
-                messageDto.pendingReactions?.remove(dto)
-                if let total = messageDto.reactionTotal?.first(where: { $0.key == reaction.key }) {
-                    total.count = max(0, total.count - 1)
-                    total.score = max(0, total.score - Int64(reaction.score))
-                    if total.count == 0 {
-                        messageDto.reactionTotal?.remove(total)
+        // Use serial queue to prevent race conditions when multiple contexts
+        // try to update the same reaction total concurrently
+        Self.reactionQueue.sync {
+            var channelDto: ChannelDTO?
+            if let dto = ReactionDTO.fetch(userId: reaction.user.id, key: reaction.key, messageId: reaction.messageId, context: self) {
+                if let messageDto = MessageDTO.fetch(id: reaction.messageId, context: self) {
+                    channelDto = ChannelDTO.fetch(id: ChannelId(messageDto.channelId), context: self)
+                    messageDto.userReactions?.remove(dto)
+                    messageDto.pendingReactions?.remove(dto)
+                    if let total = messageDto.reactionTotal?.first(where: { $0.key == reaction.key }) {
+                        total.count = max(0, total.count - 1)
+                        total.score = max(0, total.score - Int64(reaction.score))
+                        if total.count == 0 {
+                            messageDto.reactionTotal?.remove(total)
+                        }
                     }
                 }
+                delete(dto)
+                if let channelDto,
+                   channelDto.lastReaction?.id ?? 0 == reaction.id {
+                    let predicate = NSPredicate(format: "id != %lld AND message.incoming = false AND message.channelId == %lld", reaction.id, channelDto.id)
+                    channelDto.lastReaction = ReactionDTO.lastReaction(predicate: predicate, context: self)
+                }
+                return dto
             }
-            delete(dto)
-            if let channelDto,
-               channelDto.lastReaction?.id ?? 0 == reaction.id {
-                let predicate = NSPredicate(format: "id != %lld AND message.incoming = false AND message.channelId == %lld", reaction.id, channelDto.id)
-                channelDto.lastReaction = ReactionDTO.lastReaction(predicate: predicate, context: self)
-            }
-            return dto
+            return nil
         }
-        return nil
     }
     
     @discardableResult
@@ -595,6 +614,10 @@ extension NSManagedObjectContext: MessageDatabaseSession {
         )
         
         messages.forEach {
+            if $0.userMarkers == nil {
+                $0.userMarkers = .init()
+            }
+
             let markerDTO = MarkerDTO.fetchOrCreate(
                 messageId: MessageId($0.id),
                 name: messageMarkers.name,
@@ -603,6 +626,19 @@ extension NSManagedObjectContext: MessageDatabaseSession {
             )
             markerDTO.createdAt = messageMarkers.createdAt.bridgeDate
             markerDTO.user = UserDTO.fetchOrCreate(id: messageMarkers.user.id, context: self).map(messageMarkers.user)
+
+            // Insert the marker into the message's userMarkers set
+            $0.userMarkers?.insert(markerDTO)
+
+            // Update markerTotal count
+            if $0.markerTotal == nil {
+                $0.markerTotal = .init()
+            }
+            if let currentCount = $0.markerTotal?[messageMarkers.name] {
+                $0.markerTotal![messageMarkers.name] = currentCount + 1
+            } else {
+                $0.markerTotal![messageMarkers.name] = 1
+            }
         }
         return messages
     }

@@ -29,6 +29,7 @@ open class ChannelMessageSender: DataProvider {
     public let channelId: ChannelId
     public let channelOperator: ChannelOperator
     public let threadMessageId: MessageId?
+    public var maxSendRetryCount = 3
     
     public weak var delegate: ChannelMessageSenderDelegate?
     
@@ -99,7 +100,7 @@ open class ChannelMessageSender: DataProvider {
                     completion?(nil)
                     return
                 }
-                self.channelOperator.sendMessage(message)
+                self.sendMessageWithRetry(message)
                 { sentMessage, error in
                     handleAck(sentMessage: sentMessage, error: error)
                 }
@@ -117,7 +118,7 @@ open class ChannelMessageSender: DataProvider {
                             return
                         }
                          logger.info("Send message with tid \(message.tid)")
-                        self.channelOperator.sendMessage(sendableMessage)
+                        self.sendMessageWithRetry(sendableMessage)
                         { sentMessage, error in
                             handleAck(sentMessage: sentMessage, error: error)
                         }
@@ -175,12 +176,27 @@ open class ChannelMessageSender: DataProvider {
                         let message = MessageDTO.lastMessage(predicate: predicate, context: $0)
                         let channel = ChannelDTO.fetch(id: self.channelId, context: $0)
                         let lastMessageId = message?.id
+
+                        // Preserve pending votes from the original message
+                        var pendingVotes: NSSet? = nil
+                        if chatMessage.poll?.pendingVotes != nil {
+                            let existingMessageDTO = MessageDTO.fetch(tid: Int64(chatMessage.tid), context: $0)
+                            pendingVotes = existingMessageDTO?.poll?.pendingVotes
+                        }
                         
                         $0.createOrUpdate(
                             message: sentMessage,
                             channelId: self.channelId
                         )
-                        
+
+                        // Restore pending votes to the updated message
+                        if let pendingVotes = pendingVotes, pendingVotes.count > 0 {
+                            if let updatedMessageDTO = MessageDTO.fetch(id: sentMessage.id, context: $0),
+                               let pollDTO = updatedMessageDTO.poll {
+                                pollDTO.pendingVotes = pendingVotes
+                            }
+                        }
+
                         if let channel {
                             let min = min(sentMessage.id, MessageId(lastMessageId ?? Int64(sentMessage.id)))
                             let max = max(sentMessage.id, MessageId(lastMessageId ?? Int64(sentMessage.id)))
@@ -339,6 +355,43 @@ open class ChannelMessageSender: DataProvider {
         else { return [] }
         
         return attachments
+    }
+    
+    private func sendMessageWithRetry(
+        _ message: Message,
+        attempt: Int = 0,
+        completion: @escaping (Message?, Error?) -> Void
+    ) {
+        channelOperator.sendMessage(message) { [weak self] sentMessage, error in
+            guard let self else { return }
+            
+            guard self.shouldRetrySend(sentMessage: sentMessage, error: error, attempt: attempt) else {
+                completion(sentMessage, error)
+                return
+            }
+            
+            let delay = self.retryDelay(forAttempt: attempt)
+            logger.info("Retry send message tid \(message.tid), attempt \(attempt + 1)/\(self.maxSendRetryCount), delay \(Int(delay * 1000))ms")
+            DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                self.sendMessageWithRetry(message, attempt: attempt + 1, completion: completion)
+            }
+        }
+    }
+    
+    private func shouldRetrySend(sentMessage: Message?, error: Error?, attempt: Int) -> Bool {
+        guard let message = sentMessage else {
+            return false
+        }
+        guard message.deliveryStatus == .pending else { return false }
+        guard chatClient.connectionState == .connected else { return false }
+        guard attempt < max(0, maxSendRetryCount) else { return false }
+        return error?.sdkError?.isResendable == true
+    }
+    
+    private func retryDelay(forAttempt attempt: Int) -> TimeInterval {
+        let baseSeconds = 1.0 * pow(2.0, Double(attempt))
+        let jitterSeconds = Double.random(in: 0...(baseSeconds * 0.3))
+        return baseSeconds + jitterSeconds
     }
 }
 

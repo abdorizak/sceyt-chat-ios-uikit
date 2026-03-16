@@ -17,9 +17,6 @@ open class ChannelMemberListViewModel: NSObject {
     public let provider: ChannelMemberListProvider
     public let channelProvider: ChannelProvider
 
-    // Direct members array from server
-    private var members: [ChatChannelMember] = []
-
     public var addTitle: String {
         if shouldShowOnlyAdmins {
             return L10n.Channel.Add.Admins.title
@@ -45,6 +42,63 @@ open class ChannelMemberListViewModel: NSObject {
     }
     
     @Published public var event: Event?
+    
+    public lazy var defaultPredicate: NSPredicate = {
+        var predicate = NSPredicate(format: "channelId == %lld", channel.id)
+        if let filterMembersByRole {
+            predicate = predicate.and(predicate: .init(format: "role.name == %@", filterMembersByRole))
+        }
+        return predicate
+    }()
+
+    // Separate observers for each role section
+    public private(set) lazy var ownerObserver: DatabaseObserver<MemberDTO, ChatChannelMember> = {
+        let predicate = NSPredicate(format: "channelId == %lld AND role.name == %@",
+                                   channel.id,
+                                   SceytChatUIKit.shared.config.memberRolesConfig.owner)
+        return DatabaseObserver<MemberDTO, ChatChannelMember>(
+            request: MemberDTO.fetchRequest()
+                .fetch(predicate: predicate)
+                .sort(descriptors: []),
+            context: SceytChatUIKit.shared.database.viewContext
+        ) { $0.convert() }
+    }()
+
+    public private(set) lazy var adminObserver: DatabaseObserver<MemberDTO, ChatChannelMember> = {
+        let predicate = NSPredicate(format: "channelId == %lld AND role.name == %@",
+                                   channel.id,
+                                   SceytChatUIKit.shared.config.memberRolesConfig.admin)
+        return DatabaseObserver<MemberDTO, ChatChannelMember>(
+            request: MemberDTO.fetchRequest()
+                .fetch(predicate: predicate)
+                .sort(descriptors: []),
+            context: SceytChatUIKit.shared.database.viewContext
+        ) { $0.convert() }
+    }()
+
+    public private(set) lazy var otherObserver: DatabaseObserver<MemberDTO, ChatChannelMember> = {
+        let ownerRole = SceytChatUIKit.shared.config.memberRolesConfig.owner
+        let adminRole = SceytChatUIKit.shared.config.memberRolesConfig.admin
+        let predicate = NSPredicate(format: "channelId == %lld AND role.name != %@ AND role.name != %@",
+                                   channel.id,
+                                   ownerRole,
+                                   adminRole)
+        return DatabaseObserver<MemberDTO, ChatChannelMember>(
+            request: MemberDTO.fetchRequest()
+                .fetch(predicate: predicate)
+                .sort(descriptors: []),
+            context: SceytChatUIKit.shared.database.viewContext
+        ) { $0.convert() }
+    }()
+
+    public private(set) lazy var memberObserver: DatabaseObserver<MemberDTO, ChatChannelMember> = {
+        return DatabaseObserver<MemberDTO, ChatChannelMember>(
+            request: MemberDTO.fetchRequest()
+                .fetch(predicate: defaultPredicate)
+                .sort(descriptors: []),
+            context: SceytChatUIKit.shared.database.viewContext
+        ) { $0.convert() }
+    }()
 
     public required init(channel: ChatChannel,
                          filterMembersByRole: String? = nil) {
@@ -74,17 +128,140 @@ open class ChannelMemberListViewModel: NSObject {
         return canAddMembers && SceytChatUIKit.shared.config.channelInviteDeepLinkConfig != nil
     }
 
+    open func startDatabaseObserver() {
+        if shouldShowOnlyAdmins {
+            // Wait for deletion to complete before starting observer
+            deleteAdminsFromDatabase { [weak self] error in
+                guard let self else { return }
+                if let error = error {
+                    logger.errorIfNotNil(error, "Failed to delete admins before starting observer")
+                }
+
+                // Use the original single observer when filtering by role
+                self.memberObserver.onDidChange = { [weak self] in
+                    self?.onDidChangeEvent(items: $0)
+                }
+                do {
+                    try self.memberObserver.startObserver()
+                } catch {
+                    logger.errorIfNotNil(error, "observer.startObserver")
+                }
+
+                self.loadMembers()
+            }
+        } else {
+            // Wait for deletion to complete before starting observers
+            deleteMembersFromDatabase { [weak self] error in
+                guard let self else { return }
+                if let error = error {
+                    logger.errorIfNotNil(error, "Failed to delete members before starting observer")
+                }
+
+                // Use separate observers for each role section
+                self.ownerObserver.onDidChange = { [weak self] in
+                    guard let self else { return }
+                    self.onDidChangeEvent(items: $0, section: self.ownerSectionIndex)
+                }
+                self.adminObserver.onDidChange = { [weak self] in
+                    guard let self else { return }
+                    self.onDidChangeEvent(items: $0, section: self.adminSectionIndex)
+                }
+                self.otherObserver.onDidChange = { [weak self] in
+                    guard let self else { return }
+                    self.onDidChangeEvent(items: $0, section: self.otherSectionIndex)
+                }
+                do {
+                    try self.ownerObserver.startObserver()
+                    try self.adminObserver.startObserver()
+                    try self.otherObserver.startObserver()
+                } catch {
+                    logger.errorIfNotNil(error, "observer.startObserver")
+                }
+
+                self.loadMembers()
+            }
+        }
+    }
+
+    open func deleteMembersFromDatabase(completion: ((Error?) -> Void)? = nil) {
+        provider.database.write { context in
+            let predicate = NSPredicate(format: "channelId == %lld", self.channel.id)
+            context.deleteMembers(predicate: predicate)
+        } completion: { error in
+            if let error = error {
+                logger.errorIfNotNil(error, "Failed to delete members from database")
+            }
+            completion?(error)
+        }
+    }
+
+    open func deleteAdminsFromDatabase(completion: ((Error?) -> Void)? = nil) {
+        provider.database.write { context in
+            let predicate = NSPredicate(format: "channelId == %lld AND role.name == %@",
+                                       self.channel.id,
+                                       SceytChatUIKit.shared.config.memberRolesConfig.admin)
+            context.deleteMembers(predicate: predicate)
+        } completion: { error in
+            if let error = error {
+                logger.errorIfNotNil(error, "Failed to delete admins from database")
+            }
+            completion?(error)
+        }
+    }
+
     open var shouldShowOnlyAdmins: Bool {
         filterMembersByRole == SceytChatUIKit.shared.config.memberRolesConfig.admin
     }
+    
+    open func onDidChangeEvent(items: DBChangeItemPaths, section: Int? = nil) {
+        if let section = section {
+            // Role-based section change
+            event = .change(.init(changes: items, section: section))
+        } else {
+            // Original behavior for filtered view
+            event = .change(.init(changes: items, section: hasActionRows ? 1 : 0))
+        }
+    }
+
+    // Section indices for role-based display
+    open var ownerSectionIndex: Int {
+        hasActionRows ? 1 : 0
+    }
+
+    open var adminSectionIndex: Int {
+        hasActionRows ? 2 : 1
+    }
+
+    open var otherSectionIndex: Int {
+        hasActionRows ? 3 : 2
+    }
 
     open func member(at indexPath: IndexPath) -> ChatChannelMember? {
-        guard indexPath.row < members.count else { return nil }
-        return members[indexPath.row]
+        if shouldShowOnlyAdmins {
+            // Use original observer when filtering
+            return memberObserver.item(at: .init(row: indexPath.row, section: 0))
+        } else {
+            // Use role-specific observers
+            let section = indexPath.section
+            if section == ownerSectionIndex {
+                return ownerObserver.item(at: .init(row: indexPath.row, section: 0))
+            } else if section == adminSectionIndex {
+                return adminObserver.item(at: .init(row: indexPath.row, section: 0))
+            } else if section == otherSectionIndex {
+                return otherObserver.item(at: .init(row: indexPath.row, section: 0))
+            }
+            return nil
+        }
     }
     
     open var numberOfSections: Int {
-        hasActionRows ? 2 : 1
+        if shouldShowOnlyAdmins {
+            // Original behavior when filtering
+            return hasActionRows ? 2 : 1
+        } else {
+            // Role-based sections: action rows (optional) + owners + admins + others
+            return hasActionRows ? 4 : 3
+        }
     }
 
     open var hasActionRows: Bool {
@@ -99,36 +276,43 @@ open class ChannelMemberListViewModel: NSObject {
     }
 
     open func numberOfItems(section: Int) -> Int {
-        switch (section, hasActionRows) {
-        case (0, true):
-            return numberOfActionRows
-        case (1, true), (0, false):
-            return members.count
-        default:
+        if shouldShowOnlyAdmins {
+            // Original behavior when filtering
+            switch (section, hasActionRows) {
+            case (0, true):
+                return numberOfActionRows
+            case (1, true), (0, false):
+                return memberObserver.numberOfItems(in: 0)
+            default:
+                return 0
+            }
+        } else {
+            // Role-based sections
+            if section == 0 && hasActionRows {
+                return numberOfActionRows
+            } else if section == ownerSectionIndex {
+                return ownerObserver.numberOfItems(in: 0)
+            } else if section == adminSectionIndex {
+                return adminObserver.numberOfItems(in: 0)
+            } else if section == otherSectionIndex {
+                return otherObserver.numberOfItems(in: 0)
+            }
             return 0
-
         }
     }
     
     var numberOfMembers: Int {
-        members.count
-    }
-
-    open func loadMembers() {
-        provider.loadMembers { [weak self] fetchedMembers in
-            guard let self = self, fetchedMembers.count > 0 else { return }
-            self.members.append(contentsOf: fetchedMembers)
-            self.event = .reload
+        if shouldShowOnlyAdmins {
+            return memberObserver.numberOfItems(in: 0)
+        } else {
+            return ownerObserver.numberOfItems(in: 0) +
+                   adminObserver.numberOfItems(in: 0) +
+                   otherObserver.numberOfItems(in: 0)
         }
     }
 
-    open func loadNextPageIfNeeded() {
-        guard provider.hasNext else { return }
-        loadMembers()
-    }
-
-    open var hasMoreMembers: Bool {
-        provider.hasNext
+    open func loadMembers() {
+        provider.loadMembers()
     }
 
     open func canChangeMemberRoleToOwner(memberAt indexPath: IndexPath) -> Bool {

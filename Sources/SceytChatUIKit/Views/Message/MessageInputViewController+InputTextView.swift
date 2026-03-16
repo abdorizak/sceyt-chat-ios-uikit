@@ -79,7 +79,14 @@ extension MessageInputViewController {
         open override func paste(_ sender: Any?) {
             var pastedAttributedString: NSAttributedString?
             let pasteboard = UIPasteboard.general
-            if let data = pasteboard.data(forPasteboardType: kUTTypeRTF as String) {
+            var isFromCustomPasteboardType: Bool = false
+            
+            // First try to get our custom attributed string with all attributes (including .mention)
+            if let data = pasteboard.data(forPasteboardType: "com.sceyt.attributedstring"),
+               let archived = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSAttributedString.self, from: data) {
+                pastedAttributedString = archived
+                isFromCustomPasteboardType = true
+            } else if let data = pasteboard.data(forPasteboardType: kUTTypeRTF as String) {
                 pastedAttributedString = try? NSAttributedString(data: data, options: [NSAttributedString.DocumentReadingOptionKey.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil)
             } else if let data = pasteboard.data(forPasteboardType: "com.apple.flat-rtfd") {
                 pastedAttributedString = try? NSAttributedString(data: data, options: [NSAttributedString.DocumentReadingOptionKey.documentType: NSAttributedString.DocumentType.rtfd], documentAttributes: nil)
@@ -98,31 +105,37 @@ extension MessageInputViewController {
                 return
             }
             
-            let mPastedAttributedString = NSMutableAttributedString(string: pastedAttributedString.string)
-            pastedAttributedString.enumerateAttributes(in: .init(location: 0, length: pastedAttributedString.length)) { value, range, pointer in
-                if let font = value[.font] as? UIFont {
-                    var newFont = appearance.textInputAppearance.labelAppearance.font
-                    if font.isBold {
-                        newFont = newFont.toBold
+            let mPastedAttributedString = isFromCustomPasteboardType ?
+            NSMutableAttributedString(attributedString: pastedAttributedString) :
+            NSMutableAttributedString(string: pastedAttributedString.string)
+            
+            if !isFromCustomPasteboardType {
+                pastedAttributedString.enumerateAttributes(in: .init(location: 0, length: pastedAttributedString.length)) { value, range, pointer in
+                    if let font = value[.font] as? UIFont {
+                        var newFont = appearance.textInputAppearance.labelAppearance.font
+                        if font.isBold {
+                            newFont = newFont.toBold
+                        }
+                        if font.isItalic {
+                            newFont = newFont.toItalic
+                        }
+                        if font.isMonospace {
+                            newFont = newFont.toMonospace
+                        }
+                        mPastedAttributedString.addAttribute(.font, value: newFont, range: range)
                     }
-                    if font.isItalic {
-                        newFont = newFont.toItalic
+                    if let _ = value[.strikethroughStyle] {
+                        mPastedAttributedString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
                     }
-                    if font.isMonospace {
-                        newFont = newFont.toMonospace
+                    if let _ = value[.underlineStyle] {
+                        mPastedAttributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
                     }
-                    mPastedAttributedString.addAttribute(.font, value: newFont, range: range)
                 }
-                if let _ = value[.strikethroughStyle] {
-                    mPastedAttributedString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
-                }
-                if let _ = value[.underlineStyle] {
-                    mPastedAttributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
-                }
+                
+                mPastedAttributedString.addAttribute(.foregroundColor,
+                                                     value: appearance.textInputAppearance.labelAppearance.foregroundColor,
+                                                     range: .init(location: 0, length: mPastedAttributedString.length))
             }
-            mPastedAttributedString.addAttribute(.foregroundColor,
-                                                 value: appearance.textInputAppearance.labelAppearance.foregroundColor,
-                                                 range: .init(location: 0, length: mPastedAttributedString.length))
             let mAttributedText = attributedText.mutableCopy() as! NSMutableAttributedString
             let range = selectedRange
             mAttributedText.safeReplaceCharacters(in: range, with: mPastedAttributedString)

@@ -22,6 +22,8 @@ public struct DefaultMarkerTitleProvider: DefaultMarkerTitleProviding {
             L10n.Message.Info.playedBy
         case .custom(let custom):
             custom
+        case .opened:
+            ""
         }
     }
 }

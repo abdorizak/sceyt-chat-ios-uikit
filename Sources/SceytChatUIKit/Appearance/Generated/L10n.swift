@@ -291,6 +291,8 @@ public enum L10n {
       public enum Segment {
         /// Files
         public static let files = L10n.tr("Localizable", "channel.info.segment.files", fallback: "Files")
+        /// Groups
+        public static let groups = L10n.tr("Localizable", "channel.info.segment.groups", fallback: "Groups")
         /// Links
         public static let links = L10n.tr("Localizable", "channel.info.segment.links", fallback: "Links")
         /// Media
@@ -300,20 +302,34 @@ public enum L10n {
         /// Voice
         public static let voice = L10n.tr("Localizable", "channel.info.segment.voice", fallback: "Voice")
         public enum Files {
-          /// No file items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.files.noItems", fallback: "No file items yet")
+          /// No Files
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.files.noItems", fallback: "No Files")
+          /// Shared files will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.files.noItemsSubTitle", fallback: "Shared files will appear here.")
+        }
+        public enum Groups {
+          /// No groups in common
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.groups.noItems", fallback: "No groups in common")
+          /// Groups in common will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.groups.noItemsSubTitle", fallback: "Groups in common will appear here.")
         }
         public enum Links {
-          /// No link items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.links.noItems", fallback: "No link items yet")
+          /// No links
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.links.noItems", fallback: "No links")
+          /// Shared links will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.links.noItemsSubTitle", fallback: "Shared links will appear here.")
         }
         public enum Medias {
-          /// No media items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.medias.noItems", fallback: "No media items yet")
+          /// No Media
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.medias.noItems", fallback: "No Media")
+          /// Shared media will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.medias.noItemsSubTitle", fallback: "Shared media will appear here.")
         }
         public enum Voice {
-          /// No voice items yet
-          public static let noItems = L10n.tr("Localizable", "channel.info.segment.voice.noItems", fallback: "No voice items yet")
+          /// No voice messages
+          public static let noItems = L10n.tr("Localizable", "channel.info.segment.voice.noItems", fallback: "No voice messages")
+          /// Shared voice messages will appear here.
+          public static let noItemsSubTitle = L10n.tr("Localizable", "channel.info.segment.voice.noItemsSubTitle", fallback: "Shared voice messages will appear here.")
         }
       }
     }
@@ -611,6 +627,8 @@ public enum L10n {
   public enum Message {
     /// Message was deleted.
     public static let deleted = L10n.tr("Localizable", "message.deleted", fallback: "Message was deleted.")
+    /// Read more
+    public static let readMore = L10n.tr("Localizable", "message.readMore", fallback: "Read more")
     public enum Action {
       public enum Subtitle {
         /// Delete For All
@@ -912,6 +930,16 @@ public enum L10n {
         /// 1 day
         public static let one = L10n.tr("Localizable", "time.interval.day.one", fallback: "1 day")
       }
+      public enum Format {
+        /// %@ and %@
+        public static func end(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "time.interval.format.end", String(describing: p1), String(describing: p2), fallback: "%@ and %@")
+        }
+        /// %@, %@
+        public static func middle(_ p1: Any, _ p2: Any) -> String {
+          return L10n.tr("Localizable", "time.interval.format.middle", String(describing: p1), String(describing: p2), fallback: "%@, %@")
+        }
+      }
       public enum Hour {
         /// %d hours
         public static func multiple(_ p1: Int) -> String {
@@ -936,6 +964,14 @@ public enum L10n {
         /// 1 month
         public static let one = L10n.tr("Localizable", "time.interval.month.one", fallback: "1 month")
       }
+      public enum Second {
+        /// %d seconds
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.second.multiple", p1, fallback: "%d seconds")
+        }
+        /// 1 second
+        public static let one = L10n.tr("Localizable", "time.interval.second.one", fallback: "1 second")
+      }
       public enum Week {
         /// %d weeks
         public static func multiple(_ p1: Int) -> String {
@@ -943,6 +979,14 @@ public enum L10n {
         }
         /// 1 week
         public static let one = L10n.tr("Localizable", "time.interval.week.one", fallback: "1 week")
+      }
+      public enum Year {
+        /// %d years
+        public static func multiple(_ p1: Int) -> String {
+          return L10n.tr("Localizable", "time.interval.year.multiple", p1, fallback: "%d years")
+        }
+        /// 1 year
+        public static let one = L10n.tr("Localizable", "time.interval.year.one", fallback: "1 year")
       }
     }
   }
@@ -988,6 +1032,29 @@ public enum L10n {
       public static let offline = L10n.tr("Localizable", "user.presence.offline", fallback: "offline")
       /// online
       public static let online = L10n.tr("Localizable", "user.presence.online", fallback: "online")
+    }
+  }
+  public enum ViewOnce {
+    /// Message self-destructed
+    public static let selfDestructed = L10n.tr("Localizable", "viewOnce.selfDestructed", fallback: "Message self-destructed")
+    /// Self-destructed %@
+    public static func selfDestructedAttachment(_ p1: Any) -> String {
+      return L10n.tr("Localizable", "viewOnce.selfDestructedAttachment", String(describing: p1), fallback: "Self-destructed %@")
+    }
+    public enum Info {
+      /// Any photo, video, or voice message you send will disappear from the chat after it's been opened.
+      /// To keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.
+      public static let description = L10n.tr("Localizable", "viewOnce.info.description", fallback: "Any photo, video, or voice message you send will disappear from the chat after it's been opened.\nTo keep your content private, recipients won't be able to share, forward, copy, save, or take screenshots.")
+      /// View once messages
+      public static let title = L10n.tr("Localizable", "viewOnce.info.title", fallback: "View once messages")
+    }
+    public enum Screenshot {
+      public enum Alert {
+        /// Screen capture has been restricted to ensure user privacy.
+        public static let message = L10n.tr("Localizable", "viewOnce.screenshot.alert.message", fallback: "Screen capture has been restricted to ensure user privacy.")
+        /// Screenshot Blocked
+        public static let title = L10n.tr("Localizable", "viewOnce.screenshot.alert.title", fallback: "Screenshot Blocked")
+      }
     }
   }
 }

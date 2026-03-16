@@ -38,6 +38,8 @@ extension ChannelInfoViewController {
             super.setup()
             
             noItemsMessage = L10n.Channel.Info.Segment.Files.noItems
+            noItemsMessageSubTitle = L10n.Channel.Info.Segment.Files.noItemsSubTitle
+            noItemsIcon = UIImage.emptyFiles
             register(Components.channelInfoFileCell.self)
             register(Components.channelInfoDateSeparatorView.self, kind: .header)
             delegate = self

@@ -16,13 +16,15 @@ extension MessageInputViewController {
             case
                 noPermission,
                 recordingUnavailable,
-                recorded(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>),
-                send(URL, ChatMessage.Attachment.Metadata<[Int]>),
+                recorded(url: URL, metadata: ChatMessage.Attachment.Metadata<[Int]>, viewOnce: Bool),
+                send(URL, ChatMessage.Attachment.Metadata<[Int]>, viewOnce: Bool),
                 didStartRecording, didStopRecording
         }
 
         var onEvent: ((Event) -> Void)?
         
+        open var minDuration: TimeInterval = 1.0
+
         enum State {
             case unlock, lock, locked, cancel, recorded
         }
@@ -30,9 +32,15 @@ extension MessageInputViewController {
         enum RecordingState {
             case idle, start, stop, process
         }
-        
+
+        private var isViewOnceEnabled: Bool = false {
+            didSet {
+                updateViewOnceButton()
+            }
+        }
+
         private var recordingEventTimer: Timer?
-        
+
         private var state = State.unlock {
             didSet {
                 setState(state, animated: true)
@@ -86,22 +94,27 @@ extension MessageInputViewController {
                     {
                         recorder.stopRecording()
                         let metadata = recorder.metadata
-                        self.onEvent?(.recorded(url: recorder.url, metadata: metadata))
+                        self.onEvent?(.recorded(url: recorder.url, metadata: metadata, viewOnce: isViewOnceEnabled))
                     }
                     self.dismiss()
                 }
                 self.lockButton.isHidden = self.state == .recorded
                 self.micButton.isHidden = self.state == .recorded
                 self.slidingView.isHidden = self.state == .recorded
+                self.viewOnceButton.isHidden = self.state != .locked || !appearance.enableViewOnce
             }
         }
         
         public var recorder: AudioRecorder?
-        
+
         private let lockButton = UIButton()
-        
+
         private let micButton = UIButton()
-        
+
+        private let viewOnceButton = UIView()
+
+        private let viewOnceImageView = UIImageView()
+
         private lazy var slidingView = SlidingView { [weak self] in
             self?.reset(animated: false)
         }
@@ -148,6 +161,7 @@ extension MessageInputViewController {
             
             switch gesture.state {
             case .began:
+                isViewOnceEnabled = false
                 let recordPermission = Components.audioSession.recordPermission
                 switch recordPermission {
                 case .granted:
@@ -221,16 +235,24 @@ extension MessageInputViewController {
                 addSubview(slidingView.withoutAutoresizingMask)
                 addSubview(lockButton.withoutAutoresizingMask)
                 addSubview(micButton.withoutAutoresizingMask)
-                
+                addSubview(viewOnceButton.withoutAutoresizingMask)
+                viewOnceButton.addSubview(viewOnceImageView.withoutAutoresizingMask)
+
                 setState(.unlock, animated: false)
                 slidingView.state = .unlock
-                
+
                 lockButton.bottomAnchor.pin(to: micButton.topAnchor, constant: -8 + MessageInputViewController.Layouts.recorderShadowBlur)
                 lockButton.centerXAnchor.pin(to: micButton.centerXAnchor)
                 micButton.pin(to: self, anchors: [.trailing(9)])
                 micButton.centerYAnchor.pin(to: gestureView.centerYAnchor)
                 slidingView.pin(to: self, anchors: [.leading(), .trailing()])
                 slidingView.topAnchor.pin(to: gestureView.topAnchor)
+                viewOnceButton.bottomAnchor.pin(to: lockButton.topAnchor, constant: -8 + MessageInputViewController.Layouts.recorderShadowBlur)
+                viewOnceButton.centerXAnchor.pin(to: lockButton.centerXAnchor)
+                viewOnceButton.resize(anchors: [.width(42), .height(42)])
+                viewOnceImageView.centerXAnchor.pin(to: viewOnceButton.centerXAnchor)
+                viewOnceImageView.centerYAnchor.pin(to: viewOnceButton.centerYAnchor)
+                viewOnceImageView.resize(anchors: [.width(24), .height(24)])
                 startCenter = gestureView.convert(.init(x: gestureView.width / 2, y: gestureView.height / 2), to: self)
                 currentCenter = startCenter
                 
@@ -287,28 +309,40 @@ extension MessageInputViewController {
                     self.setNeedsLayout()
                     self.layoutIfNeeded()
                 }
-            } else if state == .cancel || recorder == nil || recorder!.metadata.duration < 1 {
+            } else if state == .cancel || recorder == nil || TimeInterval(recorder?.metadata.duration ?? 0) < minDuration {
                 impactFeebackGenerator.impactOccurred()
                 reset(animated: animated)
             } else if state != .recorded, superview != nil {
                 reset(animated: animated)
-                onEvent?(.send(recorder!.url, recorder!.metadata))
+                onEvent?(.send(recorder!.url, recorder!.metadata, viewOnce: isViewOnceEnabled))
             }
         }
         
         override open func setupAppearance() {
             super.setupAppearance()
-            
+
             backgroundColor = .clear
             slidingView.appearance = appearance
+            viewOnceButton.backgroundColor = appearance.backgroundColor
+            viewOnceButton.layer.cornerRadius = 21
+            viewOnceButton.layer.shadowColor = UIColor.black.cgColor
+            viewOnceButton.layer.shadowOffset = CGSize(width: 0, height: 2)
+            viewOnceButton.layer.shadowOpacity = 0.1
+            viewOnceButton.layer.shadowRadius = 4
+            viewOnceImageView.contentMode = .scaleToFill
+            updateViewOnceButton()
         }
         
         override open func setup() {
             super.setup()
-            
+
             impactFeebackGenerator.prepare()
             lockButton.addTarget(self, action: #selector(onTapStop), for: .touchUpInside)
             micButton.addTarget(self, action: #selector(onTapSend), for: .touchUpInside)
+
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(onTapViewOnce))
+            viewOnceButton.addGestureRecognizer(tapGesture)
+            viewOnceButton.isUserInteractionEnabled = true
         }
         
         override open func layoutSubviews() {
@@ -323,6 +357,7 @@ extension MessageInputViewController {
             else { return }
             micButton.center = currentCenter
             lockButton.bottom = micButton.top - 8 + MessageInputViewController.Layouts.recorderShadowBlur
+            viewOnceButton.bottom = lockButton.top
         }
         
         private func startSendingStartRecordingEvents() {
@@ -359,6 +394,7 @@ extension MessageInputViewController {
             currentCenter = nil
             lockButton.removeFromSuperview()
             micButton.removeFromSuperview()
+            viewOnceButton.removeFromSuperview()
             slidingView.removeFromSuperview()
             removeFromSuperview()
         }
@@ -370,15 +406,30 @@ extension MessageInputViewController {
         
         @objc
         private func onTapSend() {
+            guard let recorder else { return }
+            if TimeInterval(recorder.metadata.duration) < minDuration {
+                reset(animated: false)
+                return
+            }
             reset(animated: false)
-            onEvent?(.send(recorder!.url, recorder!.metadata))
+            onEvent?(.send(recorder.url, recorder.metadata, viewOnce: isViewOnceEnabled))
         }
-        
+
+        @objc
+        private func onTapViewOnce() {
+            isViewOnceEnabled.toggle()
+        }
+
+        private func updateViewOnceButton() {
+            var buttonImage: UIImage = isViewOnceEnabled ? appearance.viewOnceActiveIcon : appearance.viewOnceIcon
+            self.viewOnceImageView.image = buttonImage
+        }
+
         func stop() {
             state = .cancel
             recorder?.stopRecording()
         }
-        
+
         open func stopAndPreview() {
             state = .recorded
         }

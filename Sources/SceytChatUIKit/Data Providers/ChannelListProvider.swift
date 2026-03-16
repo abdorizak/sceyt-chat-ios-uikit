@@ -37,9 +37,11 @@ extension ChannelListProvider {
 }
 
 open class ChannelListProvider: DataProvider {
-    
+
+    public var maxFetchRetryCount = 3
+
     public var config: Config
-    
+
     open private(set) var defaultQuery: ChannelListQuery!
     
     internal var onStoreChannels: (([Channel]) -> Void)?
@@ -78,7 +80,7 @@ open class ChannelListProvider: DataProvider {
             return
         }
         if query.hasNext, !query.loading {
-            query.loadNext { _, channels, error in
+            loadChannelsWithRetry(query: query, attempt: 0) { channels, error in
                 guard let channels = channels
                 else {
                     completion?(error)
@@ -105,7 +107,7 @@ open class ChannelListProvider: DataProvider {
             logger.errorIfNotNil(error, "Unable Store channels")
             completion?(error)
         }
-        
+
         DispatchQueue.global(qos: .userInitiated).async {
             channels.forEach { channel in
                 guard let message = channel.lastMessage
@@ -117,6 +119,40 @@ open class ChannelListProvider: DataProvider {
                     .markMessagesAsReceived(ids: [message.id])
             }
         }
+    }
+
+    private func loadChannelsWithRetry(
+        query: ChannelListQuery,
+        attempt: Int = 0,
+        completion: @escaping ([Channel]?, Error?) -> Void
+    ) {
+        query.loadNext { [weak self] _, channels, error in
+            guard let self else { return }
+
+            guard self.shouldRetryFetch(channels: channels, error: error, attempt: attempt) else {
+                completion(channels, error)
+                return
+            }
+
+            let delay = self.retryDelay(forAttempt: attempt)
+            logger.info("Retry fetch channels, attempt \(attempt + 1)/\(self.maxFetchRetryCount), delay \(Int(delay * 1000))ms")
+            DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                self.loadChannelsWithRetry(query: query, attempt: attempt + 1, completion: completion)
+            }
+        }
+    }
+
+    private func shouldRetryFetch(channels: [Channel]?, error: Error?, attempt: Int) -> Bool {
+        guard channels == nil || channels?.isEmpty == true else { return false }
+        guard chatClient.connectionState == .connected else { return false }
+        guard attempt < max(0, maxFetchRetryCount) else { return false }
+        return error?.sdkError?.isResendable == true
+    }
+
+    private func retryDelay(forAttempt attempt: Int) -> TimeInterval {
+        let baseSeconds = 1.0 * pow(2.0, Double(attempt))
+        let jitterSeconds = Double.random(in: 0...(baseSeconds * 0.3))
+        return baseSeconds + jitterSeconds
     }
 }
 

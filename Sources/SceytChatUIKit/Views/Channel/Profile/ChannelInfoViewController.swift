@@ -34,9 +34,12 @@ open class ChannelInfoViewController: ViewController,
     
     open lazy var linkListViewController = Components.channelInfoLinkCollectionView
         .init()
-    
-    open lazy var segmentViewController = Components.segmentedControlView
-        .init(items: [
+
+    open lazy var groupListViewController = Components.channelInfoGroupCollectionView
+        .init()
+
+    open lazy var segmentViewController: SegmentedControlView = {
+        var items: [SegmentedControlView.SectionItem] = [
             .init(content: mediaListViewController,
                   title: L10n.Channel.Info.Segment.medias),
             .init(content: fileListViewController,
@@ -45,7 +48,17 @@ open class ChannelInfoViewController: ViewController,
                   title: L10n.Channel.Info.Segment.voice),
             .init(content: linkListViewController,
                   title: L10n.Channel.Info.Segment.links)
-        ]).withoutAutoresizingMask
+        ]
+
+        // Only show groups tab for direct channels
+        if SceytChatUIKit.shared.config.showGroupsInCommon &&
+           profileViewModel.channel.isDirect && !profileViewModel.channel.isSelfChannel {
+            items.append(.init(content: groupListViewController,
+                              title: L10n.Channel.Info.Segment.groups))
+        }
+
+        return Components.segmentedControlView.init(items: items).withoutAutoresizingMask
+    }()
     
     public var sections = [Sections]()
     
@@ -72,6 +85,7 @@ open class ChannelInfoViewController: ViewController,
         fileListViewController.fileViewModel = profileViewModel.fileListViewModel
         linkListViewController.linkViewModel = profileViewModel.linkListViewModel
         voiceListViewController.voiceViewModel = profileViewModel.voiceListViewModel
+        groupListViewController.channel = profileViewModel.channel
         tableView.register(Components.channelInfoDetailsCell.self)
         tableView.register(Components.channelInfoDescriptionCell.self)
         tableView.register(Components.channelInfoOptionCell.self)
@@ -92,7 +106,12 @@ open class ChannelInfoViewController: ViewController,
                 router.showAttachment(attachment)
             }
         }
-        
+
+        groupListViewController.onSelect = { [weak self] channelModel in
+            guard let self else { return }
+            router.topToChannelListShowChannel(channelModel.channel)
+        }
+
         segmentViewController.parentScrollView = tableView
         segmentViewController.items
             .compactMap { $0.content as? ChannelInfoViewController.AttachmentCollectionView }
@@ -159,6 +178,7 @@ open class ChannelInfoViewController: ViewController,
         fileListViewController.parentAppearance = appearance.fileCollectionAppearance
         voiceListViewController.parentAppearance = appearance.voiceCollectionAppearance
         linkListViewController.parentAppearance = appearance.linkCollectionAppearance
+        groupListViewController.parentAppearance = appearance.groupCollectionAppearance
     }
     
     override open func viewSafeAreaInsetsDidChange() {
@@ -167,6 +187,7 @@ open class ChannelInfoViewController: ViewController,
         fileListViewController.contentInset.bottom = view.safeAreaInsets.bottom
         linkListViewController.contentInset.bottom = view.safeAreaInsets.bottom
         voiceListViewController.contentInset.bottom = view.safeAreaInsets.bottom
+        groupListViewController.contentInset.bottom = view.safeAreaInsets.bottom
     }
     
     open func onEvent(_ event: ChannelProfileViewModel.Event) {
@@ -305,7 +326,7 @@ open class ChannelInfoViewController: ViewController,
 
             // Special handling for autoDelete to show formatted time
             if action.tag == ActionTag.autoDeleteMessages {
-                cell.detailLabel.text = formatAutoDeleteTime(profileViewModel.autoDelete)
+                cell.descriptionLabel.text = formatAutoDeleteTime(profileViewModel.autoDelete)
             } else if let toggle = action.toggle {
                 cell.detailLabel.text = toggle ? L10n.Common.on : L10n.Common.off
             } else {
@@ -533,7 +554,7 @@ open class ChannelInfoViewController: ViewController,
             default:
                 break
             }
-            if profileViewModel.isOwner {
+            if profileViewModel.isOwner || profileViewModel.isAdmin {
                 actions += [.init(title: appearance.optionTitles.adminsTitleText,
                                   image: appearance.optionIcons.adminsIcon,
                                   tag: ActionTag.admins)]
@@ -976,27 +997,7 @@ public extension ChannelInfoViewController {
     // MARK: - Helper Methods
 
     open func formatAutoDeleteTime(_ interval: TimeInterval) -> String {
-        if interval == 0 {
-            return L10n.Channel.Info.AutoDelete.off
-        }
-
-        let hours = Int(interval / 3600)
-        let days = hours / 24
-        let weeks = days / 7
-        let months = days / 30
-
-        if months > 0 && days % 30 == 0 {
-            return "\(months)mo"
-        } else if weeks > 0 && days % 7 == 0 {
-            return "\(weeks)w"
-        } else if days > 0 && hours % 24 == 0 {
-            return "\(days)d"
-        } else if hours > 0 {
-            return "\(hours)h"
-        } else {
-            let minutes = Int(interval / 60)
-            return "\(minutes)m"
-        }
+        return "(\(SceytChatUIKit.shared.formatters.timeIntervalFormatter.format(interval)))"
     }
 
     enum ActionTag {

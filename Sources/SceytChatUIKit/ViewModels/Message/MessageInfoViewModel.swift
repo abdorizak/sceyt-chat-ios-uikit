@@ -64,6 +64,7 @@ open class MessageInfoViewModel: NSObject {
 			}
 		}
 		
+		markersArray.removeAll { $0.markerName == DefaultMarker.opened.rawValue }
 		markersArray.sort { DefaultMarker(rawValue: $0.markerName) > DefaultMarker(rawValue: $1.markerName) }
 		
 		return markersArray

@@ -95,7 +95,10 @@ extension ChannelViewController {
                 bubbleViewTopAnchor = bubbleView.topAnchor
             }
             
-            if layout.contentOptions == .text {
+            if layout.contentOptions == .text || layout.message.hasOpenedMarker {
+                let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
+                let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
+
                 layoutConstraint += [
                     attachmentView.topAnchor.pin(to: bubbleViewTopAnchor),
                     bubbleView.leadingAnchor.pin(to: textLabel.leadingAnchor, constant: -12),
@@ -104,12 +107,21 @@ extension ChannelViewController {
                     
                     textLabel.topAnchor.pin(to: bubbleViewTopAnchor, constant: layout.isForwarded ? 2 : 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
-                    textLabel.heightAnchor.pin(constant: layout.textSize.height),
+                    textLabel.heightAnchor.pin(constant: textHeight),
+
+                    // ReadMore button constraints
+                    readMoreButton.topAnchor.pin(to: textLabel.bottomAnchor, constant: 0.0),
+                    readMoreButton.leadingAnchor.pin(to: textLabel.leadingAnchor),
                 ]
                 
                 let infoWidth = layout.infoViewMeasure.width
                 let maxSpace = infoWidth == 0 ? 70 : infoWidth + 12
-                if layout.lastCharRect.maxX + maxSpace <= layout.textSize.width {
+                if shouldDisplayReadMoreButton {
+                    layoutConstraint += [
+                        textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12),
+                        infoView.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor)
+                    ]
+                } else if layout.lastCharRect.maxX + maxSpace <= layout.textSize.width {
                     layoutConstraint += [
                         textLabel.bottomAnchor.pin(to: infoView.bottomAnchor),
                         textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12)
@@ -163,7 +175,9 @@ extension ChannelViewController {
                     attachmentView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: 0),
                 ]
             } else if layout.contentOptions.contains(.link), layout.attachments.isEmpty {
-                
+                let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
+                let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
+
                 layoutConstraint += [
                     bubbleView.leadingAnchor.pin(to: textLabel.leadingAnchor, constant: -12),
                     bubbleView.trailingAnchor.pin(to: containerView.trailingAnchor, constant: -12),
@@ -171,22 +185,33 @@ extension ChannelViewController {
                     bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.linkViewMeasure.width + 24),
                     bubbleView.widthAnchor.pin(greaterThanOrEqualToConstant: layout.infoViewMeasure.width + 24),
                     bubbleView.widthAnchor.pin(lessThanOrEqualToConstant: Components.messageLayoutModel.defaults.messageWidth).priority(.required),
-                    
+
                     infoView.leadingAnchor.pin(greaterThanOrEqualTo: bubbleView.leadingAnchor, constant: 10),
-                    
+
                     textLabel.trailingAnchor.pin(to: bubbleView.trailingAnchor, constant: -12),
                     textLabel.topAnchor.pin(to: bubbleViewTopAnchor, constant: 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
-                    textLabel.heightAnchor.pin(constant: layout.textSize.height),
-                    
+                    textLabel.heightAnchor.pin(constant: textHeight),
+
+                    // ReadMore button constraints for link+text
+                    readMoreButton.topAnchor.pin(to: textLabel.bottomAnchor, constant: 0.0),
+                    readMoreButton.leadingAnchor.pin(to: textLabel.leadingAnchor),
+
                     linkView.leadingAnchor.pin(to: bubbleView.leadingAnchor),
-                    linkView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
-                    //                linkView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4),
                     linkView.trailingAnchor.pin(to: bubbleView.trailingAnchor),
                     linkView.heightAnchor.pin(constant: layout.linkViewMeasure.height),
                 ]
-                
-                
+
+                if shouldDisplayReadMoreButton {
+                    layoutConstraint += [
+                        linkView.topAnchor.pin(to: readMoreButton.bottomAnchor, constant: 8)
+                    ]
+                } else {
+                    layoutConstraint += [
+                        linkView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8)
+                    ]
+                }
+
                 layoutConstraint += [ linkView.bottomAnchor.pin(to: infoView.topAnchor, constant: -4) ]
             } else if layout.contentOptions.contains(.poll), layout.attachments.isEmpty {
                 layoutConstraint += [
@@ -237,20 +262,36 @@ extension ChannelViewController {
                 }
                 infoView.displayedLabel.textColor = infoView.dateLabel.textColor
                 infoView.eyeView.tintColor = infoView.dateLabel.textColor
-                
+
+                let shouldDisplayReadMoreButton = layout.shouldDisplayReadMoreButton
+                let textHeight = shouldDisplayReadMoreButton ? layout.truncatedTextSize.height : layout.textSize.height
+
                 layoutConstraint += [
                     bubbleView.trailingAnchor.pin(to: containerView.trailingAnchor, constant: -12),
                     bubbleView.widthAnchor.pin(constant: maxBubbleWidth),
                     bubbleView.topAnchor.pin(to: containerView.topAnchor),
-                    
+
                     textLabel.leadingAnchor.pin(to: bubbleView.leadingAnchor, constant: 12),
                     textLabel.topAnchor.pin(to: bubbleViewTopAnchor, constant: layout.isForwarded ? 2 : 8),
                     textLabel.widthAnchor.pin(greaterThanOrEqualToConstant: layout.textSize.width),
-                    textLabel.heightAnchor.pin(constant: layout.textSize.height),
-                    
-                    attachmentView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8),
+                    textLabel.heightAnchor.pin(constant: textHeight),
+
+                    // ReadMore button constraints for image+text
+                    readMoreButton.topAnchor.pin(to: textLabel.bottomAnchor, constant: 0.0),
+                    readMoreButton.leadingAnchor.pin(to: textLabel.leadingAnchor),
+
                     attachmentView.bottomAnchor.pin(to: bubbleView.bottomAnchor, constant: -2),
                 ]
+
+                if shouldDisplayReadMoreButton {
+                    layoutConstraint += [
+                        attachmentView.topAnchor.pin(to: readMoreButton.bottomAnchor, constant: 8)
+                    ]
+                } else {
+                    layoutConstraint += [
+                        attachmentView.topAnchor.pin(to: textLabel.bottomAnchor, constant: 8)
+                    ]
+                }
             }
             
             if layout.contentOptions.contains(.image) || layout.contentOptions.contains(.file) || layout.contentOptions.contains(.voice) {
@@ -370,21 +411,34 @@ extension ChannelViewController {
             } else {
                 replySize = .zero
             }
-            if model.contentOptions == .text {
-                textSize = model.textSize
+            if model.contentOptions == .text || model.message.hasOpenedMarker {
+                // Use truncated text size if text is not expanded
+                // For deleted messages, always use current textSize regardless of isTextExpanded state
+                let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
+                textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.width = max(textSize.width, model.parentTextSize.width - 70)
                 bubbleSize = textSize
+
+                // Add read more button height if needed
+                if shouldDisplayReadMoreButton {
+                    bubbleSize.height += model.readMoreButtonHeight
+                }
+
                 let infoViewSize = model.infoViewMeasure
                 let maxSpace = infoViewSize.width + 12
-                
-                if model.lastCharRect.maxX + maxSpace <= model.textSize.width {
-                    
+                let effectiveTextSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
+
+                if shouldDisplayReadMoreButton {
+                    // Always add infoView height on new line when read more button is shown
+                    bubbleSize.height += infoViewSize.height
+                } else if model.lastCharRect.maxX + maxSpace <= effectiveTextSize.width {
+
                 } else if model.lastCharRect.maxX + maxSpace <= Components.messageLayoutModel.defaults.messageWidth - 12 * 2 {
-                    bubbleSize.width += model.lastCharRect.maxX + maxSpace - model.textSize.width
+                    bubbleSize.width += model.lastCharRect.maxX + maxSpace - effectiveTextSize.width
                 } else {
                     bubbleSize.height += infoViewSize.height
                 }
-                
+
                 bubbleSize.width += 24
                 bubbleSize.height += model.isForwarded ? 2 : 8
                 bubbleSize.height += 8 //bottom
@@ -402,9 +456,19 @@ extension ChannelViewController {
                 bubbleSize.height += (model.hasReply ? 8 : model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)
             } else if model.contentOptions.contains(.link) {
                 let linkSize = model.linkViewMeasure
-                textSize = model.textSize
+
+                // Use truncated text size if text is not expanded
+                // For deleted messages, always use current textSize regardless of isTextExpanded state
+                let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
+                textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.width = max(textSize.width, model.parentTextSize.width - 70)
                 bubbleSize = textSize
+
+                // Add read more button height if needed
+                if shouldDisplayReadMoreButton {
+                    bubbleSize.height += model.readMoreButtonHeight
+                }
+
                 bubbleSize.width = max(bubbleSize.width, linkSize.width)
                 bubbleSize.height += linkSize.height
                 bubbleSize.height += (model.hasReply ? 8 : model.isForwarded ? hasVoicesOrFiles ? 0 : 8 : 2)
@@ -436,8 +500,18 @@ extension ChannelViewController {
                 shouldShowDateTickBackground = false
                 bubbleSize = model.attachmentsContainerSize
                 bubbleSize.width += 4
-                textSize = model.textSize
+
+                // Use truncated text size if text is not expanded
+                // For deleted messages, always use current textSize regardless of isTextExpanded state
+                let shouldDisplayReadMoreButton = model.shouldDisplayReadMoreButton
+                textSize = shouldDisplayReadMoreButton ? model.truncatedTextSize : model.textSize
                 textSize.height += model.isForwarded ? 2 : 8
+
+                // Add read more button height if needed
+                if shouldDisplayReadMoreButton {
+                    textSize.height += model.readMoreButtonHeight
+                }
+
                 bubbleSize.height += textSize.height
                 bubbleSize.width = max(bubbleSize.width, textSize.width)
                 bubbleSize.height += 8 + 2

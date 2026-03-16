@@ -68,31 +68,8 @@ open class SystemMessageBodyFormatter: SystemMessageBodyFormatting {
             if timeInterval == 0 {
                 return L10n.System.Message.disableDisappearingMessages(owner)
             } else {
-                return L10n.System.Message.setDisappearingMessageTime(owner, formatTimeInterval(timeInterval))
-            }
-        }
-
-        func formatTimeInterval(_ interval: TimeInterval) -> String {
-            if interval == 0 {
-                return L10n.Time.Interval.off
-            }
-
-            let hours = Int(interval / 3600)
-            let days = hours / 24
-            let weeks = days / 7
-            let months = days / 30
-
-            if months > 0 && days % 30 == 0 {
-                return months == 1 ? L10n.Time.Interval.Month.one : L10n.Time.Interval.Month.multiple(months)
-            } else if weeks > 0 && days % 7 == 0 {
-                return weeks == 1 ? L10n.Time.Interval.Week.one : L10n.Time.Interval.Week.multiple(weeks)
-            } else if days > 0 && hours % 24 == 0 {
-                return days == 1 ? L10n.Time.Interval.Day.one : L10n.Time.Interval.Day.multiple(days)
-            } else if hours > 0 {
-                return hours == 1 ? L10n.Time.Interval.Hour.one : L10n.Time.Interval.Hour.multiple(hours)
-            } else {
-                let minutes = Int(interval / 60)
-                return minutes == 1 ? L10n.Time.Interval.Minute.one : L10n.Time.Interval.Minute.multiple(minutes)
+                let formattedTime = SceytChatUIKit.shared.formatters.timeIntervalFormatter.format(timeInterval)
+                return L10n.System.Message.setDisappearingMessageTime(owner, formattedTime)
             }
         }
 

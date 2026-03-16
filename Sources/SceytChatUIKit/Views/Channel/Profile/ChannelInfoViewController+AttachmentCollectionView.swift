@@ -11,10 +11,21 @@ import UIKit
 extension ChannelInfoViewController {
     open class AttachmentCollectionView: CollectionView, UIScrollViewDelegate, UIGestureRecognizerDelegate {
         open var noItemsMessage: String? {
-            set { emptyStatView.titleLabel.text = newValue }
-            get { emptyStatView.titleLabel.text }
+            set { emptyStateView.title = newValue }
+            get { emptyStateView.title }
         }
-        open lazy var emptyStatView = EmptyStateView()
+        open var noItemsMessageSubTitle: String? {
+            set { emptyStateView.message = newValue }
+            get { emptyStateView.message }
+        }
+        open var noItemsIcon: UIImage? {
+            set { emptyStateView.icon = newValue }
+            get { emptyStateView.icon }
+        }
+
+        open lazy var emptyStateView = EmptyStateStackView()
+            .withoutAutoresizingMask
+
         open var shouldReceiveTouch: (() -> Bool)?
         public lazy var scrollingDecelerator = ScrollingDecelerator(scrollView: self)
         
@@ -24,7 +35,11 @@ extension ChannelInfoViewController {
         
         open override func setup() {
             super.setup()
-            
+
+            self.addSubview(emptyStateView)
+            emptyStateView.pin(to: self, anchors: [.centerX, .top(50), .leading(16, .greaterThanOrEqual)])
+            emptyStateView.isHidden = true
+
             isPrefetchingEnabled = false
             bounces = true
         }
@@ -81,9 +96,9 @@ extension ChannelInfoViewController {
         
         open func updateNoItems() {
             if totalNumberOfItems <= 0 {
-                backgroundView = emptyStatView
+                emptyStateView.isHidden = false
             } else {
-                backgroundView = nil
+                emptyStateView.isHidden = true
             }
         }
         

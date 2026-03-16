@@ -68,6 +68,7 @@ extension SceytChatUIKit {
         public static var mediaPreviewerCarouselViewController: MediaPreviewerCarouselViewController.Type = MediaPreviewerCarouselViewController.self
         public static var mediaPreviewerNavigationController: MediaPreviewerNavigationController.Type = MediaPreviewerNavigationController.self
         public static var mediaPreviewerViewController: MediaPreviewerViewController.Type = MediaPreviewerViewController.self
+        public static var mediaPreviewerAudioViewController: MediaPreviewerAudioViewController.Type = MediaPreviewerAudioViewController.self
         public static var menuController: MenuController.Type = MenuController.self
         public static var messageInfoViewController: MessageInfoViewController.Type = MessageInfoViewController.self
         public static var messageInputViewController: MessageInputViewController.Type = MessageInputViewController.self
@@ -113,6 +114,7 @@ extension SceytChatUIKit {
         public static var channelInfoDescriptionCell: ChannelInfoViewController.DescriptionCell.Type = ChannelInfoViewController.DescriptionCell.self
         public static var channelInfoDetailsCell: ChannelInfoViewController.DetailsCell.Type = ChannelInfoViewController.DetailsCell.self
         public static var channelInfoFileCell: ChannelInfoViewController.FileCell.Type = ChannelInfoViewController.FileCell.self
+        public static var channelInfoGroupCell: ChannelInfoViewController.GroupCell.Type = ChannelInfoViewController.GroupCell.self
         public static var channelInfoImageAttachmentCell: ChannelInfoViewController.ImageAttachmentCell.Type = ChannelInfoViewController.ImageAttachmentCell.self
         public static var channelInfoLinkCell: ChannelInfoViewController.LinkCell.Type = ChannelInfoViewController.LinkCell.self
         public static var channelInfoOptionCell: ChannelInfoViewController.OptionCell.Type = ChannelInfoViewController.OptionCell.self
@@ -129,6 +131,7 @@ extension SceytChatUIKit {
         public static var messageCellActionButtonView: MessageCell.BottomActionView.Type = MessageCell.BottomActionView.self
         public static var messageCellForwardView: MessageCell.ForwardView.Type = MessageCell.ForwardView.self
         public static var messageCellInfoView: MessageCell.InfoView.Type = MessageCell.InfoView.self
+        public static var messageCellReadMoreButton: MessageCell.ReadMoreButton.Type = MessageCell.ReadMoreButton.self
         public static var messageCellLinkPreviewView: MessageCell.LinkPreviewView.Type = MessageCell.LinkPreviewView.self
         public static var messageCellLinkStackView: MessageCell.LinkStackView.Type = MessageCell.LinkStackView.self
         public static var messageCellReactionLabel: MessageCell.ReactionLabel.Type = MessageCell.ReactionLabel.self
@@ -173,6 +176,7 @@ extension SceytChatUIKit {
         public static var channelInfoFileCollectionView: ChannelInfoViewController.FileCollectionView.Type = ChannelInfoViewController.FileCollectionView.self
         public static var channelInfoLinkCollectionView: ChannelInfoViewController.LinkCollectionView.Type = ChannelInfoViewController.LinkCollectionView.self
         public static var channelInfoVoiceCollectionView: ChannelInfoViewController.VoiceCollectionView.Type = ChannelInfoViewController.VoiceCollectionView.self
+        public static var channelInfoGroupCollectionView: ChannelInfoViewController.GroupCollectionView.Type = ChannelInfoViewController.GroupCollectionView.self
         public static var checkBoxView: CheckBoxView.Type = CheckBoxView.self
         public static var circleButton: CircleButton.Type = CircleButton.self
         public static var circleImageView: CircleImageView.Type = CircleImageView.self
@@ -227,6 +231,8 @@ extension SceytChatUIKit {
                 
             }
         }
+        public static var chatRemoteNotificationHandler: ChatRemoteNotificationHandler.Type = ChatRemoteNotificationHandler.self
+        public static var pushNotificationParser: DefaultPushNotificationParser.Type = DefaultPushNotificationParser.self
         public static var attachmentTransfer: AttachmentTransfer.Type = AttachmentTransfer.self
         public static var channelAttachmentProvider: ChannelAttachmentProvider.Type = ChannelAttachmentProvider.self
         public static var channelCreator: ChannelCreator.Type = ChannelCreator.self

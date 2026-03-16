@@ -45,6 +45,7 @@ public struct RepliedMessageBodyFormatterAttributes {
     let attachmentDurationFormatter: any TimeIntervalFormatting
     let attachmentNameFormatter: any AttachmentFormatting
     let mentionUserNameFormatter: any UserFormatting
+    let replyUserNameFormatter: any UserFormatting
 }
 
 public struct EditMessageBodyFormatterAttributes {

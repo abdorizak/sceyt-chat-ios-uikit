@@ -72,31 +72,49 @@ public extension Database {
         resetStalenessInterval: Bool = true,
         completion: (() -> Void)? = nil
     ) {
-        
-        if resetStalenessInterval {
-            self.backgroundPerformContext.stalenessInterval = 0
+        let group = DispatchGroup()
+
+        group.enter()
+        self.backgroundPerformContext.perform {
+            if resetStalenessInterval {
+                self.backgroundPerformContext.stalenessInterval = 0
+            }
+            self.backgroundPerformContext.refreshAllObjects()
+            if resetStalenessInterval {
+                self.backgroundPerformContext.stalenessInterval = -1
+            }
+            group.leave()
         }
-        self.backgroundPerformContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.backgroundPerformContext.stalenessInterval = -1
+
+        group.enter()
+        self.backgroundReadOnlyObservableContext.perform {
+            if resetStalenessInterval {
+                self.backgroundReadOnlyObservableContext.stalenessInterval = 0
+            }
+            self.backgroundReadOnlyObservableContext.refreshAllObjects()
+            if resetStalenessInterval {
+                self.backgroundReadOnlyObservableContext.stalenessInterval = -1
+            }
+            group.leave()
         }
-        
-        if resetStalenessInterval {
-            self.backgroundReadOnlyObservableContext.stalenessInterval = 0
+
+        group.enter()
+        self.viewContext.perform {
+            if resetStalenessInterval {
+                self.viewContext.stalenessInterval = 0
+            }
+            self.viewContext.refreshAllObjects()
+            if resetStalenessInterval {
+                self.viewContext.stalenessInterval = -1
+            }
+            group.leave()
         }
-        self.backgroundReadOnlyObservableContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.backgroundReadOnlyObservableContext.stalenessInterval = -1
+
+        if let completion {
+            group.notify(queue: .main) {
+                completion()
+            }
         }
-        
-        if resetStalenessInterval {
-            self.viewContext.stalenessInterval = 0
-        }
-        self.viewContext.refreshAllObjects()
-        if resetStalenessInterval {
-            self.viewContext.stalenessInterval = -1
-        }
-        completion?()
     }
     
     func deleteAll() {
@@ -105,7 +123,10 @@ public extension Database {
 }
 
 public final class PersistentContainer: NSPersistentContainer, Database {
-    
+
+    // Accessed only on the main queue — guards against reacting to same-process saves.
+    private var lastHistoryToken: NSPersistentHistoryToken?
+
     private lazy var observersQueue: OperationQueue = {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
@@ -167,6 +188,10 @@ public final class PersistentContainer: NSPersistentContainer, Database {
         switch type {
         case .sqLite(let fileUrl):
             description.url = fileUrl
+            description.setOption(true as NSNumber,
+                forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+            description.setOption(true as NSNumber,
+                forKey: NSPersistentHistoryTrackingKey)
         case .binary(let fileUrl):
             description.url = fileUrl
         case .inMemory:
@@ -185,6 +210,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
         let context = newBackgroundContext()
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         context.automaticallyMergesChangesFromParent = true
+        context.transactionAuthor = Bundle.main.bundleIdentifier
         return context
     }()
    
@@ -225,9 +251,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
                 }
                 if self.backgroundPerformContext.hasChanges {
                     self.logUncommittedChanges(context: self.backgroundPerformContext)
-                    logger.info("[DATABASE] Will save on backgroundPerformContext")
                     try self.backgroundPerformContext.save()
-                    logger.info("[DATABASE] Saved on backgroundPerformContext")
                 }
             } catch {
                 resultQueue.async { completion?(error) }
@@ -236,32 +260,12 @@ public final class PersistentContainer: NSPersistentContainer, Database {
     }
     
     func logUncommittedChanges(context: NSManagedObjectContext) {
-        let insertedObjects = context.insertedObjects
-        let updatedObjects = context.updatedObjects
-        let deletedObjects = context.deletedObjects
-        let registeredObjects = context.registeredObjects
-        
-        if !insertedObjects.isEmpty {
-            logger.info("[DATABASE] Inserted Objects: \(insertedObjects.count)")
-        }
-        
-        if !updatedObjects.isEmpty {
-            logger.info("[DATABASE] Updated Objects: \(updatedObjects.count)")
-        }
-        
-        if !deletedObjects.isEmpty {
-            logger.info("[DATABASE] Deleted Objects: \(deletedObjects.count)")
-        }
-        
-        if !registeredObjects.isEmpty {
-            logger.info("[DATABASE] Registered Objects: \(registeredObjects.count)")
-        }
     }
     
     public final func performWriteTask(resultQueue: DispatchQueue,
                                               _ perform: @escaping (NSManagedObjectContext) throws -> Void,
                                               completion: ((Error?) -> Void)? = nil) {
-        let context = createBackgroundContext()
+        let context = backgroundPerformContext
         context.perform {[weak self] in
             guard let self = self else { return }
             do {
@@ -276,6 +280,7 @@ public final class PersistentContainer: NSPersistentContainer, Database {
                     try context.save()
                 }
             } catch {
+                context.rollback()
                 resultQueue.async { completion?(error) }
             }
         }
@@ -378,7 +383,10 @@ public final class PersistentContainer: NSPersistentContainer, Database {
                 self,
                 name: .NSManagedObjectContextDidSave,
                 object: backgroundPerformContext)
-
+        NotificationCenter.default.removeObserver(
+            self,
+            name: .NSPersistentStoreRemoteChange,
+            object: persistentStoreCoordinator)
     }
 }
 
@@ -407,6 +415,10 @@ private extension PersistentContainer {
     func addObservers() {
         let notificationCenter = NotificationCenter.default
         notificationCenter.addObserver(self, selector: #selector(didSave(notification: )), name: .NSManagedObjectContextDidSave, object: backgroundPerformContext)
+        notificationCenter.addObserver(self,
+            selector: #selector(storeDidChangeExternally(_:)),
+            name: .NSPersistentStoreRemoteChange,
+            object: persistentStoreCoordinator)
     }
     
     func removeObservers() {
@@ -422,6 +434,51 @@ private extension PersistentContainer {
             }
         }
     }
+
+    @objc
+    func storeDidChangeExternally(_ notification: Notification) {
+        // NSPersistentStoreRemoteChange fires for ALL saves — including same-process ones.
+        // Fetch persistent history to check whether any transaction was authored by a
+        // different process (NSE / Share Extension). Only then refresh contexts and
+        // notify observers, so that normal in-app writes don't trigger a cascade.
+        let currentAuthor = Bundle.main.bundleIdentifier
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            let tokenSnapshot = self.lastHistoryToken
+            let historyContext = self.newBackgroundContext()
+            historyContext.perform {
+                let fetchRequest = NSPersistentHistoryChangeRequest.fetchHistory(after: tokenSnapshot)
+                guard let result = try? historyContext.execute(fetchRequest) as? NSPersistentHistoryResult,
+                      let transactions = result.result as? [NSPersistentHistoryTransaction],
+                      !transactions.isEmpty else { return }
+
+                let lastToken = transactions.last?.token
+                let hasExternalChanges = transactions.contains { $0.author != currentAuthor }
+
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.lastHistoryToken = lastToken
+
+                    // Purge processed history to prevent unbounded table growth.
+                    if let purgeToken = lastToken {
+                        let purgeContext = self.newBackgroundContext()
+                        purgeContext.perform {
+                            let purgeRequest = NSPersistentHistoryChangeRequest.deleteHistory(before: purgeToken)
+                            try? purgeContext.execute(purgeRequest)
+                        }
+                    }
+
+                    guard hasExternalChanges else { return }
+
+                    self.refreshAllObjects {
+                        NotificationCenter.default.post(
+                            name: .persistentStoreDidChangeExternally,
+                            object: self)
+                    }
+                }
+            }
+        }
+    }
 }
 
 fileprivate extension NSError {
@@ -433,11 +490,16 @@ fileprivate extension NSError {
 
 
 public extension NSManagedObjectContext {
-    
+
     func mergeChangesWithViewContext(fromRemoteContextSave: [AnyHashable: Any]) {
         NSManagedObjectContext.mergeChanges(
             fromRemoteContextSave: fromRemoteContextSave,
             into: [self, SceytChatUIKit.shared.database.viewContext]
         )
     }
+}
+
+public extension Notification.Name {
+    static let persistentStoreDidChangeExternally =
+        Notification.Name("SceytChatUIKit.persistentStoreDidChangeExternally")
 }

@@ -136,6 +136,7 @@ open class ChannelEventHandler: NSObject, ChannelDelegate {
         logger.debug("[MARKER CHECK] didReceive in cid \(channel.id) mark: \(marker.name) for \(marker.messageIds) in channelId:\(marker.channelId)")
         database.write {
             $0.update(messageMarkers: marker)
+        } completion: { _ in
         }
     }
     

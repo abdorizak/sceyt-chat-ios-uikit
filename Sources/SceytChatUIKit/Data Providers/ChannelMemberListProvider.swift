@@ -14,10 +14,46 @@ open class ChannelMemberListProvider: DataProvider {
     public var queryLimit = SceytChatUIKit.shared.config.queryLimits.channelMemberListQueryLimit
     public var queryOrder = MemberListOrder.username
     public var queryType = MemberListQueryType.all
-    public var hasNext: Bool = true
 
     let channelId: ChannelId
-    private var isLoading = false
+
+    // Serial queue to prevent concurrent database writes
+    private let databaseWriteQueue = DispatchQueue(label: "com.sceyt.channelMemberListProvider.databaseWrite", qos: .userInitiated)
+
+    // Separate loading states for each role
+    private var ownerLoading = false
+    private var adminLoading = false
+    private var othersLoading = false
+
+    // Track if there are more items to load for each role
+    private var ownerHasNext = true
+    private var adminHasNext = true
+    private var othersHasNext = true
+
+    // Separate queries for each role type
+    private lazy var ownerQuery: MemberListQuery = {
+        MemberListQuery.Builder(channelId: channelId)
+            .order(queryOrder)
+            .limit(UInt(queryLimit))
+            .queryRole(SceytChatUIKit.shared.config.memberRolesConfig.owner)
+            .build()
+    }()
+
+    private lazy var adminQuery: MemberListQuery = {
+        MemberListQuery.Builder(channelId: channelId)
+            .order(queryOrder)
+            .limit(UInt(queryLimit))
+            .queryRole(SceytChatUIKit.shared.config.memberRolesConfig.admin)
+            .build()
+    }()
+
+    private lazy var othersQuery: MemberListQuery = {
+        MemberListQuery.Builder(channelId: channelId)
+            .order(queryOrder)
+            .limit(UInt(queryLimit))
+            .queryRole(SceytChatUIKit.shared.config.memberRolesConfig.participant)
+            .build()
+    }()
 
     public required init(channelId: ChannelId) {
         self.channelId = channelId
@@ -32,42 +68,104 @@ open class ChannelMemberListProvider: DataProvider {
         .build()
     }()
 
-    /// Loads next page of members from server
-    open func loadMembers(completion: (([ChatChannelMember]) -> Void)? = nil) {
-        guard !isLoading else {
-            completion?([])
-            return
-        }
-        guard hasNext else {
-            completion?([])
+    open func loadMembers() {
+        loadOwners()
+        loadAdmins()
+        loadOthers()
+    }
+
+    open func loadOwners() {
+        guard !ownerLoading, ownerHasNext, !ownerQuery.loading else {
             return
         }
 
-        isLoading = true
-
-        query.loadNext { [weak self] _, members, error in
+        ownerLoading = true
+        ownerQuery.loadNext { [weak self] _, members, _ in
             guard let self = self else {
-                completion?([])
                 return
             }
 
-            self.isLoading = false
+            let count = members?.count ?? 0
+            self.ownerLoading = false
 
-            if let error = error {
-                logger.errorIfNotNil(error, "Failed to load members")
-                completion?([])
+            // If we received fewer members than requested, there are no more to load
+            if count < self.queryLimit {
+                self.ownerHasNext = false
+            }
+
+            guard let members = members, !members.isEmpty else {
+                self.ownerHasNext = false
                 return
             }
-            
-            if (members?.count ?? 0) < queryLimit {
-                hasNext = false
+
+            self.store(members: members)
+        }
+    }
+
+    open func loadAdmins() {
+        guard !adminLoading, adminHasNext, !adminQuery.loading else {
+            return
+        }
+
+        adminLoading = true
+        adminQuery.loadNext { [weak self] _, members, _ in
+            guard let self = self else {
+                return
             }
 
-            if let members = members {
-                let chatMembers = members.map { ChatChannelMember(member: $0) }
-                completion?(chatMembers)
-            } else {
-                completion?([])
+            let count = members?.count ?? 0
+            self.adminLoading = false
+
+            // If we received fewer members than requested, there are no more to load
+            if count < self.queryLimit {
+                self.adminHasNext = false
+            }
+
+            guard let members = members, !members.isEmpty else {
+                self.adminHasNext = false
+                return
+            }
+
+            self.store(members: members)
+        }
+    }
+
+    open func loadOthers() {
+        guard !othersLoading, othersHasNext, !othersQuery.loading else {
+            return
+        }
+
+        othersLoading = true
+        othersQuery.loadNext { [weak self] _, members, _ in
+            guard let self = self else {
+                return
+            }
+
+            let count = members?.count ?? 0
+            self.othersLoading = false
+
+            // If we received fewer members than requested, there are no more to load
+            if count < self.queryLimit {
+                self.othersHasNext = false
+            }
+
+            guard let members = members, !members.isEmpty else {
+                self.othersHasNext = false
+                return
+            }
+
+            self.store(members: members)
+        }
+    }
+
+    open func store(members: [Member]) {
+        // Use serial queue to prevent concurrent database writes that cause crashes
+        databaseWriteQueue.async { [weak self] in
+            guard let self else { return }
+            self.database.performWriteTask {
+                $0.createOrUpdate(members: members, channelId: self.channelId)
+            } completion: { error in
+                logger.debug(error?.localizedDescription ?? "")
             }
         }
     }

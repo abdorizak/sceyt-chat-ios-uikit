@@ -30,7 +30,18 @@ extension ChannelViewController {
         open lazy var channelEventView = Components.channelEventView
             .init()
             .withoutAutoresizingMask
+
+        open lazy var tapButton: UIButton = {
+            let button = UIButton()
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.backgroundColor = .clear
+            return button
+        }()
         
+        open override var intrinsicContentSize: CGSize {
+            return CGSize(width: CGFloat.greatestFiniteMagnitude, height: UIView.noIntrinsicMetric)
+        }
+
         private lazy var stackView = UIStackView(
             column: [
                 headLabel,
@@ -39,7 +50,7 @@ extension ChannelViewController {
             ],
             spacing: 0
         )
-            .withoutAutoresizingMask
+        .withoutAutoresizingMask
 
         private var _mode: Mode = .default
 
@@ -88,12 +99,17 @@ extension ChannelViewController {
             addSubview(profileImageView)
             addSubview(channelEventView)
             addSubview(stackView)
-            
+            addSubview(tapButton)
+
             profileImageView.widthAnchor.pin(to: profileImageView.heightAnchor)
-            profileImageView.pin(to: self, anchors: [.leading(), .top(4), .bottom(-4)])
-            stackView.pin(to: self, anchors: [.trailing(0)])
+            profileImageView.heightAnchor.pin(constant: 36)
+            profileImageView.pin(to: self, anchors: [.leading(), .centerY])
+
+            stackView.pin(to: self, anchors: [.trailing(-8)])
             stackView.centerYAnchor.pin(to: profileImageView.centerYAnchor)
             stackView.leadingAnchor.pin(to: profileImageView.trailingAnchor, constant: 12)
+
+            tapButton.pin(to: self, anchors: [.leading(), .trailing(), .top(), .bottom()])
         }
         
         open override func setupDone() {

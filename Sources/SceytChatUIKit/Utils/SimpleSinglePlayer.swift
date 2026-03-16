@@ -15,19 +15,27 @@ internal class SimpleSinglePlayer: NSObject {
     
     private static var currentPlayer: AVPlayer?
     private static var currentStopBlock: StopBlock?
+    private static var currentPauseBlock: StopBlock?
     private static var currentDurationBlock: DurationBlock?
     private static var timeObserver: Any?
+    private static var speedForPlayer: [Int64: Float] = [:]
     private(set) static var isPlaying = false
     private(set) static var duration: Double = 0
     private(set) static var currentTime: Double = 0
+    internal static var currentId: Int64?
     static var progress: Double { currentTime / duration }
     static var url: URL? { (currentPlayer?.currentItem?.asset as? AVURLAsset)?.url }
     
-    static func play(_ url: URL, durationBlock: DurationBlock?, stopBlock: StopBlock?) {
+    static func play(_ url: URL, id: Int64, durationBlock: DurationBlock?, stopBlock: StopBlock?) {
         guard url != self.url else {
             if !isPlaying {
                 isPlaying = true
+                currentId = id
                 currentPlayer?.play()
+                // Apply stored speed if available
+                if let storedRate = speedForPlayer[id], id != 0 {
+                    currentPlayer?.rate = storedRate
+                }
             }
             set(durationBlock: durationBlock, stopBlock: stopBlock)
             return
@@ -56,7 +64,12 @@ internal class SimpleSinglePlayer: NSObject {
                 }
             }
             isPlaying = true
+            currentId = id
             player.play()
+            // Apply stored speed if available
+            if let storedRate = speedForPlayer[id] {
+                player.rate = storedRate
+            }
         } catch {
             logger.errorIfNotNil(error, "")
         }
@@ -76,27 +89,40 @@ internal class SimpleSinglePlayer: NSObject {
     static func pause() {
         isPlaying = false
         currentPlayer?.pause()
+        currentPauseBlock?()
+    }
+
+    static func setPauseBlock(_ block: StopBlock?) {
+        currentPauseBlock = block
     }
     
     static func stop(resumeBackgroundPlayback: Bool = true) {
         isPlaying = false
         if let currentPlayer {
             currentPlayer.pause()
-        }
-        currentPlayer = nil
-        if let timeObserver {
-            currentPlayer?.removeTimeObserver(timeObserver)
+            if let timeObserver {
+                currentPlayer.removeTimeObserver(timeObserver)
+            }
         }
         timeObserver = nil
+        currentPlayer = nil
+        currentId = nil
+        currentTime = 0
         currentStopBlock?()
         currentStopBlock = nil
+        currentPauseBlock = nil
         
         if resumeBackgroundPlayback {
             try? Components.audioSession.notifyOthersOnDeactivation()
         }
     }
     
-    static func setRate(_ rate: Float) {
+    static func setRate(_ rate: Float, for id: Int64) {
+        speedForPlayer[id] = rate
+
+        // Only apply to current player if this tId is currently playing
+        guard id == currentId else { return }
+
         guard currentPlayer?.rate != rate
         else { return }
         
@@ -104,5 +130,10 @@ internal class SimpleSinglePlayer: NSObject {
         if !isPlaying {
             currentPlayer?.pause()
         }
+    }
+
+    static func getSpeed(for tid: Int64?) -> Float? {
+        guard let tid = tid else { return nil }
+        return speedForPlayer[tid]
     }
 }

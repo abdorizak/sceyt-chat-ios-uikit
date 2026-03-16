@@ -30,7 +30,8 @@ public class ChatMessage {
     public let replyCount: Int
     public let displayCount: Int
     public var disableMentionsCount: Bool
-    
+    public let viewOnce: Bool
+
     public let attachments: [Attachment]?
     public let userReactions: [Reaction]?
     public let userPendingReactions: [Reaction]?
@@ -70,6 +71,7 @@ public class ChatMessage {
                 replyCount: Int = 0,
                 displayCount: Int = 0,
                 disableMentionsCount: Bool = false,
+                viewOnce: Bool = false,
                 attachments: [ChatMessage.Attachment]? = nil,
                 userReactions: [ChatMessage.Reaction]? = nil,
                 userPendingReactions: [ChatMessage.Reaction]? = nil,
@@ -102,6 +104,7 @@ public class ChatMessage {
         self.replyCount = replyCount
         self.displayCount = displayCount
         self.disableMentionsCount = disableMentionsCount
+        self.viewOnce = viewOnce
         self.attachments = attachments
         self.userReactions = userReactions
         self.userPendingReactions = userPendingReactions
@@ -145,6 +148,7 @@ public class ChatMessage {
         replyCount = Int(dto.replyCount)
         displayCount = Int(dto.displayCount)
         disableMentionsCount = dto.disableMentionsCount
+        viewOnce = dto.viewOnce
         markerCount = dto.markerTotal
         if let user = dto.user {
             self.user = user.convert()
@@ -277,6 +281,7 @@ public class ChatMessage {
             replyCount: message.replyCount,
             displayCount: message.displayCount,
             disableMentionsCount: message.disableMentionsCount,
+            viewOnce: message.viewOnce,
             attachments: message.attachments?.map { ChatMessage.Attachment(attachment: $0)},
             userReactions: message.userReactions?.map { ChatMessage.Reaction(reaction: $0)},
             reactionTotals: message.reactionTotals?.map { .init(reaction: $0)},
@@ -526,6 +531,11 @@ public extension ChatMessage {
             .transient(transient)
             .displayCount(displayCount)
             .silent(silent)
+
+        if viewOnce {
+            b.viewOnce(true)
+        }
+
         if let metadata {
             b.metadata(metadata)
         }
@@ -544,6 +554,29 @@ public extension ChatMessage {
         if let bodyAttributes {
             b.bodyAttributes(bodyAttributes.map { .init(offset: $0.offset, length: $0.length, type: $0.type.rawValue, metadata: $0.metadata) })
         }
+
+        if let poll {
+            let options = poll.options
+                .filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .map { option in
+                    SceytChat.PollOption.Builder()
+                        .id(option.id)
+                        .name(option.text)
+                        .build()
+                }
+
+            let pollDetails = SceytChat.PollDetails.Builder()
+                .pollId(String(tid))
+                .name(poll.name)
+                .description("")
+                .options(options)
+                .allowMultipleVotes(poll.allowMultipleVotes)
+                .anonymous(poll.anonymous)
+                .allowVoteRetract(true)
+                .build()
+
+            b.poll(pollDetails)
+        }
         return b
     }
 }
@@ -558,6 +591,7 @@ public extension ChatMessage {
         public static let link = "link"
         public static let system = "system"
         public static let poll = "poll"
+        public static let viewOnce = "view_once"
     }
 
     /// Returns true if this is a system message
@@ -568,6 +602,32 @@ public extension ChatMessage {
     /// Returns true if this is a poll message
     var isPollMessage: Bool {
         return type == MessageType.poll && poll != nil
+    }
+    
+    var isViewOnceMessage: Bool {
+        return type == MessageType.viewOnce
+    }
+
+    var hasOpenedMarker: Bool {
+        // If it's my message (outgoing)
+        if !incoming {
+            // Check if markerCount > 0 OR if any other user has opened it
+            if markerCount?[DefaultMarker.opened.rawValue] ?? 0 > 0 {
+                return true
+            }
+
+            // Check if userMarkers contains any marker from users OTHER than me
+            return userMarkers?.contains(where: {
+                $0.user?.id != SceytChatUIKit.shared.currentUserId &&
+                $0.name == DefaultMarker.opened.rawValue
+            }) == true
+        } else {
+            // If it's not my message, check if I have opened it
+            return userMarkers?.contains(where: {
+                $0.user?.id == SceytChatUIKit.shared.currentUserId &&
+                $0.name == DefaultMarker.opened.rawValue
+            }) == true
+        }
     }
 }
 

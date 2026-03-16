@@ -56,7 +56,8 @@ open class ChannelAttachmentListViewModel: NSObject {
         if attachmentTypes.isEmpty {
             predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
 //                NSPredicate(format: "message != nil", channel.id, channel.id),
-                NSPredicate(format: "channelId == %lld", channel.id)
+                NSPredicate(format: "channelId == %lld", channel.id),
+                NSPredicate(format: "message.type != %@", ChatMessage.MessageType.viewOnce)
             ])
         } else {
             predicate =
@@ -65,7 +66,8 @@ open class ChannelAttachmentListViewModel: NSObject {
                     NSPredicate(format: "channelId == %lld", channel.id),
                     NSCompoundPredicate(orPredicateWithSubpredicates:
                         attachmentTypes.map { NSPredicate(format: "type = %@", $0) }
-                    )
+                    ),
+                    NSPredicate(format: "message.type != %@", ChatMessage.MessageType.viewOnce)
                 ])
         }
 
