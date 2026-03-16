@@ -81,7 +81,7 @@ extension ChannelInfoViewController {
             // Create query for mutual groups
             query = ChannelListQuery.Builder()
                 .mutual(withUserId: peerId)
-                .excludeTypes([ChatChannel.ChannelType.direct.rawValue])
+                .types(SceytChatUIKit.shared.config.mutualGroupChannelTypes)
                 .limit(UInt(pageLimit))
                 .build()
 

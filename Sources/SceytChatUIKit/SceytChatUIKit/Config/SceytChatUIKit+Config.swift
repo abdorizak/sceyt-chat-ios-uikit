@@ -58,6 +58,8 @@ extension SceytChatUIKit {
 
         public var showGroupsInCommon: Bool = false
 
+        public var mutualGroupChannelTypes: [String] = [ChatChannel.ChannelType.group.rawValue]
+
         public var channelListOrder: ChannelListOrder = .lastMessage
         
         public var defaultAvatarBackgroundColors: [UIColor] = [
